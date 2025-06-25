@@ -35,7 +35,7 @@ const FloatingIcon = ({ url, top, left, size=20, rotation, delay }) => {
 
   return (
     <motion.div
-        className={`z-10 h-[${size}%] w-[${size}%] absolute pointer-events-none`}
+        className={`z-10 h-[${size}%] w-[${size}%] absolute pointer-events-none`}        // h-[${size}%] w-[${size}%]
         style={{ top, left }}
         initial={{ y: `${10000/size}%`, rotate: 5*rotation }}
         animate={controls}

@@ -4,7 +4,7 @@ import SignUpPage from '../pages/SignUpPage';
 import LoginPage from '../pages/LoginPage';
 
 const AppRoutes = () => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900
+    <div className="min-h-screen bg-gradient-to-br from-gray-800 via-purple-600 to-violet-800
     flex items-center justify-center relative overflow-hidden">
         <BrowserRouter>
             <Routes>

@@ -15,7 +15,7 @@ const FloatingIcon = ({ url, top, left, size=20, rotation, delay }) => {
         duration: 2,
         type: "spring",
         stiffness: 100,
-        damping: 30,
+        damping: 40,
         delay,
       },
     }).then(() => {
@@ -26,18 +26,20 @@ const FloatingIcon = ({ url, top, left, size=20, rotation, delay }) => {
           duration: 10,
           ease: "easeInOut",
           repeat: Infinity,
-            repeatType: "loop",
-            repeatDelay: 1,
+          repeatType: "loop",
+          repeatDelay: 1,
         },
       });
     });
-  }, [controls, delay, rotation]);
-
+  }, [controls, rotation, delay]);
+  const angle = [-300, -200, -100, 100, 200, 300]
+  const random_rotation = angle[Math.floor(Math.random() * angle.length)];
   return (
+    
     <motion.div
-        className={`z-10 h-[${size}%] w-[${size}%] absolute pointer-events-none`}        // h-[${size}%] w-[${size}%]
+        className={`z-10 h-[${size}%] w-[${size}%] absolute pointer-events-none`}      // h-[${size}%] w-[${size}%]
         style={{ top, left }}
-        initial={{ y: `${10000/size}%`, rotate: 5*rotation }}
+        initial={{ y: `${10000/size}%`, rotate: random_rotation }}
         animate={controls}
     >
       <img src={url} alt="Floating Icon" className="w-full h-full object-contain" />

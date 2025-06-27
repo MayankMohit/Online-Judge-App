@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "CommonJS",
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "outDir": "./dist-emails",
+    "rootDir": "./backend/emails"
+  },
+  "include": ["backend/emails/**/*"]
+}

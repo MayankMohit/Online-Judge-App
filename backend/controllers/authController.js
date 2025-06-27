@@ -2,6 +2,7 @@ import { User } from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../emails/senders";
 
 
 export const signup = async (req, res) => {
@@ -28,7 +29,7 @@ export const signup = async (req, res) => {
 
         generateTokenAndSetCookie(res, user._id);
 
-        // await sendVerificationEmail(user.email, verificationToken);
+        await sendVerificationEmail(user.email, user.name, verificationToken);
 
         res.status(201).json({
             success: true,
@@ -61,7 +62,7 @@ export const verifyEmail = async (req, res) => {
         user.verificationTokenExpiresAt = undefined;
         await user.save();
 
-        // await sendWelcomeEmail(user.email, user.name);
+        await sendWelcomeEmail(user.email, user.name);
 
         res.status(200).json({
             success: true,
@@ -130,8 +131,8 @@ export const forgotPassword = async (req, res) => {
         user.resetPasswordExpiresAt = resetTokenExpiresAt;
         await user.save();
 
-        // await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
-        res.status(200).json({ status: true, message: `Password Reset link sent to your email, token:${resetToken}` });
+        await sendPasswordResetEmail(user.email, user.name, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
+        res.status(200).json({ status: true, message: `Password Reset link sent to your email` });
 
     } catch (error) {
         res.status(400).json({ status: false, message: error.message });
@@ -156,7 +157,7 @@ export const resetPassword = async (req, res) => {
         user.resetPasswordExpiresAt = undefined;
         await user.save();
 
-        // await sendResetSuccessEmail(user.email);
+        await sendResetSuccessEmail(user.email, user.name);
 
         res.status(200).json({
             success: true,

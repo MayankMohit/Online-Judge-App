@@ -22,6 +22,8 @@ app.use(express.json());
 
 app.use("/api/auth", authRoute);
 
+app.use('/static', express.static(path.join(__dirname, "/frontend/public")));
+
 if(process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));
     app.get("/*", (req, res) => {

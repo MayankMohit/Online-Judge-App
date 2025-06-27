@@ -18,11 +18,11 @@ const Landing = () => {
       <FloatingIcon url={PythonIcon} top="15%" left="5%" rotation={-10} delay={0.3} />
       <FloatingIcon url={CppIcon} top="10%" left="75%" rotation={-5} delay={0.5} />
       <FloatingIcon url={JsIcon} top="70%" left="15%" rotation={8} delay={0.1} />
-      <FloatingIcon url={CsharpIcon} top="23%" left="30%" size={10} rotation={-5} delay={0.4} />
-      <FloatingIcon url={GoIcon} top="70%" left="86%" size={10} rotation={10} delay={0.2} />
-      <FloatingIcon url={SwiftIcon} top="60%" left="5%" size={10} rotation={-8} delay={0.6} />
-      <FloatingIcon url={TsIcon} top="10%" left="60%" size={10} rotation={5} delay={0.7} />
-      <FloatingIcon url={PhpIcon} top="85%" left="70%" size={10} rotation={-10} delay={0.8} />
+      <FloatingIcon url={CsharpIcon} top="23%" left="30%" rotation={-5} delay={0.4} size={10} />
+      <FloatingIcon url={GoIcon} top="70%" left="86%" rotation={10} delay={0.2} size={10} />
+      <FloatingIcon url={SwiftIcon} top="60%" left="5%" rotation={-8} delay={0.6} size={10} />
+      <FloatingIcon url={TsIcon} top="10%" left="60%" rotation={5} delay={0.7} size={10} />
+      <FloatingIcon url={PhpIcon} top="85%" left="70%" rotation={-10} delay={0.8} size={10} />
       <div className="relative z-30 flex flex-col items-center h-full justify-center">
         <img src={Logo} alt="Logo" className="pointer-events-none h-[60%]" />
         <Link to="/signup">

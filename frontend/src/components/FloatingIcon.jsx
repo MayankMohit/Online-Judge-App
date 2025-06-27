@@ -1,9 +1,9 @@
 import { motion, useAnimation } from 'framer-motion';
 import { useEffect } from 'react';
+import clsx from 'clsx';
 
-
-const FloatingIcon = ({ url, top, left, size=20, rotation, delay }) => {
-    
+const FloatingIcon = ({ url, top, left, rotation, delay, size = 20 }) => {
+  
     const controls = useAnimation();
 
   useEffect(() => {
@@ -34,12 +34,21 @@ const FloatingIcon = ({ url, top, left, size=20, rotation, delay }) => {
   }, [controls, rotation, delay]);
   const angle = [-300, -200, -100, 100, 200, 300]
   const random_rotation = angle[Math.floor(Math.random() * angle.length)];
+
+  const sizeClass = {
+      10: "h-[10%] w-[10%]",
+      20: "h-[20%] w-[20%]",
+  }[size] || "h-[20%] w-[20%]"; 
+  
   return (
     
     <motion.div
-        className={`z-10 h-[${size}%] w-[${size}%] absolute pointer-events-none`}      // h-[${size}%] w-[${size}%]
+        className={clsx(
+          "z-10 absolute pointer-events-none",
+          sizeClass
+        )}
         style={{ top, left }}
-        initial={{ y: `${10000/size}%`, rotate: random_rotation }}
+        initial={{ y: `${10000 / size}%`, rotate: random_rotation }}
         animate={controls}
     >
       <img src={url} alt="Floating Icon" className="w-full h-full object-contain" />

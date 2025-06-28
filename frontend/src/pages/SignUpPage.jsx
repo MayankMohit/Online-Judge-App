@@ -4,23 +4,24 @@ import { User, Mail, Lock, Loader } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
-// import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../store/authStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const SignUpPage = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    // const { signup, error, isLoading, setError } = useAuthStore();
-    // if(error) setError(null)
+    const { signup, error, isLoading, setError } = useAuthStore();
+    if(error) setError(null);
+
     const navigate = useNavigate();
     const location = useLocation();
 
-    // useEffect(() => {
-    //     if (location.pathname === '/login') {
-    //       setError(null);
-    //     }
-    //   }, [location.pathname, setError]);
+    useEffect(() => {
+        if (location.pathname === '/login') {
+          setError(null);
+        }
+    }, [location.pathname, setError]);
 
     const handleSignUp = async (e) => {
         e.preventDefault();
@@ -28,8 +29,8 @@ const SignUpPage = () => {
             await signup(email, password, name);
             navigate('/verify-email');
         }catch (error) {
-            console.log(error);
-            setTimeout(() => set({ error: null }), 3000);
+            setError(error);
+            setTimeout(() => setError(null), 3000);
         }
     }
 
@@ -38,10 +39,11 @@ const SignUpPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl 
-            overflow-hidden'>
+            className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl
+             rounded-2xl shadow-xl overflow-hidden'>
             <div className='p-8'>
-                <h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-purple-500 text-transparent bg-clip-text'>
+                <h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400
+                 to-purple-500 text-transparent bg-clip-text'>
                     Create an Account
                 </h2>
 
@@ -53,15 +55,16 @@ const SignUpPage = () => {
                 <Input icon={Lock} type='password' placeholder='Password'
                     value={password} onChange={(e) => setPassword(e.target.value)} />
 
-                {/* {error && <p className='text-red-500 font-semibold mt-2'>{error}</p>} */}
+                {error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
 
                 <PasswordStrengthMeter password={password} />
-                <motion.button type='submit' whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} // disabled={isLoading}
+                <motion.button type='submit' whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
                     className='w-full py-3 mt-5 bg-gradient-to-r from-purple-500 to-purple-600
                      text-white font-bold rounded-lg shadow-lg hover:from-purple-600 hover:to-purple-700 
                      focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
-                     focus:ring-offset-gray-900 transition duration-200'> Sign Up
-                     {/* {isLoading ? <Loader className="animate-spin mx-auto" size={24} /> : 'Sign Up'} */}
+                     focus:ring-offset-gray-900 transition duration-200' disabled={isLoading}
+                    >
+                     {isLoading ? <Loader className="animate-spin mx-auto" size={24} /> : 'Sign Up'}
                  </motion.button>
 
             </form>      

@@ -6,6 +6,10 @@ import EmailVerificationPage from '../pages/EmailVerificationPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import DashboardPage from '../pages/DashboardPage';
+import MainLayout from '../layouts/MainLayout';
+import ProblemsPage from '../pages/ProblemsPage';
+import ContestsPage from '../pages/ContestsPage';
+import LeaderboardPage from '../pages/LeaderboardPage';
 
 const AppRoutes = () => (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-purple-600 to-violet-800
@@ -19,6 +23,11 @@ const AppRoutes = () => (
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                <Route element={<MainLayout />}>
+                    <Route path="/problems" element={<ProblemsPage />} />
+                    <Route path="/contests" element={<ContestsPage />} />
+                    <Route path="/leaderboards" element={<LeaderboardPage />} />
+                </Route>
             </Routes>
         </BrowserRouter>
     </div>

@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const problemSchema = mongoose.Schema({
+    problemNumber: {
+        type: Number,
+        unique: true,
+        required: true,
+    },
     title: {
         type: String,
         required: true,

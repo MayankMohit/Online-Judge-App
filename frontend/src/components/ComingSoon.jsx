@@ -10,8 +10,8 @@ const ComingSoon = ({ title }) => {
         transition={{ duration: 0.5 }}
         className="flex sm:flex-row flex-col items-center justify-center max-h-[calc(100vh-9rem)]"
       >
-      <div>
-        <img src={stop} alt="Under Construction" className="sm:w-2xl w-[18rem] " />
+      <div className="">
+        <img src={stop} alt="Under Construction" className="sm:w-2xl w-[18rem] drop-shadow-lg drop-shadow-amber-100/40 " />
       </div>
       <div className=" flex flex-col items-center justify-center text-center px-4">
         <motion.h1

@@ -35,10 +35,23 @@ const userSchema = mongoose.Schema({
         solvedAt: Date,
         },
     ],
-
+    favoriteProblems: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Problem"
+        }
+    ],
     submissions: [
         { type: mongoose.Schema.Types.ObjectId, ref: "Submission" },
     ],
+    totalProblemsSolved: {
+        type: Number,
+        default: 0
+    },
+    totalSubmissions: {
+        type: Number,
+        default: 0
+    },
     resetPasswordToken: String,
     resetPasswordExpiresAt: Date,
     verificationToken: String,

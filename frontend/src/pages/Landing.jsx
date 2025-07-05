@@ -24,7 +24,7 @@ const Landing = () => {
       <FloatingIcon url={TsIcon} top="10%" left="60%" rotation={5} delay={0.7} size={10} />
       <FloatingIcon url={PhpIcon} top="85%" left="70%" rotation={-10} delay={0.8} size={10} />
       <div className="relative z-30 flex flex-col items-center h-full justify-center">
-        <img src={Logo} alt="Logo" className="pointer-events-none h-[60%]" />
+        <img src={Logo} alt="Logo" className="pointer-events-none sm:h-[60%]" />
         <Link to="/signup">
           <button className="px-15 py-2 text-2xl bg-purple-400 text-black rounded-4xl hover:bg-purple-300 transition">
             Get Started

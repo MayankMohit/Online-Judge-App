@@ -18,7 +18,7 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate("/problems");
     } catch (error) {
       setError(error);
       setTimeout(() => setError(null), 3000);
@@ -31,7 +31,7 @@ const LoginPage = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl 
-      rounded-2xl shadow-xl overflow-hidden"
+      sm:rounded-2xl shadow-xl overflow-hidden"
     >
       <div className="p-8">
         <h2

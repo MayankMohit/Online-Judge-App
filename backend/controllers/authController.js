@@ -4,7 +4,6 @@ import crypto from "crypto";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../emails/senders";
 
-
 export const signup = async (req, res) => {
     const { email, password, name } = req.body;
     try {

@@ -8,7 +8,7 @@ const ComingSoon = ({ title }) => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.5 }}
-        className="flex sm:flex-row flex-col items-center justify-center max-h-[calc(100vh-9rem)]"
+        className="flex min-w-screen pt-30 sm:flex-row flex-col items-center justify-center max-h-[calc(100vh-9rem)]"
       >
       <div className="">
         <img src={stop} alt="Under Construction" className="sm:w-2xl w-[18rem] drop-shadow-lg drop-shadow-amber-100/40 " />

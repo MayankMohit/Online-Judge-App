@@ -22,7 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const startServer = async () => {
   try {
-    await connectDB(); // Wait for DB to connect
+    await connectDB(); 
 
     // Sync indexes after DB is connected
     // await Problem.syncIndexes();

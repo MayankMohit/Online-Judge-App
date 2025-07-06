@@ -105,3 +105,42 @@ export const getSubmissionsByProblem = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch submissions" });
   }
 };
+
+export const getAllSubmissions = async (req, res) => {
+  try {
+    const { userId, problemId, verdict, page = 1, limit = 20 } = req.query;
+
+    const filter = {};
+    if (userId) filter.user = userId;
+    if (problemId) filter.problem = problemId;
+    if (verdict) filter.verdict = verdict;
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [submissions, total] = await Promise.all([
+      Submission.find(filter)
+        .populate("user", "name email")
+        .populate("problem", "problemNumber title")
+        .sort({ submittedAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Submission.countDocuments(filter)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      submissions,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (err) {
+    console.error("Admin fetch all submissions failed:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch all submissions" });
+  }
+};

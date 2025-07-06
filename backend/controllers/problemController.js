@@ -195,3 +195,16 @@ export const getUniqueTags = async (req, res) => {
   }
 };
 
+export const getProblemsByAdmin = async (req, res) => {
+  try {
+    const adminId = req.params.adminId;
+
+    const problems = await Problem.find({ createdBy: adminId })
+      .select("problemNumber title difficulty tags createdAt")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, problems });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch problems by admin" });
+  }
+};

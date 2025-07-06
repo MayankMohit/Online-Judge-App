@@ -11,6 +11,7 @@ import {
   removeFavorite,
   searchProblems,
   getUniqueTags,
+  getProblemsByAdmin
 } from "../controllers/problemController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
@@ -18,7 +19,7 @@ import { isProblemCreator } from "../middlewares/isProblemCreator.js";
 
 router.get("/", getAllProblems);
 
-router.get("/number/:number", getProblemByNumber);
+router.get("/number/:number", verifyToken, getProblemByNumber);
 
 router.post("/", verifyToken, isAdmin, createProblem);
 
@@ -33,5 +34,7 @@ router.delete("/:id/favorite", verifyToken, removeFavorite);
 router.get("/search", searchProblems);
 
 router.get("/tags", getUniqueTags);
+
+router.get("/admin/:adminId", verifyToken, isAdmin, getProblemsByAdmin);
 
 export default router;

@@ -6,11 +6,15 @@ import {
   getUserSubmissions,
   getSubmissionById,
   getSubmissionsByProblem,
+  getAllSubmissions
 } from "../controllers/submissionController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
+import { limiter } from "../middlewares/rateLimiter.js";
 
-router.post("/", verifyToken, createSubmission);
+router.post("/", verifyToken, limiter, createSubmission);
+
+router.get("/", verifyToken, isAdmin, getAllSubmissions);
 
 router.get("/user", verifyToken, getUserSubmissions);
 

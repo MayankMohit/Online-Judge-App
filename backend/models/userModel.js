@@ -29,10 +29,10 @@ const userSchema = mongoose.Schema({
     },
     solvedProblems: [
         {
-        problemId: { type: mongoose.Schema.Types.ObjectId, ref: "Problem" },
-        status: { type: String, enum: ["accepted", "wrong", "time_limit"], default: "accepted" },
-        submissionId: { type: mongoose.Schema.Types.ObjectId, ref: "Submission" },
-        solvedAt: Date,
+        problemId: { type: mongoose.Schema.Types.ObjectId, ref: "Problem", required: true },
+        status: { type: String, enum: ["accepted"], default: "accepted" },
+        submissionId: { type: mongoose.Schema.Types.ObjectId, ref: "Submission", required: true },
+        solvedAt: { type: Date, default: Date.now }
         },
     ],
     favoriteProblems: [

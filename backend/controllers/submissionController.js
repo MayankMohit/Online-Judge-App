@@ -1,6 +1,7 @@
+import axios from "axios";
 import { Problem } from "../models/problemModel.js";
-import { User } from "../models/userModel.js";
 import { Submission } from "../models/submissionModel.js";
+import { User } from "../models/userModel.js";
 
 export const createSubmission = async (req, res) => {
   const { problemId, code, language } = req.body;
@@ -15,21 +16,59 @@ export const createSubmission = async (req, res) => {
       return res.status(404).json({ success: false, message: "Problem not found" });
     }
 
-    const verdicts = ["accepted", "wrong", "time_limit"];
-    const randomVerdict = verdicts[Math.floor(Math.random() * verdicts.length)];
+    const testCases = problem.testCases;
+    let verdict = "accepted";
+    let failedCase = null;
+    let totalTime = 0;
+    let testCaseCount = 0;
+
+    for (const testCase of testCases) {
+      const { data } = await axios.post("http://localhost:5001/api/run/", {
+        code,
+        language,
+        input: testCase.input
+      });
+
+      const { success, output, error, time } = data;
+
+      const timeMs = parseInt(time?.replace("ms", "") || "0", 10);
+      totalTime += timeMs;
+      testCaseCount++;
+
+      if (!success) {
+        if (error === "time_limit_exceeded") {
+          verdict = "time_limit_exceeded";
+        } else {
+          verdict = "compilation_error";
+        }
+        failedCase = testCase;
+        break;
+      }
+
+      const cleanOutput = (output ?? "").trim();
+      const expectedOutput = testCase.expectedOutput.trim();
+
+      if (cleanOutput !== expectedOutput) {
+        verdict = "wrong_answer";
+        failedCase = testCase;
+        break;
+      }
+    }
+
+    const averageTime = testCaseCount > 0 ? `${(totalTime / testCaseCount).toFixed(2)}ms` : "0ms";
 
     const submission = new Submission({
       user: req.userId,
       problem: problemId,
       code,
       language,
-      verdict: randomVerdict
+      verdict,
+      averageTime
     });
 
     await submission.save();
 
     const user = await User.findById(req.userId);
-
     user.submissions.push(submission._id);
     user.totalSubmissions++;
 
@@ -37,7 +76,7 @@ export const createSubmission = async (req, res) => {
       (p) => p.problemId.toString() === problemId && p.status === "accepted"
     );
 
-    if (randomVerdict === "accepted" && !alreadySolved) {
+    if (verdict === "accepted" && !alreadySolved) {
       user.solvedProblems.push({
         problemId,
         status: "accepted",
@@ -49,9 +88,20 @@ export const createSubmission = async (req, res) => {
 
     await user.save();
 
-    res.status(201).json({ success: true, submission });
+    return res.status(201).json({
+      success: true,
+      message: "Submission created successfully",
+      verdict,
+      averageTime,
+      failedCase: verdict !== "accepted" ? failedCase : null
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to submit" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to submit",
+      error: error.response?.data?.error || error.message || "Unknown error"
+    });
   }
 };
 

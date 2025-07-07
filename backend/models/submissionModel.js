@@ -4,10 +4,12 @@ const submissionSchema = mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+        required: true,
     },
     problem: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Problem",
+        required: true,
     },
     code: {
         type: String,
@@ -15,12 +17,16 @@ const submissionSchema = mongoose.Schema({
     },
     language: {
         type: String,
-        enum: ["cpp", "python", "java", "js"],
+        enum: ["cpp", "c", "py", "js"],
     },
     verdict: {
         type: String,
-        enum: ["accepted", "wrong", "time_limit", "runtime_error", "compile_error"],
-        default: "wrong",
+        enum: ["accepted", "wrong_answer", "time_limit_exceeded", "runtime_error", "compilation_error"],
+        default: "wrong_answer",
+    },
+    averageTime: {
+        type: String,
+        default: "0ms",
     },
     submittedAt: {
         type: Date,

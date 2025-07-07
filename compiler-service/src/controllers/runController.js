@@ -26,33 +26,31 @@ export const runRoute = async (req, res) => {
 
     const filePath = generateFile(extension, code);
 
-    let output;
+    let result;
     switch (language) {
       case "cpp":
-        output = await executeCpp(filePath, input);
+        result = await executeCpp(filePath, input);
         break;
       case "c":
-        output = await executeC(filePath, input);
+        result = await executeC(filePath, input);
         break;
       case "py":
-        output = await executePython(filePath, input);
+        result = await executePython(filePath, input);
         break;
       case "js":
-        output = await executeNode(filePath, input);
+        result = await executeNode(filePath, input);
         break;
     }
-
-    return res.status(200).json({ success: true, output });
+    
+    return res.status(200).json(result);
 
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Execution failed",
-      error: error.error || error.message || "Unknown error"
+      error: error.error || error.message || "Unknown error",
+      output: null,
+      time: null
     });
   }
 };
 
-export const submitRoute = async (req, res) => {
-  return res.status(200).json({ success: true, message: "Submit route will be implemented later." });
-};

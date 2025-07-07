@@ -1,15 +1,15 @@
 import { spawn } from "child_process";
 
 export const runInSandbox = ({ command, args, cwd, input = "", timeout = 3000 }) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
     const process = spawn(command, args, { cwd });
 
     let output = "";
     let errorOutput = "";
+    let isTimeout = false;
 
-    if (input) {
-      process.stdin.write(input);
-    }
+    process.stdin.write(input ?? "");
     process.stdin.end();
 
     process.stdout.on("data", (data) => {
@@ -21,16 +21,38 @@ export const runInSandbox = ({ command, args, cwd, input = "", timeout = 3000 })
     });
 
     const timer = setTimeout(() => {
-      process.kill("SIGTERM");
-      reject({ error: "Execution timed out" });
+      isTimeout = true;
+      process.kill("SIGKILL");
     }, timeout);
 
     process.on("close", (code) => {
       clearTimeout(timer);
-      if (code !== 0 && errorOutput) {
-        return reject({ error: errorOutput });
+      const executionTime = `${Date.now() - startTime}ms`;
+
+      if (isTimeout) {
+        return resolve({
+          success: false,
+          output: null,
+          error: "Time Limit Exceeded",
+          time: executionTime,
+        });
       }
-      resolve(output.trim());
+
+      if (code !== 0 && errorOutput) {
+        return resolve({
+          success: false,
+          output: null,
+          error: errorOutput.trim() || `Exited with code ${code}`,
+          time: executionTime,
+        });
+      }
+
+      return resolve({
+        success: true,
+        output: output.trim(),
+        error: null,
+        time: executionTime,
+      });
     });
   });
 };

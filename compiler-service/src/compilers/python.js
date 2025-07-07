@@ -1,4 +1,3 @@
-import { spawn } from "child_process";
 import path from "path";
 import { unlink } from "fs";
 import { runInSandbox } from "../utils/sandbox.js";
@@ -13,9 +12,19 @@ export const executePython = async (filePath, input = "") => {
     });
 
     unlink(filePath, () => {});
-    return result;
+    return {
+      success: true,
+      output: result.output,
+      error: null,
+      time: result.time
+    };
   } catch (err) {
     unlink(filePath, () => {});
-    throw err;
+    return {
+      success: false,
+      output: null,
+      error: err.error || "Runtime error",
+      time: null
+    };
   }
 };

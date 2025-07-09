@@ -2,7 +2,7 @@ import { User } from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
-import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../emails/senders";
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../emails/senders.js";
 
 export const signup = async (req, res) => {
     const { email, password, name } = req.body;

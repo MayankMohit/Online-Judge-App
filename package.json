@@ -4,8 +4,8 @@
   "description": "",
   "main": "backend/index.js",
   "scripts": {
-    "dev": "set NODE_OPTIONS=--loader tsm && nodemon backend/index.js",
-    "test:email": "set NODE_OPTIONS=--loader tsm && node backend/emails/test-email.js"
+    "dev": "nodemon backend/index.ts",
+    "build:emails": "tsc -p tsconfig.email.json"
   },
   "repository": {
     "type": "git",

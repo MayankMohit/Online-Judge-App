@@ -33,7 +33,7 @@ const ProblemCard = ({ problem, index }) => {
     >
       <div className="flex items-center gap-4">
         <div className={`w-3 h-3 rounded-full ${isSolved ? "bg-green-400" : "bg-gray-500"}`} />
-        <span className="text-gray-400">#{index + 1}</span>
+        <span className="text-gray-400">#{index}</span>
         <h3 className="text-lg font-semibold text-white sm:truncate sm:max-w-[clamp(8rem,40vw,28rem)] sm:overflow-hidden sm:whitespace-nowrap">{problem.title}</h3>
       </div>    
 

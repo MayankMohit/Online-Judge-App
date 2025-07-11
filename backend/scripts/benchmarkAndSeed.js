@@ -10,15 +10,15 @@ console.log("✅ Connected to MongoDB");
 
 const seedProblems = async () => {
   const existing = await Problem.countDocuments();
-  if (existing >= 10000) {
-    console.log("⚠️ Skipping seeding — 10,000+ problems already exist.");
+  if (existing >= 1000) {
+    console.log("⚠️ Skipping seeding — 10,00+ problems already exist.");
     return;
   }
 
-  console.log("🌱 Seeding 10,000 dummy problems...");
+  console.log("🌱 Seeding 10,00 dummy problems...");
 
   const problems = [];
-  for (let i = 1; i <= 10000; i++) {
+  for (let i = 12; i <= 1000; i++) {
     problems.push({
       problemNumber: i,
       title: `Problem ${i}`,

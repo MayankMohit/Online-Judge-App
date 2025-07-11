@@ -5,7 +5,8 @@
   "main": "backend/index.js",
   "scripts": {
     "dev": "nodemon backend/index.ts",
-    "build:emails": "tsc -p tsconfig.email.json"
+    "build:emails": "tsc -p tsconfig.email.json",
+    "seed": "node backend/scripts/benchmarkAndSeed.js"
   },
   "repository": {
     "type": "git",

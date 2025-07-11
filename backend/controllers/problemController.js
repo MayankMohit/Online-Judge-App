@@ -160,10 +160,10 @@ export const searchProblems = async (req, res) => {
     }
 
     // Sorting logic
-    let sortOption = {};
+    let sortOption = { problemNumber: 1 }; 
     if (sort) {
       const [field, direction] = sort.split("_");
-      sortOption[field] = direction === "desc" ? -1 : 1;
+      sortOption = { [field]: direction === "desc" ? -1 : 1 };
     }
 
     // Pagination

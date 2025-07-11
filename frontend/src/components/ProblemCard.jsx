@@ -28,7 +28,7 @@ const ProblemCard = ({ problem, index }) => {
 
   return (
     <div
-      onClick={() => navigate(`/problems/${problem._id}`)}
+      onClick={() => navigate(`/problems/${problem.problemNumber}`)}
       className="bg-gray-800 p-3 rounded-lg shadow-md hover:bg-gray-700 transition cursor-pointer flex items-center justify-between"
     >
       <div className="flex items-center gap-4">

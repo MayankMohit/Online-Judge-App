@@ -14,7 +14,10 @@ const initialState = {
     tag: "",
     difficulty: "",
     sort: "",
-  }
+  },
+  currentProblem: null,
+  problemLoading: false,
+  problemError: null,
 }
 
 
@@ -43,6 +46,18 @@ export const fetchProblems = createAsyncThunk(
   }
 );
 
+export const fetchProblemByNumber = createAsyncThunk(
+  'problems/fetchProblemByNumber',
+  async (problemNumber, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/problems/number/${problemNumber}`);
+      console.log("Fetched problem:", response.data.problem);
+      return response.data.problem;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch problem');
+    }
+  }
+);
 
 const problemsSlice = createSlice({
   name: 'problems',
@@ -65,7 +80,12 @@ const problemsSlice = createSlice({
     },
     resetProblems(state) {
       Object.assign(state, initialState);
-    }
+    },
+    clearCurrentProblem(state) {
+      state.currentProblem = null;
+      state.problemError = null;
+      state.problemLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -83,6 +103,20 @@ const problemsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
+    
+    builder
+      .addCase(fetchProblemByNumber.pending, (state) => {
+        state.problemLoading = true;
+        state.problemError = null;
+      })
+      .addCase(fetchProblemByNumber.fulfilled, (state, action) => {
+        state.problemLoading = false;
+        state.currentProblem = action.payload;
+      })
+      .addCase(fetchProblemByNumber.rejected, (state, action) => {
+        state.problemLoading = false;
+        state.problemError = action.payload;
+      });
   },
 });
 
@@ -90,7 +124,8 @@ export const {
   setSearchQuery,
   setFilters,
   incrementPage,
-  resetProblems
+  resetProblems,
+  clearCurrentProblem,
 } = problemsSlice.actions;
 
 export default problemsSlice.reducer;

@@ -14,6 +14,7 @@ import MainLayout from "../layouts/MainLayout";
 import ProblemsPage from "../pages/ProblemsPage";
 import ContestsPage from "../pages/ContestsPage";
 import LeaderboardPage from "../pages/LeaderboardPage";
+import ProblemDetailsPage from "../pages/ProblemDetailsPage";
 
 const RedirectAuthenticatedUser = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -82,6 +83,7 @@ const AppRoutes = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/problems/:number" element={<ProblemDetailsPage />} />
             <Route element={<MainLayout />}>
               <Route path="/problems" element={<ProblemsPage />} />
               <Route path="/contests" element={<ContestsPage />} />

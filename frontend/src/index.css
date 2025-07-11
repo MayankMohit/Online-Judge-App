@@ -10,3 +10,11 @@ body{
     font-weight: 400;
     font-style: normal;
 }
+
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}

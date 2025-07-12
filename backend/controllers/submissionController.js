@@ -3,6 +3,8 @@ import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { User } from "../models/userModel.js";
 
+const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
+
 export const createSubmission = async (req, res) => {
   const { problemId, code, language } = req.body;
 
@@ -23,7 +25,7 @@ export const createSubmission = async (req, res) => {
     let testCaseCount = 0;
 
     for (const testCase of testCases) {
-      const { data } = await axios.post("http://localhost:5001/api/run/", {
+      const { data } = await axios.post(`${BASE_URL}/api/run/`, {
         code,
         language,
         input: testCase.input

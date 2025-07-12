@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
+
 export const runCode = async (req, res) => {
   const { code, language, input = "" } = req.body;
 
@@ -11,7 +13,7 @@ export const runCode = async (req, res) => {
   }
 
   try {
-    const compilerResponse = await axios.post("http://localhost:5001/api/run/", {
+    const compilerResponse = await axios.post(`${BASE_URL}/api/run/`, {
       code,
       language,
       input,

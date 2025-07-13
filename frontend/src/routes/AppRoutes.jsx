@@ -15,6 +15,7 @@ import ProblemsPage from "../pages/ProblemsPage";
 import ContestsPage from "../pages/ContestsPage";
 import LeaderboardPage from "../pages/LeaderboardPage";
 import ProblemDetailsPage from "../pages/ProblemDetailsPage";
+import AllSubmissions from "../pages/AllSubmissions";
 
 const RedirectAuthenticatedUser = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -83,6 +84,7 @@ const AppRoutes = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/submissions" element={<AllSubmissions />} />
             <Route path="/problems/:number" element={<ProblemDetailsPage />} />
             <Route element={<MainLayout />}>
               <Route path="/problems" element={<ProblemsPage />} />

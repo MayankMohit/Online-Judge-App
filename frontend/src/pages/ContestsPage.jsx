@@ -3,7 +3,9 @@ import ComingSoon from "../components/ComingSoon";
 
 const ContestsPage = () => {
   return (
-    <ComingSoon title='Contests' />
+    <div className="select-none">
+      <ComingSoon title='Contests' />
+    </div>
   );
 };
 

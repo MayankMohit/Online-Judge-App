@@ -196,3 +196,26 @@ export const getAllSubmissions = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch all submissions" });
   }
 };
+
+export const getUserSubmissionsForProblem = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const problemNumber = req.params.number;
+
+    const problem = await Problem.findOne({ problemNumber });
+
+    if (!problem) {
+      return res.status(404).json({ success: false, message: "Problem not found." });
+    }
+
+    const submissions = await Submission.find({
+      user: userId,
+      problem: problem._id,
+    }).sort({ submittedAt: -1 });
+
+    res.status(200).json({ success: true, submissions });
+  } catch (error) {
+    console.error("Error fetching user submissions for problem:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch submissions." });
+  }
+};

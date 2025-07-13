@@ -1,186 +1,298 @@
-// import { motion } from "framer-motion";
-// import { useAuthStore } from "../store/authStore";
-// import { formatDate } from "../utils/date";
-// import { useNavigate } from "react-router-dom";
-
-// const DashboardPage = () => {
-//     const { user, logout } = useAuthStore();
-//     const navigate = useNavigate();
-//     const handleLogout = () => {
-//         logout();
-//         navigate("/login", { replace: true });
-//     };
-//     return (
-//         <motion.div
-//         className="max-w-md w-full mx-auto mt-10 p-8 bg-gray-900 bg-opacity-80 backdrop-filter
-//         backdrop-blur-lg rounded-xl shadow-2xl border border-gray-800"
-//         initial={{ opacity: 0, scale: 0.9 }}
-//         animate={{ opacity: 1, scale: 1 }}
-//         exit={{ opacity: 0, scale: 0.9 }}
-//         transition={{ duration: 0.5 }}
-//         >
-//         <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-purple-600 text-transparent bg-clip-text">
-//             Dashboard
-//         </h2>
-//         <div className="space-y-6">
-//             <motion.div
-//             initial={{ opacity: 0, y: 20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ duration: 0.2 }}
-//             className="bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700 p-4"
-//             >
-//             <h3 className="text-xl font-semibold text-purple-400 mb-3">
-//                 Profile Information
-//             </h3>
-//             <p className="text-gray-300">Name: {user.name}</p>
-//             <p className="text-gray-300">Email: {user.email}</p>
-//             </motion.div>
-//             <motion.div
-//             className="p-4 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
-//             initial={{ opacity: 0, y: 20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ duration: 0.4 }}
-//             >
-//             <h3 className="text-xl font-semibold text-purple-400 mb-3">
-//                 Account Activity
-//             </h3>
-//             <p className="text-gray-300">
-//                 <span className="font-bold">Joined: </span>
-//                 {new Date(user.createdAt).toLocaleDateString("en-US", {
-//                 year: "numeric",
-//                 month: "long",
-//                 day: "numeric",
-//                 })}
-//             </p>
-//             <p className="text-gray-300">
-//                 <span className="font-bold">Last Login: </span>
-//                 {formatDate(user.lastLogin)}
-//             </p>
-//             </motion.div>
-//         </div>
-//         <motion.div
-//             className="mt-4"
-//             initial={{ opacity: 0, y: 20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ duration: 0.6 }}
-//         >
-//             <motion.button
-//             className="w-full py-3 px-4 bg-gradient-to-r from-purple-500
-//                 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-purple-600
-//                     hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500
-//                     focus:ring-offset-2 focus:purple-offset-gray-900"
-//             whileHover={{ scale: 1.05 }}
-//             whileTap={{ scale: 0.95 }}
-//             onClick={handleLogout}
-//             >
-//             Logout
-//             </motion.button>
-//         </motion.div>
-//         </motion.div>
-//     );
-// };
-
-// export default DashboardPage;
-
-
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchDashboardData } from "../features/dashboard/dashboardSlice";
+import { ArrowBigLeftDashIcon, Edit3Icon, LogOutIcon } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { fetchFavoriteProblems } from "../features/favorites/favoritesSlice";
+import ProblemCard from "../components/ProblemCard";
 
-const mockSubmissions = [
-  { problem: "Two Sum", language: "C++", status: "Accepted", submitted: "2 hrs ago" },
-  { problem: "Palindrome", language: "JavaScript", status: "Wrong Answer", submitted: "5 hrs ago" },
-];
+const COLORS = ["#4CAF50", "#FFD301", "#E03C32"]; // Easy, Medium, Hard
+const RADIAN = Math.PI / 180;
 
-const mockChartData = [
-  { difficulty: "Easy", solved: 15 },
-  { difficulty: "Medium", solved: 8 },
-  { difficulty: "Hard", solved: 2 },
-];
+const formatDate = (isoString) => {
+  if (!isoString) return "N/A";
+  const date = new Date(isoString);
+  return date.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  });
+};
+
+const shortFormatDate = (isoString) => {
+  if (!isoString) return "N/A";
+  const date = new Date(isoString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+};
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
-  const [submissions] = useState(mockSubmissions);
-  const [chartData] = useState(mockChartData);
+  const dispatch = useDispatch();
+  const { logout } = useAuthStore();
+
+  const {
+    name,
+    email,
+    lastLogin,
+    totalProblemsSolved,
+    submissions,
+    difficultyStats,
+    loading,
+    error,
+  } = useSelector((state) => state.dashboard);
+
+  const favoriteProblems = useSelector(
+    (state) => state.favorites.favoriteProblems
+  );
+
+  useEffect(() => {
+    dispatch(fetchDashboardData());
+    dispatch(fetchFavoriteProblems());
+  }, [dispatch]);
+
+  const recentSubmissions = [...submissions]
+    .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+    .slice(0, 5);
+
+  const handleEdit = () => {};
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const [favPage, setFavPage] = useState(0);
+  const problemsPerPage = 3;
+
+  const startIdx = favPage * problemsPerPage;
+  const endIdx = startIdx + problemsPerPage;
+
+  const currentFavorites = favoriteProblems.slice(startIdx, endIdx);
+
+  const totalPages = Math.ceil(favoriteProblems.length / problemsPerPage);
 
   return (
-    <div className="min-h-screen px-6 py-3 bg-gray-900 text-white">
-      {/* Back to Problems */}
-      <button
-        onClick={() => navigate("/problems")}
-        className="mb-6 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-      >
-        ← Back
-      </button>
-
-      <h1 className="text-3xl font-bold text-purple-400 mb-6">
-        Welcome, {user?.name || "User"}
-      </h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* User Details */}
-        <div className="bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-purple-300">User Details</h2>
-          <ul className="space-y-2 text-sm">
-            <li><strong>Email:</strong> {user?.email}</li>
-            <li><strong>Joined:</strong> {user?.createdAt?.slice(0, 10) || "N/A"}</li>
-            <li><strong>Last Login:</strong> {user?.lastLogin || "N/A"}</li>
-            <li><strong>Total Problems Solved:</strong> {user?.totalSolved || 0}</li>
-            <li><strong>Submissions:</strong> {user?.totalSubmissions || 0}</li>
-          </ul>
+    <div className="w-full min-h-screen bg-purple-900 text-white relative select-none">
+      {/* Banner */}
+      <div className="h-[30vh] w-full bg-gray-950 px-6 py-4 shadow-md hi sm:block hidden">
+        <div className="flex items-center justify-start ">
           <button
-            onClick={logout}
-            className="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+            onClick={() => navigate("/problems")}
+            className="bg-purple-700 hover:bg-purple-800 text-black font-semibold py-2 px-2 pr-1 rounded-sm transition text-sm"
           >
-            Sign Out
+            <ArrowBigLeftDashIcon className="inline mr-2" size={25} />
           </button>
+          <h1 className="text-2xl sm:text-3xl font-bold text-purple-200 ml-20">
+            {loading ? "Loading..." : `Welcome, ${name || "User"}`}
+          </h1>
         </div>
+      </div>
 
-        {/* Chart */}
-        <div className="lg:col-span-2 bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-purple-300">Problem Stats</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <XAxis dataKey="difficulty" stroke="#ccc" />
-                <YAxis stroke="#ccc" />
-                <Tooltip />
-                <Bar dataKey="solved" fill="#a855f7" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      {/* Main Dashboard */}
+      <div className="relative z-10 sm:-mt-[20vh] sm:max-w-[80vw] mx-auto bg-gray-800 sm:rounded-2xl sm:p-6 p-2 shadow-2xl">
+        {error && (
+          <p className="text-red-400 mb-4 text-center">Error: {error}</p>
+        )}
+
+        <div className="flex flex-col sm:gap-6 gap-3">
+          {/* User Info */}
+          <div className="bg-gray-900 rounded-xl p-6 shadow-md flex sm:flex-row flex-col items-center justify-between">
+            <div className="sm:w-1/2 w-full">
+              <h2 className="text-xl font-semibold mb-4 text-purple-300 inline-flex gap-5">
+                👤 User Details
+                <div className="relative group w-fit">
+                  <Edit3Icon
+                    onClick={handleEdit}
+                    className="text-white opacity-50 cursor-pointer"
+                  />
+                  <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 text-xs bg-white text-black px-2 py-1 rounded opacity-0 group-hover:opacity-70 transition whitespace-nowrap z-10 shadow">
+                    Feature Coming soon
+                  </span>
+                </div>
+              </h2>
+              <ul className="space-y-3 text-md text-gray-300">
+                <li className="sm:hidden">
+                  <strong>Name:</strong> {name}
+                </li>
+                <li>
+                  <strong>Email:</strong> {email}
+                </li>
+
+                <li>
+                  <strong>Total Problems Solved:</strong> {totalProblemsSolved}
+                </li>
+                <li>
+                  <strong>Total Submissions:</strong> {submissions.length}
+                </li>
+              </ul>
+            </div>
+            {/* Mini Problem Stats */}
+            <div className="sm:mt-6 w-full sm:ml-10 ml-20 mt-5">
+              <div className="flex items-center gap-5 pointer-events-none ">
+                {/* Pie Chart */}
+                <div className="w-32 h-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "Easy", value: difficultyStats?.Easy || 0 },
+                          {
+                            name: "Medium",
+                            value: difficultyStats?.Medium || 0,
+                          },
+                          { name: "Hard", value: difficultyStats?.Hard || 0 },
+                        ]}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={50}
+                        stroke="none"         
+                      >
+                        <Cell fill={COLORS[0]} /> {/* Easy */}
+                        <Cell fill={COLORS[1]} /> {/* Medium */}
+                        <Cell fill={COLORS[2]} /> {/* Hard */}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Labels */}
+                <div className="flex flex-col gap-2 text-sm font-semibold">
+                  <span className="bg-green-700 text-green-200 px-3 py-1 rounded-full w-fit">
+                    Easy: {difficultyStats?.Easy || 0}
+                  </span>
+                  <span className="bg-yellow-700 text-yellow-200 px-3 py-1 rounded-full w-fit">
+                    Medium: {difficultyStats?.Medium || 0}
+                  </span>
+                  <span className="bg-red-700 text-red-200 px-3 py-1 rounded-full w-fit">
+                    Hard: {difficultyStats?.Hard || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Favorite Problems Section */}
+            <div className="bg-gray-900 rounded-xl px-2 w-90 md:w-[140%] mt-5 sm:mt-0">
+              <h2 className="text-xl font-semibold mb-4 text-purple-300">
+                Favourite Problems
+              </h2>
+
+              {favoriteProblems.length === 0 ? (
+                <p className="text-sm text-gray-400">No favorites added yet.</p>
+              ) : (
+                <>
+                  <div className="space-y-3 mb-4">
+                    {currentFavorites.map((problem, idx) => (
+                      <ProblemCard
+                        key={problem._id}
+                        problem={problem}
+                        index={problem.problemNumber}
+                      />
+                    ))}
+                    {Array.from({
+                      length: problemsPerPage - currentFavorites.length,
+                    }).map((_, idx) => (
+                      <div
+                        key={`empty-${idx}`}
+                        className="h-[52px] bg-gray-800 rounded-lg opacity-0"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center text-sm text-gray-300">
+                    <button
+                      onClick={() =>
+                        setFavPage((prev) => Math.max(prev - 1, 0))
+                      }
+                      disabled={favPage === 0}
+                      className={`px-2 py-1 rounded-md ${
+                        favPage === 0
+                          ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                          : "bg-purple-700 hover:bg-purple-800"
+                      }`}
+                    >
+                      Prev
+                    </button>
+
+                    <span className="px-2 text-gray-400">
+                      Page {favPage + 1} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        setFavPage((prev) => Math.min(prev + 1, totalPages - 1))
+                      }
+                      disabled={endIdx >= favoriteProblems.length}
+                      className={`px-2 py-1 rounded-md ${
+                        endIdx >= favoriteProblems.length
+                          ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                          : "bg-purple-700 hover:bg-purple-800"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Submissions */}
-        <div className="lg:col-span-3 bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-purple-300">Recent Submissions</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left border-b border-gray-700">
-                <th className="py-2">Problem</th>
-                <th className="py-2">Language</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Submitted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {submissions.map((sub, idx) => (
-                <tr key={idx} className="border-b border-gray-700">
-                  <td className="py-2">{sub.problem}</td>
-                  <td className="py-2">{sub.language}</td>
-                  <td className={`py-2 ${sub.status === "Accepted" ? "text-green-400" : "text-red-400"}`}>{sub.status}</td>
-                  <td className="py-2">{sub.submitted}</td>
+          {/* Submissions */}
+          <div className="lg:col-span-3 bg-gray-900 rounded-xl p-6 shadow-md">
+            <h2 className="text-xl font-semibold mb-4 text-purple-300">
+              🧾 Recent Submissions
+            </h2>
+            <table className="w-full text-sm mb-4">
+              <thead>
+                <tr className="text-left border-b border-gray-700">
+                  <th className="py-2">Problem</th>
+                  <th className="py-2">Language</th>
+                  <th className="py-2">Verdict</th>
+                  <th className="py-2 sm:block hidden">Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {recentSubmissions.map((sub, idx) => (
+                  <tr key={idx} className="border-b border-gray-700">
+                    <td className="py-2">{sub.problem?.title || "N/A"}</td>
+                    <td className="py-2">{sub.language}</td>
+                    <td
+                      className={`py-2 ${sub.verdict === "accepted" ? "text-green-400" : "text-red-400"}`}
+                    >
+                      {sub.verdict}
+                    </td>
+                    <td className="py-2 sm:block hidden">
+                      {shortFormatDate(sub.submittedAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex items-center justify-between ">
+              <button
+                className="text-red-400 cursor-pointer"
+                onClick={handleLogout}
+              >
+                SignOut <LogOutIcon className="inline ml-1" size={16} />
+              </button>
+              <div className="relative w-fit">
+                <button
+                  onClick={() => navigate("/submissions")}
+                  className="text-purple-400  text-sm cursor-pointer"
+                >
+                  View all submissions →
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-// This code defines a DashboardPage component that displays user information, problem statistics, and recent submissions.

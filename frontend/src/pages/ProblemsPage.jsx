@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { SlidersHorizontal, ArrowDownUp } from "lucide-react";
 import ProblemCard from "../components/ProblemCard";
 import { useDispatch, useSelector } from "react-redux";
+import { fetchFavoriteProblems } from "../features/favorites/favoritesSlice";
+
 import {
   fetchProblems,
   setSearchQuery,
@@ -18,6 +20,8 @@ const ProblemsPage = () => {
   const observer = useRef();
   const [direction, setDirection] = useState("desc"); 
 
+  const { loading: loadingFavorites } = useSelector((state) => state.favorites);
+
   const dispatch = useDispatch();
   const {
     items,
@@ -32,6 +36,10 @@ const ProblemsPage = () => {
   useEffect(() => {
     dispatch(fetchProblems());
   }, [dispatch, page, searchQuery, filters]);
+
+  useEffect(() => {
+    dispatch(fetchFavoriteProblems());
+  }, [dispatch, page])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -73,7 +81,7 @@ const ProblemsPage = () => {
   };
 
   return (
-    <div className="bg-gray-900 text-white px-6 py-25 sm:py-20 min-h-[calc(100vh-8rem)] relative min-w-screen">
+    <div className="bg-gray-900 text-white px-6 py-25 sm:py-20 min-h-[calc(100vh-8rem)] relative min-w-screen select-none">
       {/* Top Controls */}
       <div className="flex flex-row gap-2 items-center sm:justify-center mb-6">
         {/* Search */}
@@ -158,7 +166,8 @@ const ProblemsPage = () => {
 
       {/* Problem List */}
       <div className="grid gap-2 md:px-50">
-        {loading && <p className="w-4 h-4 m-auto border-2 border-b-blue-500 border-t-cyan-500 rounded-4xl"></p>}
+        {(loading) && <div className="w-6 h-6 m-auto rounded-full border-2 border-t-purple-500 border-b-purple-300 animate-spin"></div>
+}
         {error && <p className="text-red-500 m-auto">Error: {error}</p>}
 
         {items.map((problem, index) => {

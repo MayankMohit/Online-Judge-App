@@ -6,7 +6,8 @@ import {
   getUserSubmissions,
   getSubmissionById,
   getSubmissionsByProblem,
-  getAllSubmissions
+  getAllSubmissions,
+  getUserSubmissionsForProblem
 } from "../controllers/submissionController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
@@ -21,5 +22,7 @@ router.get("/user", verifyToken, getUserSubmissions);
 router.get("/:id", verifyToken, getSubmissionById);
 
 router.get("/problem/:id", verifyToken, isAdmin, getSubmissionsByProblem);
+
+router.get("/user/problem/:number", verifyToken, getUserSubmissionsForProblem);
 
 export default router;

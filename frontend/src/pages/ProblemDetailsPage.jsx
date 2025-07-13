@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
-import { ArrowLeft, ArrowBigUp } from "lucide-react";
+import { ArrowLeft, ArrowBigUp, CircleCheckBig } from "lucide-react";
 import {
   fetchProblemByNumber,
   clearCurrentProblem,
 } from "../features/problems/problemsSlice";
-import { runCode, submitCode } from "../features/code/codeSlice";
-import { toast } from "react-hot-toast";
+import {
+  fetchSubmissionsByProblem,
+  clearProblemSubmissions,
+} from "../features/submissions/problemSubmissionsSlice";
 
 // Constants
 const languageBoilerplates = {
@@ -44,19 +46,15 @@ const difficultyColors = {
   Hard: "text-red-400 bg-red-950",
 };
 
-
-
 // Components
-const ProblemHeader = ({
-  problemNumber,
-  title,
-  difficulty,
-  tags,
-}) => (
+const ProblemHeader = ({ problemNumber, title, difficulty, tags, isSolved }) => (
   <div className="flex items-center gap-4 mb-4">
     <div>
-      <h1 className="text-2xl font-bold">
+      <h1 className="text-2xl font-bold flex justify-between mb-2 gap-20">
         {problemNumber}. {title}
+        {isSolved && (
+          <CircleCheckBig className="text-green-400" />
+        )}
       </h1>
       <div className="flex items-center gap-2 mt-1">
         <span
@@ -118,20 +116,21 @@ const ProblemDescription = ({
 
 const TestCase = ({ input, output }) => (
   <div className="bg-gray-800 p-3 rounded mb-4">
-    <p className="mb-1">
+    <div className="mb-1">
       <span className="text-purple-400 font-medium">Input:</span>
       <pre className="bg-gray-900 p-2 mt-1 rounded whitespace-pre-wrap overflow-x-auto hide-scrollbar">
         {input}
       </pre>
-    </p>
-    <p>
+    </div>
+    <div>
       <span className="text-purple-400 font-medium">Output:</span>
       <pre className="bg-gray-900 p-2 mt-1 rounded whitespace-pre-wrap overflow-x-auto hide-scrollbar">
         {output}
       </pre>
-    </p>
+    </div>
   </div>
 );
+
 
 const TabButton = ({ active, onClick, children }) => (
   <button
@@ -186,6 +185,12 @@ const CodeEditorPanel = ({
             {lang.charAt(0).toUpperCase() + lang.slice(1)}
           </option>
         ))}
+        <option value="java" disabled={true}>
+          Java
+        </option>
+        <option value="go" disabled={true}>
+          Go
+        </option>
       </select>
 
       {/* Run / Submit */}
@@ -231,6 +236,20 @@ const ProblemDetailsPage = () => {
   const { currentProblem, problemLoading, problemError } = useSelector(
     (state) => state.problems
   );
+  const {
+    items: userSubmissions,
+    loading,
+    error,
+  } = useSelector((state) => state.problemSubmissions);
+
+  useEffect(() => {
+    dispatch(fetchSubmissionsByProblem(number));
+    return () => {
+      dispatch(clearProblemSubmissions()); // Clean up when unmounting or switching problems
+    };
+  }, [dispatch, number]);
+
+  const isSolved = userSubmissions.some((sub) => sub.verdict === "accepted");
 
   // Layout state
   const [leftWidth, setLeftWidth] = useState(35);
@@ -391,6 +410,7 @@ const ProblemDetailsPage = () => {
                 difficulty={difficulty}
                 tags={tags}
                 navigate={navigate}
+                isSolved={isSolved} 
               />
             )}
             {activeTab === "description" && (
@@ -403,9 +423,60 @@ const ProblemDetailsPage = () => {
               />
             )}
             {activeTab === "submissions" && (
-              <p className="text-gray-400 italic">
-                Submissions view coming soon.
-              </p>
+              <div className=" bg-gray-800 rounded-lg p-4">
+                <h3 className="text-purple-300 font-semibold text-lg mb-2">
+                  Your Submissions
+                </h3>
+
+                {loading ? (
+                  <p className="text-gray-400">Loading your submissions...</p>
+                ) : error ? (
+                  <p className="text-red-500">{error}</p>
+                ) : userSubmissions.length === 0 ? (
+                  <p className="text-gray-500">
+                    No submissions yet for this problem.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left border-b border-gray-700 text-purple-200">
+                          <th className="py-2">Language</th>
+                          <th className="py-2 pl-4">Verdict</th>
+                          <th className="py-2 pl-4">
+                            Submitted At
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userSubmissions.map((sub, idx) => (
+                          <tr key={idx} className="border-b border-gray-700">
+                            <td className="py-2">{sub.language}</td>
+                            <td
+                              className={`py-2 pl-4 font-semibold ${
+                                sub.verdict === "accepted"
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {sub.verdict}
+                            </td>
+                            <td className="py-2 pl-4">
+                              {new Date(sub.submittedAt).toLocaleString(
+                                "en-IN",
+                                {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                }
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -486,6 +557,7 @@ const ProblemDetailsPage = () => {
                   difficulty={difficulty}
                   tags={tags}
                   navigate={navigate}
+                  isSolved={isSolved}
                 />
                 <ProblemDescription
                   description={description}
@@ -498,9 +570,60 @@ const ProblemDetailsPage = () => {
             )}
 
             {activeTab === "submissions" && (
-              <p className="text-gray-400 italic">
-                Submissions view coming soon.
-              </p>
+              <div className=" bg-gray-800 rounded-lg p-4">
+                <h3 className="text-purple-300 font-semibold text-lg mb-2">
+                  Your Submissions
+                </h3>
+
+                {loading ? (
+                  <p className="text-gray-400">Loading your submissions...</p>
+                ) : error ? (
+                  <p className="text-red-500">{error}</p>
+                ) : userSubmissions.length === 0 ? (
+                  <p className="text-gray-500">
+                    No submissions yet for this problem.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left border-b border-gray-700 text-purple-200">
+                          <th className="py-2 pl-4">Language</th>
+                          <th className="py-2 pl-4">Verdict</th>
+                          <th className="py-2 pl-4 ">
+                            Submitted At
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userSubmissions.map((sub, idx) => (
+                          <tr key={idx} className="border-b border-gray-700">
+                            <td className="py-2 pl-4">{sub.language}</td>
+                            <td
+                              className={`py-2 pl-4 font-semibold ${
+                                sub.verdict === "accepted"
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {sub.verdict}
+                            </td>
+                            <td className="py-2 pl-4">
+                              {new Date(sub.submittedAt).toLocaleString(
+                                "en-IN",
+                                {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                }
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -534,22 +657,21 @@ const ProblemDetailsPage = () => {
           ></div>
 
           {/* Custom Test Case Area */}
-          
-            <div
-              className="bg-gray-900 p-4 text-sm flex flex-col gap-2 overflow-hidden hide-scrollbar"
-              style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
-            >
-              <h3 className="text-purple-400 font-semibold mb-1">
-                Custom Test Case
-              </h3>
-              <textarea
-                className="bg-gray-800 text-white p-2 rounded resize-none h-full hide-scrollbar"
-                placeholder="Enter input here..."
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-              ></textarea>
-            </div>
-          
+
+          <div
+            className="bg-gray-900 p-4 text-sm flex flex-col gap-2 overflow-hidden hide-scrollbar"
+            style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
+          >
+            <h3 className="text-purple-400 font-semibold mb-1">
+              Custom Test Case
+            </h3>
+            <textarea
+              className="bg-gray-800 text-white p-2 rounded resize-none h-full hide-scrollbar"
+              placeholder="Enter input here..."
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+            ></textarea>
+          </div>
         </div>
       </div>
     </div>

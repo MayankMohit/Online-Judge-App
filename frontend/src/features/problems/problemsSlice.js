@@ -51,7 +51,6 @@ export const fetchProblemByNumber = createAsyncThunk(
   async (problemNumber, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${BASE_URL}/api/problems/number/${problemNumber}`);
-      console.log("Fetched problem:", response.data.problem);
       return response.data.problem;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch problem');

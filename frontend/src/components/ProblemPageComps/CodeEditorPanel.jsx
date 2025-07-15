@@ -27,7 +27,7 @@ const CodeEditorPanel = ({
 
   const { saving, saveSuccess } = useSelector((state) => state.codePersistence);
 
-  // 🔹 Debounced save on code change
+  // Debounced save on code change
   const handleCodeChange = (val) => {
     const problemId = currentProblem?._id;
     if (!problemId) return;
@@ -42,7 +42,7 @@ const CodeEditorPanel = ({
     }, 2000);
   };
 
-  // 🔹 Auto-clear tick after success
+  // Auto-clear tick after success
   useEffect(() => {
     if (saveSuccess) {
       tickTimeoutRef.current = setTimeout(() => {
@@ -58,13 +58,13 @@ const CodeEditorPanel = ({
         isMobile ? "min-w-full h-full bg-gray-950" : "h-full"
       }`}
     >
-      {/* 🔹 Top Toolbar */}
+      {/* Top Toolbar */}
       <div
         className={`relative flex items-center px-2 py-2 bg-gray-800 border-b border-gray-700 ${
           isMobile ? "justify-between" : "justify-start"
         }`}
       >
-        {/* 🔸 Back Button (Mobile Only) */}
+        {/* Back Button (Mobile Only) */}
         {isMobile && (
           <button
             onClick={onBackToDescription}
@@ -74,9 +74,9 @@ const CodeEditorPanel = ({
           </button>
         )}
 
-        {/* 🔸 Language Selector */}
+        {/* Language Selector */}
         <select
-          className="bg-gray-900 text-white px-3 py-2 rounded text-sm mr-52"
+          className="bg-gray-900 text-white px-3 py-2 rounded text-sm sm:ml-0 -ml-15"
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
         >
@@ -86,15 +86,15 @@ const CodeEditorPanel = ({
             </option>
           ))}
           <option value="java" disabled>
-            Java (Coming Soon)
+            Java 
           </option>
           <option value="go" disabled>
-            Go (Coming Soon)
+            Go 
           </option>
         </select>
-
-        {/* 🔸 Save Status Indicator */}
-        <div className="flex items-center space-x-2 mr-3">
+          
+        {/* Save Status Indicator */}
+        <div className="absolute sm:left-35 left-46">
           {saving && (
             <Loader2 className="animate-spin text-gray-600" size={25} />
           )}
@@ -103,7 +103,7 @@ const CodeEditorPanel = ({
           )}
         </div>
 
-        {/* 🔸 Run & Submit Buttons */}
+        {/* Run & Submit Buttons */}
         <div className="md:absolute md:left-1/2 md:transform md:-translate-x-1/2 flex gap-3">
           <button
             className="bg-blue-500 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
@@ -120,7 +120,6 @@ const CodeEditorPanel = ({
         </div>
       </div>
 
-      {/* 🔹 Monaco Editor */}
       <Editor
         height={isMobile ? "80vh" : "100%"}
         defaultLanguage={language}

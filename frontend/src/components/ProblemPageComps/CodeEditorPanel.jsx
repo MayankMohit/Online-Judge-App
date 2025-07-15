@@ -1,6 +1,6 @@
 import { Editor } from "@monaco-editor/react";
 import { ArrowLeft, CheckCheck, Loader2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   updateCodeLocally,
@@ -24,6 +24,7 @@ const CodeEditorPanel = ({
   const dispatch = useDispatch();
   const saveDebounceRef = useRef(null);
   const tickTimeoutRef = useRef(null);
+  const [fadeTick, setFadeTick] = useState(false);
 
   const { saving, saveSuccess } = useSelector((state) => state.codePersistence);
 
@@ -42,10 +43,13 @@ const CodeEditorPanel = ({
     }, 2000);
   };
 
-  // Auto-clear tick after success
   useEffect(() => {
     if (saveSuccess) {
+      setFadeTick(false); 
       tickTimeoutRef.current = setTimeout(() => {
+        setFadeTick(true);
+      }, 1000);
+      setTimeout(() => {
         dispatch(clearSaveSuccess());
       }, 2000);
     }
@@ -99,7 +103,12 @@ const CodeEditorPanel = ({
             <Loader2 className="animate-spin text-gray-600" size={25} />
           )}
           {!saving && saveSuccess && (
-            <CheckCheck className="text-gray-500" size={25} />
+            <CheckCheck
+              className={`text-gray-500 transition-opacity duration-1000 ${
+                fadeTick ? "opacity-0" : "opacity-100"
+              }`}
+              size={25}
+            />
           )}
         </div>
 

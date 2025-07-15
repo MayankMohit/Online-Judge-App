@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import Input from "../components/Input";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ const LoginPage = () => {
       await login(email, password);
       navigate("/problems");
     } catch (error) {
+      toast.error("Something went wrong! Please check your password.")
       setError(error);
       setTimeout(() => setError(null), 3000);
     }

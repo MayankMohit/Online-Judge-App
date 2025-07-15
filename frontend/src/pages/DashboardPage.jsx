@@ -7,19 +7,14 @@ import { ArrowBigLeftDashIcon, Edit3Icon, LogOutIcon } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { fetchFavoriteProblems } from "../features/favorites/favoritesSlice";
 import ProblemCard from "../components/ProblemCard";
+import {
+  UserRound,
+  Mail,
+  CheckCircle,
+  FileCode,
+} from "lucide-react";
 
-const COLORS = ["#4CAF50", "#FFD301", "#E03C32"]; // Easy, Medium, Hard
-const RADIAN = Math.PI / 180;
-
-const formatDate = (isoString) => {
-  if (!isoString) return "N/A";
-  const date = new Date(isoString);
-  return date.toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
-  });
-};
+const COLORS = ["#4CAF50", "#FFD301", "#E03C32"];
 
 const shortFormatDate = (isoString) => {
   if (!isoString) return "N/A";
@@ -59,7 +54,9 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
     .slice(0, 5);
 
-  const handleEdit = () => {};
+  const handleEdit = () => {
+    navigate("/update-profile");
+  };
 
   const handleLogout = () => {
     logout();
@@ -103,39 +100,55 @@ export default function DashboardPage() {
           {/* User Info */}
           <div className="bg-gray-900 rounded-xl p-6 shadow-md flex sm:flex-row flex-col items-center justify-between">
             <div className="sm:w-1/2 w-full">
-              <h2 className="text-xl font-semibold mb-4 text-purple-300 inline-flex gap-5">
+              <h2 className="text-xl font-semibold mb-6 text-purple-300 flex items-center gap-3">
                 👤 User Details
-                <div className="relative group w-fit">
-                  <Edit3Icon
-                    onClick={handleEdit}
-                    className="text-white opacity-50 cursor-pointer"
-                  />
-                  <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 text-xs bg-white text-black px-2 py-1 rounded opacity-0 group-hover:opacity-70 transition whitespace-nowrap z-10 shadow">
-                    Feature Coming soon
+                <Edit3Icon
+                  onClick={handleEdit}
+                  className="text-white opacity-50 cursor-pointer hover:opacity-90"
+                  title="Edit Profile"
+                />
+              </h2>
+
+              <div className="flex flex-col gap-4">
+                {/* Name */}
+                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
+                  <UserRound className="text-purple-400" size={20} />
+                  <span className="text-white text-sm">{name}</span>
+                </div>
+
+                {/* Email */}
+                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
+                  <Mail className="text-purple-400" size={20} />
+                  <span className="text-white text-sm">{email}</span>
+                </div>
+
+                {/* Problems Solved */}
+                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
+                  <CheckCircle className="text-purple-400" size={20} />
+                  <span className="text-white text-sm">
+                    Problems Solved: {totalProblemsSolved}
                   </span>
                 </div>
-              </h2>
-              <ul className="space-y-3 text-md text-gray-300">
-                <li className="sm:hidden">
-                  <strong>Name:</strong> {name}
-                </li>
-                <li>
-                  <strong>Email:</strong> {email}
-                </li>
 
-                <li>
-                  <strong>Total Problems Solved:</strong> {totalProblemsSolved}
-                </li>
-                <li>
-                  <strong>Total Submissions:</strong> {submissions.length}
-                </li>
-              </ul>
+                {/* Total Submissions */}
+                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
+                  <FileCode className="text-purple-400" size={20} />
+                  <span className="text-white text-sm">
+                    Submissions: {submissions.length}
+                  </span>
+                </div>
+              </div>
             </div>
             {/* Mini Problem Stats */}
-            <div className="sm:mt-6 w-full sm:ml-10 ml-20 mt-5">
+            <div className="sm:mt-6 w-full sm:ml-10 ml-20 mt-5 flex flex-col items-center justify-center sm:mr-10 mr-20">
+              <h2 className="text-xl font-semibold mb-4 text-purple-300 sm:block hidden">
+                Problem Stats
+              </h2>
               <div className="flex items-center gap-5 pointer-events-none ">
                 {/* Pie Chart */}
+                
                 <div className="w-32 h-32">
+                  
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -153,7 +166,7 @@ export default function DashboardPage() {
                         cy="50%"
                         innerRadius={30}
                         outerRadius={50}
-                        stroke="none"         
+                        stroke="none"
                       >
                         <Cell fill={COLORS[0]} /> {/* Easy */}
                         <Cell fill={COLORS[1]} /> {/* Medium */}

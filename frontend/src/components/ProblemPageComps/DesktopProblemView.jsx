@@ -17,7 +17,6 @@ const DesktopProblemView = ({
   language,
   setLanguage,
   code,
-  setCodeMap,
   customInput,
   setCustomInput,
   handleRun,
@@ -97,31 +96,7 @@ const DesktopProblemView = ({
         className="h-full flex flex-col border-r border-gray-800 min-w-[25vw] hide-scrollbar"
         style={{ width: `${leftWidth}%` }}
       >
-        <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="text-purple-400 hover:text-purple-300"
-            >
-              <ArrowLeft size={35} strokeWidth={3} />
-            </button>
-            <TabButton
-              active={activeTab === "description"}
-              onClick={() => setActiveTab("description")}
-              className=""
-            >
-              Description
-            </TabButton>
-            <TabButton
-              active={activeTab === "submissions"}
-              onClick={() => setActiveTab("submissions")}
-              className=""
-            >
-              Submissions
-            </TabButton>
-          </div>
-        </div>
-
+        {/* ... tab buttons */}
         <ProblemDescriptionPanel
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -150,16 +125,15 @@ const DesktopProblemView = ({
             language={language}
             setLanguage={setLanguage}
             code={code}
-            setCodeMap={setCodeMap}
             customInput={customInput}
             setCustomInput={setCustomInput}
             isMobile={false}
             onRun={handleRun}
             onSubmit={handleSubmit}
+            currentProblem={currentProblem}
           />
         </div>
 
-        {/* HEIGHT DRAG HANDLE (placeholder for now) */}
         <div className="h-2 bg-gray-700"></div>
 
         {isOutputVisible ? (

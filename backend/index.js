@@ -17,6 +17,7 @@ import problemRoute from "./routes/problemRouter.js";
 import userRoute from "./routes/userRouter.js";
 import submissionRoute from "./routes/submissionRouter.js";
 import runRoute from "./routes/runRouter.js";
+import codeRoute from "./routes/codeRouter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,6 +43,7 @@ const startServer = async () => {
     app.use("/api/users", userRoute);
     app.use("/api/submissions", submissionRoute);   
     app.use("/api/run", runRoute);
+    app.use("/api/code", codeRoute);
 
     // Static files
     app.use('/static', express.static(path.join(__dirname, "/frontend/public")));

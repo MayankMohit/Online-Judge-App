@@ -14,7 +14,6 @@ const MobileProblemView = ({
   language,
   setLanguage,
   code,
-  setCodeMap,
   customInput,
   setCustomInput,
   handleRun,
@@ -87,7 +86,6 @@ const MobileProblemView = ({
           language={language}
           setLanguage={setLanguage}
           code={code}
-          setCodeMap={setCodeMap}
           customInput={customInput}
           setCustomInput={setCustomInput}
           onBackToDescription={() =>
@@ -96,6 +94,7 @@ const MobileProblemView = ({
           isMobile={true}
           onRun={handleRun}
           onSubmit={handleSubmit}
+          currentProblem={currentProblem}
         />
 
         {/* Custom Test Case Area (mobile) */}

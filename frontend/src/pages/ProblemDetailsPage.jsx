@@ -16,8 +16,14 @@ import {
   submitCode,
   clearCodeState,
 } from "../features/code/codeSlice";
+import {
+  fetchSavedCode,
+  saveCodeToDB,
+  updateCodeLocally,
+  clearSaveSuccess,
+} from "../features/code/codePersistenceSlice";
 
-import { languageBoilerplates } from "../components/ProblemPageComps/LanguageBoilerPlates";
+import { languageBoilerplates } from "../components/ProblemPageComps/LanguageBoilerplates";
 import MobileProblemView from "../components/ProblemPageComps/MobileProblemView";
 import DesktopProblemView from "../components/ProblemPageComps/DesktopProblemView";
 
@@ -29,14 +35,18 @@ const ProblemDetailsPage = () => {
   const [testcaseHeight, setTestcaseHeight] = useState(30);
   const mobileScrollRef = useRef(null);
   const [isOutputVisible, setIsOutputVisible] = useState(false);
+  const saveTimeout = useRef(null);
 
   // Problem state
   const [activeTab, setActiveTab] = useState("description");
   const [customInput, setCustomInput] = useState("");
   const [language, setLanguage] = useState("cpp");
-  const [codeMap, setCodeMap] = useState({ ...languageBoilerplates });
+  const {
+    codeMap,
+    saving,
+    saveSuccess,
+  } = useSelector((state) => state.codePersistence);
 
-  const code = codeMap[language];
   const { number } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -78,6 +88,26 @@ const ProblemDetailsPage = () => {
       setIsOutputVisible(true);
     }
   }, [output, verdict, codeError]);
+
+  const code = codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language];
+
+  useEffect(() => {
+    if (currentProblem?._id && language) {
+      dispatch(fetchSavedCode({ problemId: currentProblem._id, language }));
+    }
+  }, [currentProblem?._id, language]);
+  
+  const handleCodeChange = (newCode) => {
+    dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
+
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current);
+    }
+
+    saveTimeout.current = setTimeout(() => {
+      dispatch(saveCodeToDB({ problemId: currentProblem._id, language, code: newCode }));
+    }, 2000);
+  };
 
   const handleRun = () => {
     dispatch(runCode({ code, language, input: customInput }));
@@ -123,7 +153,6 @@ const ProblemDetailsPage = () => {
         language={language}
         setLanguage={setLanguage}
         code={code}
-        setCodeMap={setCodeMap}
         customInput={customInput}
         setCustomInput={setCustomInput}
         handleRun={handleRun}
@@ -136,6 +165,7 @@ const ProblemDetailsPage = () => {
         averageTime={averageTime}
         time={time}
         mobileScrollRef={mobileScrollRef}
+        handleCodeChange={handleCodeChange}
       />
 
       <DesktopProblemView
@@ -150,7 +180,6 @@ const ProblemDetailsPage = () => {
         language={language}
         setLanguage={setLanguage}
         code={code}
-        setCodeMap={setCodeMap}
         customInput={customInput}
         setCustomInput={setCustomInput}
         handleRun={handleRun}
@@ -171,6 +200,7 @@ const ProblemDetailsPage = () => {
         containerRef={containerRef}
         leftWidth={leftWidth}
         setLeftWidth={setLeftWidth}
+        handleCodeChange={handleCodeChange}
       />
     </div>
   );

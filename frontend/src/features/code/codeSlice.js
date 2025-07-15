@@ -6,12 +6,14 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 // 🔹 Run Code Thunk
 export const runCode = createAsyncThunk(
   "code/run",
-  async ({ code, language, input }, thunkAPI) => {
+  async ({code, language, input}, thunkAPI) => {
     try {
-      const res = await axios.post(`${BASE_URL}/api/run/`, { code, language, input });
-      return res.data; 
+      const res = await axios.post(`${BASE_URL}/api/run/`, {code, language, input});
+      return res.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.response?.data || { error: "Run failed" });
+      return thunkAPI.rejectWithValue(
+        err.response?.data || { error: "Run failed" }
+      );
     }
   }
 );
@@ -21,10 +23,16 @@ export const submitCode = createAsyncThunk(
   "code/submit",
   async ({ problemId, code, language }, thunkAPI) => {
     try {
-      const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language });
+      const res = await axios.post(`${BASE_URL}/api/submissions/`, {
+        problemId,
+        code,
+        language,
+      });
       return res.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.response?.data || { error: "Submit failed" });
+      return thunkAPI.rejectWithValue(
+        err.response?.data || { error: "Submit failed" }
+      );
     }
   }
 );
@@ -36,7 +44,6 @@ const codeSlice = createSlice({
     output: "",
     error: null,
     time: null,
-
     verdict: "",
     failedCase: null,
     averageTime: null,
@@ -62,7 +69,7 @@ const codeSlice = createSlice({
         state.time = null;
       })
       .addCase(runCode.fulfilled, (state, action) => {
-        const { output, error, time, success } = action.payload;
+        const { success, output, error, time } = action.payload;
         state.loading = false;
         state.output = output || "";
         state.error = error || null;

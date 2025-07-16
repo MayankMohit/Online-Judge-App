@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { SlidersHorizontal, ArrowDownUp } from "lucide-react";
+import { SlidersHorizontal, ArrowDownUp, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   setSearchQuery,
   setFilters,
@@ -46,16 +47,64 @@ const ProblemControls = ({ direction, setDirection }) => {
     dispatch(setFilters({ sort: `${field}_${dir}` }));
   };
 
+  const [showSearch, setShowSearch] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearch(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <div className="flex flex-row gap-2 items-center sm:justify-center mb-6">
       {/* Search */}
-      <input
-        type="text"
-        value={searchQuery}
-        onChange={handleSearch}
-        placeholder="Search problems..."
-        className="w-full sm:w-1/3 px-4 py-2 rounded-lg bg-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 z-10"
-      />
+      <div
+        ref={searchRef}
+        className={`relative flex items-center transition-all duration-300 overflow-hidden ${
+          showSearch ? "w-full sm:w-1/3" : "w-10"
+        } bg-gray-700 rounded-full px-2 py-2`}
+      >
+        <AnimatePresence initial={false}>
+          {!showSearch && (
+            <motion.button
+              key="icon"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              onClick={() => setShowSearch(true)}
+              className="text-gray-300 hover:text-white"
+            >
+              <Search size={24} />
+            </motion.button>
+          )}
+
+          {showSearch && (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "100%" }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center w-full"
+            >
+              <Search size={22} className="text-gray-400 ml-1 mr-2" />
+              <input
+                autoFocus
+                type="text"
+                value={searchQuery}
+                onChange={handleSearch}
+                placeholder="Search problems..."
+                className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Filter & Sort */}
       <div className="flex gap-1">

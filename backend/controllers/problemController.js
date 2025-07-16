@@ -169,46 +169,51 @@ export const searchProblems = async (req, res) => {
 
     const filter = {};
 
-    // Fast search by problemNumber OR title
+    // ✅ Optimized $or query
     if (query) {
       const tokens = query.trim().split(/\s+/);
+      const orConditions = [];
 
-      filter.$or = tokens.map((token) => {
+      for (const token of tokens) {
         const num = Number(token);
         if (!isNaN(num)) {
-          return { problemNumber: num };
+          orConditions.push({ problemNumber: num });
         } else {
-          return { title: { $regex: token, $options: "i" } };
+          // Use anchored regex for faster match (starts with) instead of full text search
+          orConditions.push({ title: { $regex: `^${token}`, $options: "i" } });
         }
-      });
+      }
+
+      if (orConditions.length > 0) filter.$or = orConditions;
     }
 
-    // Filter by multiple tags using $in
+    // ✅ Use $in for tags
     if (tag) {
-      const tagArray = tag.split(",").map((t) => t.trim());
-      filter.tags = { $in: tagArray };
+      const tagArray = tag.split(",").map((t) => t.trim()).filter(Boolean);
+      if (tagArray.length > 0) filter.tags = { $in: tagArray };
     }
 
     if (difficulty) {
       filter.difficulty = difficulty;
     }
 
-    // Sorting logic
+    // ✅ Sorting (ensure field is indexed)
     let sortOption = { problemNumber: 1 };
     if (sort) {
       const [field, direction] = sort.split("_");
-      sortOption = { [field]: direction === "desc" ? -1 : 1 };
+      if (["problemNumber", "title", "difficulty"].includes(field)) {
+        sortOption = { [field]: direction === "desc" ? -1 : 1 };
+      }
     }
 
-    // Pagination
-    const pageNum = Number(page);
-    const limitNum = Number(limit);
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Query DB
+    // ✅ Query with projection + lean
     const problems = await Problem.find(filter)
-      .select("problemNumber title difficulty tags") // Only needed fields
-      .lean() // Faster than full Mongoose docs
+      .select("problemNumber title difficulty tags")
+      .lean()
       .sort(sortOption)
       .skip(skip)
       .limit(limitNum);

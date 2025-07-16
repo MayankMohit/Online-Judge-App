@@ -7,7 +7,7 @@ import { useAuthStore } from "../store/authStore";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const toggleRef = useRef(null);
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -64,6 +64,7 @@ const Navbar = () => {
           <NavLink to="/contests" className={navLinkStyle} onClick={toggleMenu}>Contests</NavLink>
           <NavLink to="/leaderboards" className={navLinkStyle} onClick={toggleMenu}>Leaderboards</NavLink>
           <NavLink to="/dashboard" className="px-3 py-2 hover:text-purple-300" onClick={toggleMenu}>View Profile</NavLink>
+        {user.role === "admin" && <NavLink to="/admin" className="px-3 py-2 hover:text-purple-300" onClick={toggleMenu}>Admin Panel</NavLink>}
           <NavLink to="/login" className="text-left px-3 py-2 hover:text-purple-300" onClick={logout}>Logout</NavLink>
         </div>
       )}

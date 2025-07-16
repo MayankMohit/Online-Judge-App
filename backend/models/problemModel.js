@@ -47,8 +47,12 @@ const problemSchema = mongoose.Schema({
     },
 });
 
-problemSchema.index({ title: "text" });
+problemSchema.index({ title: 1 });
 problemSchema.index({ tags: 1 });
 problemSchema.index({ difficulty: 1 });
+problemSchema.index({ problemNumber: 1 });
+problemSchema.index({ tags: 1, difficulty: 1, problemNumber: 1 });
+problemSchema.index({ tags: 1, difficulty: 1, title: 1 });
+
 
 export const Problem = mongoose.model('Problem', problemSchema);

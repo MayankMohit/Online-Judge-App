@@ -12,7 +12,8 @@ const ProblemsPage = () => {
   const observer = useRef();
   const [direction, setDirection] = useState("desc");
   const dispatch = useDispatch();
-  const { items, loading, error, hasMore, page, searchQuery, filters } = useSelector((state) => state.problems);
+  const { items, loading, error, hasMore, page, searchQuery, filters } =
+    useSelector((state) => state.problems);
 
   useEffect(() => {
     dispatch(fetchProblems());
@@ -27,11 +28,21 @@ const ProblemsPage = () => {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          dispatch(incrementPage());
+      let timeoutId;
+
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+              dispatch(incrementPage());
+            }, 600);
+          }
+        },
+        {
+          rootMargin: "0px 0px 500px 0px", // load earlier
         }
-      });
+      );
 
       if (node) observer.current.observe(node);
     },

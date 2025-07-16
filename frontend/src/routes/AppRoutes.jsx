@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "../store/authStore";
 import ProtectedRoute from "../components/ProtectedRoute";
+import ProtectedAdminRoute from "../components/ProtectedAdminRoute";
+import Unauthorized from "../components/Unauthorized";
 import Landing from "../pages/Landing";
 import SignUpPage from "../pages/SignUpPage";
 import LoginPage from "../pages/LoginPage";
@@ -17,6 +19,9 @@ import LeaderboardPage from "../pages/LeaderboardPage";
 import ProblemDetailsPage from "../pages/ProblemDetailsPage";
 import AllSubmissions from "../pages/AllSubmissions";
 import UpdateProfilePage from "../pages/UpdateProfilePage";
+import AdminDashboard from "../pages/adminPages/AdminDashboard";
+import UserManagement from "../pages/adminPages/UserManagement";
+import ProblemManagement from "../pages/adminPages/ProblemManagement";
 
 const RedirectAuthenticatedUser = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -37,14 +42,14 @@ const AppRoutes = () => {
       className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-800 to-violet-900
       flex items-center justify-center relative overflow-hidden shadow-inner shadow-purple-900/20"
     >
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none -z-10">
         <div className="absolute w-96 h-96 bg-purple-600/30 rounded-full blur-3xl top-[-10%] left-[-10%] animate-pulse" />
-        <div className="absolute w-96 h-96 bg-violet-400/30 rounded-full blur-2xl bottom-[-10%] right-[-10%] animate-pulse delay-2000" />
-        <div className="absolute w-120 h-120 bg-purple-400/20 rounded-full blur-3xl top-[0%] right-[25%] animate-pulse delay-1000" />
-        <div className="absolute w-120 h-120 bg-violet-500/40 rounded-full blur-2xl bottom-[-45%] left-[15%] animate-pulse delay-1000" />
+        <div className="absolute w-96 h-96 bg-violet-400/30 rounded-full blur-2xl bottom-[-10%] right-[-10%] animate-pulse delay-1500" />
+        <div className="absolute w-120 h-120 bg-purple-400/20 rounded-full blur-3xl top-[0%] right-[25%] animate-pulse delay-500" />
+        <div className="absolute w-120 h-120 bg-violet-500/20 rounded-full blur-2xl bottom-[-45%] left-[15%] animate-pulse delay-2000" />
       </div>
       <BrowserRouter>
-        <Toaster position="top-right" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route
@@ -100,6 +105,15 @@ const AppRoutes = () => {
               <Route path="/leaderboards" element={<LeaderboardPage />} />
             </Route>
           </Route>
+
+          {/* Admin Protected Routes */}
+          <Route path="/admin" element={<ProtectedAdminRoute />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="problems" element={<ProblemManagement />} />
+          </Route>
+
+          <Route path="/unauthorized" element={<Unauthorized />} />
         </Routes>
       </BrowserRouter>
     </div>

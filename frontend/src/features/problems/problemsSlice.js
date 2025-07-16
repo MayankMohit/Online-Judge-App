@@ -118,10 +118,16 @@ const problemsSlice = createSlice({
       .addCase(fetchProblems.fulfilled, (state, action) => {
         state.loading = false;
         const newItems = action.payload;
-        state.items =
-          state.items[0]?.problemNumber === newItems[0]?.problemNumber
-            ? state.items
-            : [...state.items, ...newItems];
+
+        const isDuplicate =
+          state.items.length > 0 &&
+          newItems.length > 0 &&
+          state.items[state.items.length - 1].problemNumber ===
+            newItems[newItems.length - 1].problemNumber;
+
+        if (!isDuplicate && newItems.length > 0) {
+          state.items = [...state.items, ...newItems];
+        }
         state.hasMore = newItems.length === 20;
       })
       .addCase(fetchProblems.rejected, (state, action) => {

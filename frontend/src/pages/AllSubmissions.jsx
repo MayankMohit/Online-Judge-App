@@ -48,7 +48,7 @@ export default function AllSubmissions() {
   };
 
   return (
-    <div className="min-h-screen sm:w-[80vw] w-full mx-auto bg-gray-900 text-white px-2 sm:px-8 py-8 select-none">
+    <div className="min-h-screen sm:w-[80vw] w-full mx-auto bg-gray-900 text-white px-2 sm:px-8 py-8 select-none z-10 opacity-95">
       <h1 className="text-2xl sm:text-3xl font-bold text-purple-400 mb-6 text-center">
         All Submissions
       </h1>
@@ -62,7 +62,7 @@ export default function AllSubmissions() {
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="w-full table-auto bg-gray-800 rounded-lg overflow-hidden">
+            <table className="w-full table-auto bg-gray-800/40 rounded-lg overflow-hidden">
               <thead>
                 <tr className="bg-gray-700 text-sm text-purple-300 text-left">
                   <th className="py-3 px-4">Problem</th>

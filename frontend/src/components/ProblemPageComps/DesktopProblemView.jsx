@@ -96,7 +96,43 @@ const DesktopProblemView = ({
         className="h-full flex flex-col border-r border-gray-800 min-w-[25vw] hide-scrollbar"
         style={{ width: `${leftWidth}%` }}
       >
-        {/* ... tab buttons */}
+        <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-purple-400 hover:text-purple-300"
+            >
+              <ArrowLeft size={28} strokeWidth={2.5} />
+            </button>
+            <button
+              className={`text-sm px-2 py-2 rounded ${
+                activeTab === "description" ? "bg-purple-700 text-white" : "bg-gray-700 text-purple-300"
+              }`}
+              onClick={() => setActiveTab("description")}
+            >
+              Description
+            </button>
+            <button
+              className={`text-sm px-2 py-2 rounded ${
+                activeTab === "submissions" ? "bg-purple-700 text-white" : "bg-gray-700 text-purple-300"
+              }`}
+              onClick={() => setActiveTab("submissions")}
+            >
+              Submissions
+            </button>
+          </div>
+          <button
+            onClick={() => {
+              mobileScrollRef.current?.scrollTo({
+                left: window.innerWidth,
+                behavior: "smooth",
+              });
+            }}
+            className="text-purple-200 text-sm bg-gray-700 px-2 py-1 rounded"
+          >
+            Code →
+          </button>
+        </div>
         <ProblemDescriptionPanel
           activeTab={activeTab}
           setActiveTab={setActiveTab}

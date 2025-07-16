@@ -6,7 +6,7 @@ import { useAuthStore } from "../store/authStore";
 const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const navigate = useNavigate();
 
   const toggleProfileMenu = () => setIsOpen((prev) => !prev);
@@ -26,7 +26,7 @@ const ProfileDropdown = () => {
       {/* Avatar Button */}
       <button
         onClick={toggleProfileMenu}
-        className="w-8 h-8 mt-3 rounded-full overflow-hidden"
+        className="w-8 h-8 mt-2 mr-2 rounded-full overflow-hidden"
       >
         <img
           src={avatar}
@@ -45,13 +45,22 @@ const ProfileDropdown = () => {
           >
             View Profile
           </NavLink>
+          {user.role === "admin" && (
+            <NavLink
+              to="/admin"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-2 hover:bg-gray-700"
+            >
+              Admin Panel
+            </NavLink>
+          )}
           <button
             to="/logout"
             className="block w-full text-left px-4 py-2 hover:bg-gray-700"
             onClick={() => {
               setIsOpen(false);
               logout();
-              navigate("/login", { replace: true});
+              navigate("/login", { replace: true });
             }}
           >
             Logout

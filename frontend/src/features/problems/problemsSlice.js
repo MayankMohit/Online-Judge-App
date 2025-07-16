@@ -1,15 +1,14 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-
 const initialState = {
-  items: [],        
+  items: [],
   loading: false,
   error: null,
-  page: 1,           
-  hasMore: true,     
-  searchQuery: "",  
+  page: 1,
+  hasMore: true,
+  searchQuery: "",
   filters: {
     tag: "",
     difficulty: "",
@@ -18,11 +17,13 @@ const initialState = {
   currentProblem: null,
   problemLoading: false,
   problemError: null,
-}
-
+  tags: [],
+  tagsLoading: false,
+  tagsError: null,
+};
 
 export const fetchProblems = createAsyncThunk(
-  'problems/fetchProblems',
+  "problems/fetchProblems",
   async (_, { getState, rejectWithValue }) => {
     const { page, searchQuery, filters } = getState().problems;
     const { tag, difficulty, sort } = filters;
@@ -38,28 +39,50 @@ export const fetchProblems = createAsyncThunk(
     if (sort) params.append("sort", sort);
 
     try {
-      const response = await axios.get(`${BASE_URL}/api/problems/search?${params.toString()}`);
+      const response = await axios.get(
+        `${BASE_URL}/api/problems/search?${params.toString()}`
+      );
       return response.data.problems;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Failed to fetch problems");
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch problems"
+      );
     }
   }
 );
 
 export const fetchProblemByNumber = createAsyncThunk(
-  'problems/fetchProblemByNumber',
+  "problems/fetchProblemByNumber",
   async (problemNumber, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/problems/number/${problemNumber}`);
+      const response = await axios.get(
+        `${BASE_URL}/api/problems/number/${problemNumber}`
+      );
       return response.data.problem;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch problem');
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch problem"
+      );
+    }
+  }
+);
+
+export const fetchTags = createAsyncThunk(
+  "problems/fetchTags",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/problems/tags`);
+      return response.data.tags;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch tags"
+      );
     }
   }
 );
 
 const problemsSlice = createSlice({
-  name: 'problems',
+  name: "problems",
   initialState,
   reducers: {
     setSearchQuery(state, action) {
@@ -95,14 +118,17 @@ const problemsSlice = createSlice({
       .addCase(fetchProblems.fulfilled, (state, action) => {
         state.loading = false;
         const newItems = action.payload;
-        state.items = state.items[0]?.problemNumber === newItems[0]?.problemNumber ? state.items : [...state.items, ...newItems];
+        state.items =
+          state.items[0]?.problemNumber === newItems[0]?.problemNumber
+            ? state.items
+            : [...state.items, ...newItems];
         state.hasMore = newItems.length === 20;
       })
       .addCase(fetchProblems.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
-    
+
     builder
       .addCase(fetchProblemByNumber.pending, (state) => {
         state.problemLoading = true;
@@ -115,6 +141,20 @@ const problemsSlice = createSlice({
       .addCase(fetchProblemByNumber.rejected, (state, action) => {
         state.problemLoading = false;
         state.problemError = action.payload;
+      });
+
+    builder
+      .addCase(fetchTags.pending, (state) => {
+        state.tagsLoading = true;
+        state.tagsError = null;
+      })
+      .addCase(fetchTags.fulfilled, (state, action) => {
+        state.tagsLoading = false;
+        state.tags = action.payload;
+      })
+      .addCase(fetchTags.rejected, (state, action) => {
+        state.tagsLoading = false;
+        state.tagsError = action.payload;
       });
   },
 });

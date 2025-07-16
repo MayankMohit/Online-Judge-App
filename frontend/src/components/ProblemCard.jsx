@@ -48,7 +48,7 @@ const ProblemCard = ({ problem, index }) => {
           }`}
         />
         <span className="text-gray-400">#{index}</span>
-        <h3 className="text-lg font-semibold text-white sm:truncate sm:max-w-[clamp(8rem,40vw,28rem)] sm:overflow-hidden sm:whitespace-nowrap">
+        <h3 className="sm:text-lg text-sm font-semibold text-white sm:truncate sm:max-w-[clamp(8rem,40vw,28rem)] sm:overflow-hidden sm:whitespace-nowrap">
           {problem.title}
         </h3>
       </div>

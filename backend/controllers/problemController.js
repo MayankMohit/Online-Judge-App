@@ -2,28 +2,39 @@ import { Problem } from "../models/problemModel.js";
 import { User } from "../models/userModel.js";
 import { getNextProblemNumber } from "../utils/getNextProblemNumber.js";
 
-export const getAllProblems = async (req, res) => { 
-    try {
-        const problems = await Problem.find().select("-testCases").sort({ problemNumber: 1 });
-        res.status(200).json({ success: true, problems });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to fetch problems" });
-    }
-}
+export const getAllProblems = async (req, res) => {
+  try {
+    const problems = await Problem.find()
+      .select("-testCases")
+      .sort({ problemNumber: 1 });
+    res.status(200).json({ success: true, problems });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch problems" });
+  }
+};
 
 export const getProblemByNumber = async (req, res) => {
   try {
     const problem = await Problem.findOne({ problemNumber: req.params.number });
     if (!problem) {
-      return res.status(404).json({ success: false, message: "Problem not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Problem not found" });
     }
 
-    const visibleTestCases = problem.testCases.filter(tc => !tc.isHidden);
-    const problemToSend = { ...problem.toObject(), testCases: visibleTestCases };
+    const visibleTestCases = problem.testCases.filter((tc) => !tc.isHidden);
+    const problemToSend = {
+      ...problem.toObject(),
+      testCases: visibleTestCases,
+    };
 
     res.status(200).json({ success: true, problem: problemToSend });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to fetch problem" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch problem" });
   }
 };
 
@@ -44,7 +55,12 @@ export const createProblem = async (req, res) => {
   try {
     const exists = await Problem.findOne({ title });
     if (exists) {
-      return res.status(400).json({ success: false, message: "Problem with this title already exists" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Problem with this title already exists",
+        });
     }
 
     const problemNumber = await getNextProblemNumber();
@@ -67,7 +83,9 @@ export const createProblem = async (req, res) => {
     await problem.save();
     res.status(201).json({ success: true, problem });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to create problem" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to create problem" });
   }
 };
 
@@ -80,12 +98,16 @@ export const updateProblem = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "Problem not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Problem not found" });
     }
 
     res.status(200).json({ success: true, problem: updated });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to update problem" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to update problem" });
   }
 };
 
@@ -94,12 +116,18 @@ export const deleteProblem = async (req, res) => {
     const deleted = await Problem.findByIdAndDelete(req.params.id);
 
     if (!deleted) {
-      return res.status(404).json({ success: false, message: "Problem not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Problem not found" });
     }
 
-    res.status(200).json({ success: true, message: "Problem deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Problem deleted successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to delete problem" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to delete problem" });
   }
 };
 
@@ -123,13 +151,15 @@ export const removeFavorite = async (req, res) => {
     const user = await User.findById(req.userId);
 
     user.favoriteProblems = user.favoriteProblems.filter(
-      pid => pid.toString() !== req.params.id
+      (pid) => pid.toString() !== req.params.id
     );
     await user.save();
 
     res.status(200).json({ success: true, message: "Removed from favorites" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to remove favorite" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to remove favorite" });
   }
 };
 
@@ -141,12 +171,16 @@ export const searchProblems = async (req, res) => {
 
     // Fast search by problemNumber OR title
     if (query) {
-      const numberQuery = Number(query);
-      if (!isNaN(numberQuery)) {
-        filter.problemNumber = numberQuery;
-      } else {
-        filter.title = { $regex: query, $options: "i" };
-      }
+      const tokens = query.trim().split(/\s+/);
+
+      filter.$or = tokens.map((token) => {
+        const num = Number(token);
+        if (!isNaN(num)) {
+          return { problemNumber: num };
+        } else {
+          return { title: { $regex: token, $options: "i" } };
+        }
+      });
     }
 
     // Filter by multiple tags using $in
@@ -160,7 +194,7 @@ export const searchProblems = async (req, res) => {
     }
 
     // Sorting logic
-    let sortOption = { problemNumber: 1 }; 
+    let sortOption = { problemNumber: 1 };
     if (sort) {
       const [field, direction] = sort.split("_");
       sortOption = { [field]: direction === "desc" ? -1 : 1 };
@@ -205,6 +239,8 @@ export const getProblemsByAdmin = async (req, res) => {
 
     res.status(200).json({ success: true, problems });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to fetch problems by admin" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch problems by admin" });
   }
 };

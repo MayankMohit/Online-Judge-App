@@ -34,9 +34,15 @@ const AppRoutes = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-gray-800 via-purple-600 to-violet-800
-      flex items-center justify-center relative overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-800 to-violet-900
+      flex items-center justify-center relative overflow-hidden shadow-inner shadow-purple-900/20"
     >
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute w-96 h-96 bg-purple-600/30 rounded-full blur-3xl top-[-10%] left-[-10%] animate-pulse" />
+        <div className="absolute w-96 h-96 bg-violet-400/30 rounded-full blur-2xl bottom-[-10%] right-[-10%] animate-pulse delay-2000" />
+        <div className="absolute w-120 h-120 bg-purple-400/20 rounded-full blur-3xl top-[0%] right-[25%] animate-pulse delay-1000" />
+        <div className="absolute w-120 h-120 bg-violet-500/40 rounded-full blur-2xl bottom-[-45%] left-[15%] animate-pulse delay-1000" />
+      </div>
       <BrowserRouter>
         <Toaster position="top-right" reverseOrder={false} />
         <Routes>
@@ -81,7 +87,7 @@ const AppRoutes = () => {
               </RedirectAuthenticatedUser>
             }
           />
-          
+
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
@@ -94,7 +100,6 @@ const AppRoutes = () => {
               <Route path="/leaderboards" element={<LeaderboardPage />} />
             </Route>
           </Route>
-          
         </Routes>
       </BrowserRouter>
     </div>

@@ -1,4 +1,4 @@
-import { unlink } from "fs";
+import fs from "fs";
 import { runInSandbox } from "../utils/sandbox.js";
 import { cleanCompilerError } from "../utils/cleanError.js";
 
@@ -11,10 +11,10 @@ export const executeNode = async (filePath, input = "") => {
       timeout: 3000,
     });
 
-    unlink(filePath, () => {});
+    await fs.promises.unlink(filePath).catch(() => {});
     return result;
   } catch (err) {
-    unlink(filePath, () => {});
+    await fs.promises.unlink(filePath).catch(() => {});
     return {
       success: false,
       output: null,

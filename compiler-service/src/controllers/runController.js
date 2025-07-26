@@ -3,6 +3,7 @@ import { executeC } from "../compilers/c.js";
 import { executePython } from "../compilers/python.js";
 import { executeNode } from "../compilers/node.js";
 import { generateFile } from "../utils/generateFile.js";
+import { prepareNodeCode } from "../utils/prepareNodeCode.js";
 
 export const runRoute = async (req, res) => {
   const { code, language, input = "" } = req.body;
@@ -17,7 +18,7 @@ export const runRoute = async (req, res) => {
       c: "c",
       py: "py",
       js: "js",
-      python: "py",      
+      python: "py",
       javascript: "js",
     };
 
@@ -26,7 +27,13 @@ export const runRoute = async (req, res) => {
       return res.status(400).json({ success: false, message: "Unsupported language" });
     }
 
-    const filePath = generateFile(extension, code);
+    // Prepare JS code with ESM input wrapper
+    let finalCode = code;
+    if (language === "js" || language === "javascript") {
+      finalCode = prepareNodeCode(code);
+    }
+
+    const filePath = generateFile(extension, finalCode);
 
     let result;
     switch (language) {
@@ -40,19 +47,19 @@ export const runRoute = async (req, res) => {
         result = await executePython(filePath, input);
         break;
       case "js":
+      case "javascript":
         result = await executeNode(filePath, input);
         break;
     }
-    
     return res.status(200).json(result);
-
+    
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       error: error.error || error.message || "Unknown error",
       output: null,
-      time: null
+      time: null,
     });
   }
 };
-

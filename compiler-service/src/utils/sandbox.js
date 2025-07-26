@@ -1,31 +1,56 @@
 import { spawn } from "child_process";
+import fs from "fs";
 
-export const runInSandbox = ({ command, args, cwd, input = "", timeout = 3000 }) => {
+/**
+ * Runs a command in a sandboxed environment.
+ * 
+ * @param {Object} options
+ * @param {string} options.command - Command to run (e.g., node, python3).
+ * @param {string[]} options.args - Arguments for the command.
+ * @param {string} options.input - Input to be fed to stdin.
+ * @param {string} [options.cwd] - Working directory.
+ * @param {number} [options.timeout=3000] - Max execution time (ms).
+ * @returns {Promise<Object>} - { success, output, error, time }
+ */
+export const runInSandbox = ({ command, args, input = "", cwd, timeout = 3000 }) => {
   return new Promise((resolve) => {
     const startTime = Date.now();
-    const process = spawn(command, args, { cwd });
+    const child = spawn(command, args, { cwd });
 
     let output = "";
     let errorOutput = "";
     let isTimeout = false;
 
-    process.stdin.write(input ?? "");
-    process.stdin.end();
+    // Write input only if non-empty
+    if (input && input.length > 0) {
+      child.stdin.write(input);
+    }
+    child.stdin.end();
 
-    process.stdout.on("data", (data) => {
+    child.stdout.on("data", (data) => {
       output += data.toString();
     });
 
-    process.stderr.on("data", (data) => {
+    child.stderr.on("data", (data) => {
       errorOutput += data.toString();
     });
 
     const timer = setTimeout(() => {
       isTimeout = true;
-      process.kill("SIGKILL");
+      child.kill("SIGKILL");
     }, timeout);
 
-    process.on("close", (code) => {
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      return resolve({
+        success: false,
+        output: null,
+        error: `Spawn error: ${err.message}`,
+        time: Date.now() - startTime,
+      });
+    });
+
+    child.on("close", (code) => {
       clearTimeout(timer);
       const executionTime = Date.now() - startTime;
 
@@ -38,18 +63,19 @@ export const runInSandbox = ({ command, args, cwd, input = "", timeout = 3000 })
         });
       }
 
-      if (code !== 0 && errorOutput) {
+      // If process exits with non-zero code and there's stderr output
+      if (code !== 0 && errorOutput.trim()) {
         return resolve({
           success: false,
           output: null,
-          error: errorOutput.trim() || `Exited with code ${code}`,
+          error: errorOutput.trim(),
           time: executionTime,
         });
       }
 
       return resolve({
         success: true,
-        output: output.trim(),
+        output: output.length > 0 ? output.trimEnd() : "",
         error: null,
         time: executionTime,
       });

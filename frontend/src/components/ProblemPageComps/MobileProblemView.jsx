@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowBigUp } from "lucide-react";
+import { ArrowLeft, ArrowBigUpDash } from "lucide-react";
 import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
 import OutputTab from "./OutputTab";
@@ -68,6 +68,7 @@ const MobileProblemView = ({
           </div>
           <button
             onClick={() => {
+              setIsOutputVisible(false);
               mobileScrollRef.current?.scrollTo({
                 left: window.innerWidth,
                 behavior: "smooth",
@@ -99,20 +100,38 @@ const MobileProblemView = ({
           code={code}
           customInput={customInput}
           setCustomInput={setCustomInput}
-          onBackToDescription={() =>
-            mobileScrollRef.current?.scrollTo({ left: 0, behavior: "smooth" })
-          }
+          onBackToDescription={() => {
+            setIsOutputVisible(false);
+            mobileScrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+          }}
           isMobile={true}
-          onRun={handleRun}
-          onSubmit={handleSubmit}
+          onRun={() => {
+            setIsOutputVisible(true);
+            handleRun();
+          }}
+          onSubmit={() => {
+            setIsOutputVisible(true);
+            handleSubmit();
+          }}
           currentProblem={currentProblem}
         />
 
         {/* Custom Test Case Area */}
         <div className="bg-gray-900 p-4 text-sm flex flex-col gap-2">
-          <h3 className="text-purple-400 font-semibold mb-1">
-            Custom Test Case
-            <ArrowBigUp size={30} className="inline-block ml-2" />
+          <h3 className="text-purple-400 font-semibold mb-1 flex justify-between">
+            <div>
+              Custom Test Case
+            <ArrowBigUpDash size={30} className="inline-block ml-2" />
+            </div>
+            
+              <button
+                onClick={() => setIsOutputVisible(true)}
+              className="bg-purple-900 text-gray-300 px-2 py-1 rounded-lg shadow-lg text-sm"
+              disabled={isOutputVisible}
+              >
+                Output
+              </button>
+            
           </h3>
           <textarea
             className="bg-gray-800 text-white p-2 rounded resize-none min-h-[100px] hide-scrollbar"
@@ -124,7 +143,7 @@ const MobileProblemView = ({
 
         {/* Output Drawer */}
         <div
-          className={`fixed bottom-0 left-0 w-full bg-gray-900 shadow-lg transform transition-transform duration-300 ${
+          className={`fixed bottom-0 left-0 w-full bg-gray-900 shadow-lg transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
             isOutputVisible ? "translate-y-0" : "translate-y-full"
           }`}
           style={{ maxHeight: "45vh" }}
@@ -150,16 +169,6 @@ const MobileProblemView = ({
             />
           </div>
         </div>
-
-        {/* Reopen Output Button */}
-        {!isOutputVisible && (
-          <button
-            onClick={() => setIsOutputVisible(true)}
-            className="fixed bottom-4 right-4 bg-purple-800 text-white px-2 py-1 rounded-lg shadow-lg text-sm"
-          >
-            Output
-          </button>
-        )}
       </div>
     </div>
   );

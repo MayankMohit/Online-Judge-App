@@ -31,7 +31,7 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch users" });
   }
 };
-
+ 
 export const getFilteredUsers = async (req, res) => {
   try {
     const { role, search } = req.query;
@@ -83,13 +83,25 @@ export const getUserDashboard = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    // Difficulty-wise breakdown
-    const difficultyStats = { Easy: 0, Medium: 0, Hard: 0 };
+    const difficultySets = {
+      Easy: new Set(),
+      Medium: new Set(),
+      Hard: new Set(),
+    };
+
     user.submissions.forEach((submission) => {
       if (submission.verdict === "accepted" && submission.problem?.difficulty) {
-        difficultyStats[submission.problem.difficulty]++;
+        difficultySets[submission.problem.difficulty].add(
+          submission.problem._id.toString()
+        );
       }
     });
+
+    const difficultyStats = {
+      Easy: difficultySets.Easy.size,
+      Medium: difficultySets.Medium.size,
+      Hard: difficultySets.Hard.size,
+    };
 
     res.status(200).json({
       success: true,

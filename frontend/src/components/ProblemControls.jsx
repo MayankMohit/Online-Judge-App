@@ -61,7 +61,7 @@ const ProblemControls = ({ direction, setDirection }) => {
   }, []);
 
   return (
-    <div className="flex flex-row gap-2 items-center sm:justify-center mb-6">
+    <div className="flex flex-row gap-2 items-center sm:justify-center justify-end mb-6">
       {/* Search */}
       <div
         ref={searchRef}

@@ -45,6 +45,30 @@ export default function AllSubmissions() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const getPaginationNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    pages.push(1);
+
+    if (page > 3) pages.push("...");
+
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (page < totalPages - 2) pages.push("...");
+
+    pages.push(totalPages);
+
+    return pages;
+  };
+
   return (
     <div className="min-h-screen sm:w-[80vw] w-full mx-auto bg-gray-900 text-white px-2 sm:px-8 py-8 select-none z-10 opacity-95">
       <h1 className="text-2xl sm:text-3xl font-bold text-purple-400 mb-6 text-center">
@@ -107,19 +131,27 @@ export default function AllSubmissions() {
             >
               Prev
             </button>
-            {[...Array(totalPages)].map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => handlePageChange(idx + 1)}
-                className={`px-3 py-1 rounded ${
-                  page === idx + 1
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-700 text-gray-300"
-                }`}
-              >
-                {idx + 1}
-              </button>
-            ))}
+
+            {getPaginationNumbers().map((num, idx) =>
+              num === "..." ? (
+                <span key={idx} className="px-3 py-1 text-gray-400">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={idx}
+                  onClick={() => handlePageChange(num)}
+                  className={`px-3 py-1 rounded ${
+                    page === num
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-700 text-gray-300"
+                  }`}
+                >
+                  {num}
+                </button>
+              )
+            )}
+
             <button
               className="px-3 py-1 rounded bg-purple-700 text-white disabled:opacity-50"
               disabled={page === totalPages}

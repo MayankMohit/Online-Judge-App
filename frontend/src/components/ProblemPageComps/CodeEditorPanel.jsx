@@ -1,5 +1,5 @@
 import { Editor } from "@monaco-editor/react";
-import { ArrowLeft, CheckCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCheck } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -34,10 +34,8 @@ const CodeEditorPanel = ({
     const problemId = currentProblem?._id;
     if (!problemId) return;
 
-    // Local update
     dispatch(updateCodeLocally({ problemId, language, code: val }));
 
-    // Debounced save
     if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     saveDebounceRef.current = setTimeout(() => {
       dispatch(saveCodeToDB({ problemId, language, code: val }));
@@ -47,12 +45,8 @@ const CodeEditorPanel = ({
   useEffect(() => {
     if (saveSuccess) {
       setFadeTick(false);
-      tickTimeoutRef.current = setTimeout(() => {
-        setFadeTick(true);
-      }, 1000);
-      setTimeout(() => {
-        dispatch(clearSaveSuccess());
-      }, 2000);
+      tickTimeoutRef.current = setTimeout(() => setFadeTick(true), 1000);
+      setTimeout(() => dispatch(clearSaveSuccess()), 2000);
     }
     return () => clearTimeout(tickTimeoutRef.current);
   }, [saveSuccess, dispatch]);
@@ -85,7 +79,7 @@ const CodeEditorPanel = ({
           onChange={(e) => setLanguage(e.target.value)}
         >
           {Object.keys(languageBoilerplates).map((lang) => (
-            <option key={lang} value={lang}>
+            <option key={lang} value={lang} disabled={lang === "js" || lang === "javascript"}>
               {lang.charAt(0).toUpperCase() + lang.slice(1)}
             </option>
           ))}
@@ -99,7 +93,7 @@ const CodeEditorPanel = ({
 
         {/* Save Status Indicator */}
         <div className="absolute sm:left-35 left-46">
-          {saving && <Loader2 className="animate-spin text-gray-600" size={25} />}
+          {saving && <span className="text-gray-600 text-xs">Saving...</span>}
           {!saving && saveSuccess && (
             <CheckCheck
               className={`text-gray-500 transition-opacity duration-1000 ${
@@ -113,26 +107,18 @@ const CodeEditorPanel = ({
         {/* Run & Submit Buttons */}
         <div className="md:absolute md:left-1/2 md:transform md:-translate-x-1/2 flex gap-3">
           <button
-            className="bg-blue-500 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100 flex items-center gap-1"
+            className="bg-blue-500 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
             onClick={onRun}
             disabled={loading}
           >
-            {loading && lastAction === "run" ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              "Run"
-            )}
+            Run
           </button>
           <button
-            className="bg-green-600 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100 flex items-center gap-1"
+            className="bg-green-600 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
             onClick={onSubmit}
             disabled={loading}
           >
-            {loading && lastAction === "submit" ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              "Submit"
-            )}
+            Submit
           </button>
         </div>
       </div>
@@ -153,6 +139,7 @@ const CodeEditorPanel = ({
           tabSize: 2,
           formatOnType: true,
           formatOnPaste: true,
+          lineNumbersMinChars: 3,
         }}
       />
     </div>

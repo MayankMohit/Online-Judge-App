@@ -27,6 +27,8 @@ const MobileProblemView = ({
   time,
   mobileScrollRef,
   lastAction,
+  isOutputVisible,
+  setIsOutputVisible,
 }) => {
   return (
     <div
@@ -90,7 +92,7 @@ const MobileProblemView = ({
       </div>
 
       {/* Code Editor Panel (mobile) */}
-      <div className="min-w-full h-full flex flex-col bg-gray-950">
+      <div className="min-w-full h-full flex flex-col bg-gray-950 relative">
         <CodeEditorPanel
           language={language}
           setLanguage={setLanguage}
@@ -106,31 +108,58 @@ const MobileProblemView = ({
           currentProblem={currentProblem}
         />
 
-        {/* Custom Test Case Area (mobile) */}
-        <div className="bg-gray-900 p-4 min-h-40 text-sm flex flex-col gap-2 overflow-hidden hide-scrollbar">
+        {/* Custom Test Case Area */}
+        <div className="bg-gray-900 p-4 text-sm flex flex-col gap-2">
           <h3 className="text-purple-400 font-semibold mb-1">
-            Custom Test Case <ArrowBigUp size={30} className="inline-block ml-2" />
+            Custom Test Case
+            <ArrowBigUp size={30} className="inline-block ml-2" />
           </h3>
           <textarea
-            className="bg-gray-800 text-white p-2 rounded resize-none h-full hide-scrollbar"
+            className="bg-gray-800 text-white p-2 rounded resize-none min-h-[100px] hide-scrollbar"
             placeholder="Enter input here..."
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
           ></textarea>
         </div>
 
-        {/* Output Display (mobile) */}
-        <div className="px-4 pb-4 text-sm max-h-52 overflow-auto">
-          <OutputTab
-            output={output}
-            error={codeError}
-            verdict={verdict}
-            failedCase={failedCase}
-            time={time || averageTime}
-            loading={loading}
-            lastAction={lastAction}
-          />
+        {/* Output Drawer */}
+        <div
+          className={`fixed bottom-0 left-0 w-full bg-gray-900 shadow-lg transform transition-transform duration-300 ${
+            isOutputVisible ? "translate-y-0" : "translate-y-full"
+          }`}
+          style={{ maxHeight: "45vh" }}
+        >
+          <div className="p-2 border-b border-gray-700 flex justify-between items-center bg-gray-800">
+            <h3 className="text-purple-400 text-sm font-semibold">Output</h3>
+            <button
+              onClick={() => setIsOutputVisible(false)}
+              className="text-gray-300 text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600"
+            >
+              Close
+            </button>
+          </div>
+          <div className="p-3 overflow-auto max-h-[calc(45vh-40px)] text-sm">
+            <OutputTab
+              output={output}
+              error={codeError}
+              verdict={verdict}
+              failedCase={failedCase}
+              time={time || averageTime}
+              loading={loading}
+              lastAction={lastAction}
+            />
+          </div>
         </div>
+
+        {/* Reopen Output Button */}
+        {!isOutputVisible && (
+          <button
+            onClick={() => setIsOutputVisible(true)}
+            className="fixed bottom-4 right-4 bg-purple-800 text-white px-2 py-1 rounded-lg shadow-lg text-sm"
+          >
+            Output
+          </button>
+        )}
       </div>
     </div>
   );

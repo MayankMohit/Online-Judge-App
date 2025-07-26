@@ -130,7 +130,7 @@ const ProblemDetailsPage = () => {
     dispatch(
       runCode({
         code,
-        language : backendLanguageMap[language] || language,
+        language: backendLanguageMap[language] || language,
         input: customInput.trim() === "" ? "0\n" : customInput,
       })
     );
@@ -138,7 +138,11 @@ const ProblemDetailsPage = () => {
 
   const handleSubmit = () => {
     dispatch(
-      submitCode({ problemId: currentProblem._id, code, language: backendLanguageMap[language] || language })
+      submitCode({
+        problemId: currentProblem._id,
+        code,
+        language: backendLanguageMap[language] || language,
+      })
     ).then(() => {
       dispatch(fetchSubmissionsByProblem(number));
     });
@@ -190,6 +194,8 @@ const ProblemDetailsPage = () => {
         mobileScrollRef={mobileScrollRef}
         handleCodeChange={handleCodeChange}
         lastAction={lastAction}
+        isOutputVisible={isOutputVisible}
+        setIsOutputVisible={setIsOutputVisible}
       />
 
       <DesktopProblemView

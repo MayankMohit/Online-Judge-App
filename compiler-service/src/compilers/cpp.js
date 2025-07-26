@@ -17,36 +17,67 @@ export const executeCpp = async (filePath, input = "") => {
   const outputFile = path.join(outputDir, isWindows ? `${jobId}.exe` : `${jobId}.out`);
 
   return new Promise((resolve) => {
+    const startTime = Date.now();
     const compile = spawn("g++", [filePath, "-o", outputFile]);
+
     let compileError = "";
 
     compile.stderr.on("data", (data) => {
       compileError += data.toString();
     });
 
+    compile.on("error", (err) => {
+      return resolve({
+        success: false,
+        output: null,
+        error: `Compilation spawn error: ${err.message}`,
+        time: Date.now() - startTime,
+      });
+    });
+
     compile.on("close", async (code) => {
-      if (code !== 0 || compileError) {
-        unlink(outputFile, () => {});
-        unlink(filePath, () => {});
+      if (code !== 0 || compileError.trim() !== "") {
+        safeUnlink(outputFile);
+        safeUnlink(filePath);
         return resolve({
           success: false,
           output: null,
-          error: cleanCompilerError(compileError) || `Compilation failed with code ${code}`,
-          time: null,
+          error: cleanCompilerError(compileError) || `Compilation failed (code ${code})`,
+          time: Date.now() - startTime,
         });
       }
 
-      const result = await runInSandbox({
-        command: outputFile,
-        args: [],
-        cwd: outputDir,
-        input,
-        timeout: 3000,
-      });
+      try {
+        const result = await runInSandbox({
+          command: outputFile,
+          args: [],
+          cwd: outputDir,
+          input,
+          timeout: 3000,
+        });
 
-      unlink(outputFile, () => {});
-      unlink(filePath, () => {});
-      return resolve(result);
+        safeUnlink(outputFile);
+        safeUnlink(filePath);
+
+        return resolve({
+          ...result,
+          time: result.time ?? Date.now() - startTime,
+        });
+      } catch (err) {
+        safeUnlink(outputFile);
+        safeUnlink(filePath);
+        return resolve({
+          success: false,
+          output: null,
+          error: cleanCompilerError(err?.message || "Runtime error"),
+          time: Date.now() - startTime,
+        });
+      }
     });
   });
+};
+
+const safeUnlink = (file) => {
+  if (!file) return;
+  unlink(file, () => {});
 };

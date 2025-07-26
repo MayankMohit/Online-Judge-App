@@ -46,10 +46,16 @@ export const createSubmission = async (req, res) => {
 
       if (!success) {
         const lowerError = (error || "").toLowerCase();
+
         if (lowerError.includes("time limit")) {
           verdict = "time_limit_exceeded";
         } else if (
-          lowerError.includes("compilation") ||
+          (language === "cpp" || language === "c") &&
+          (lowerError.includes("error:") || lowerError.includes("expected"))
+        ) {
+          verdict = "compilation_error";
+        } else if (
+          (language === "py" || language === "js") &&
           lowerError.includes("syntax")
         ) {
           verdict = "compilation_error";

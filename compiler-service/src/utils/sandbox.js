@@ -27,7 +27,7 @@ export const runInSandbox = ({ command, args, cwd, input = "", timeout = 3000 })
 
     process.on("close", (code) => {
       clearTimeout(timer);
-      const executionTime = `${Date.now() - startTime}ms`;
+      const executionTime = Date.now() - startTime;
 
       if (isTimeout) {
         return resolve({

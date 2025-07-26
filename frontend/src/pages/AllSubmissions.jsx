@@ -5,15 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 10;
 
-const shortFormatDate = (isoString) => {
-  if (!isoString) return "N/A";
-  const date = new Date(isoString);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = String(date.getFullYear()).slice(-2);
-  return `${day}/${month}/${year}`;
-};
-
 const formatDate = (isoString) => {
   if (!isoString) return "N/A";
   const date = new Date(isoString);
@@ -22,6 +13,13 @@ const formatDate = (isoString) => {
     timeStyle: "short",
     timeZone: "Asia/Kolkata",
   });
+};
+
+const languageMap = {
+  cpp: "C++",
+  c: "C",
+  py: "Python",
+  js: "JavaScript",
 };
 
 export default function AllSubmissions() {
@@ -75,15 +73,13 @@ export default function AllSubmissions() {
                 {paginatedItems.map((sub, idx) => (
                   <tr
                     key={idx}
-                    onClick={() => {
-                      if (sub.problem?.problemNumber) {
-                        navigate(`/problems/${sub.problem.problemNumber}`);
-                      }
-                    }}
+                    onClick={() => navigate(`/submissions/${sub._id}`)}
                     className="border-t border-gray-700 hover:bg-gray-700 transition cursor-pointer"
                   >
                     <td className="py-3 px-4">{sub.problem?.title || "N/A"}</td>
-                    <td className="py-3 px-4">{sub.language}</td>
+                    <td className="py-3 px-4">
+                      {languageMap[sub.language] || sub.language}
+                    </td>
                     <td
                       className={`py-3 px-4 font-semibold ${
                         sub.verdict === "accepted"

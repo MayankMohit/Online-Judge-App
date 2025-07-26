@@ -23,11 +23,11 @@ export const runCode = async (req, res) => {
 
     return res.status(success ? 200 : 400).json({
       success,
-      output,
-      error,
-      time,
+      output: output || "",
+      error: error || null,
+      time: time || null,
     });
-
+    
   } catch (err) {
     const status = err.response?.status || 500;
     return res.status(status).json({

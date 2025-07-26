@@ -27,6 +27,7 @@ const CodeEditorPanel = ({
   const [fadeTick, setFadeTick] = useState(false);
 
   const { saving, saveSuccess } = useSelector((state) => state.codePersistence);
+  const { loading, lastAction } = useSelector((state) => state.code);
 
   // Debounced save on code change
   const handleCodeChange = (val) => {
@@ -45,7 +46,7 @@ const CodeEditorPanel = ({
 
   useEffect(() => {
     if (saveSuccess) {
-      setFadeTick(false); 
+      setFadeTick(false);
       tickTimeoutRef.current = setTimeout(() => {
         setFadeTick(true);
       }, 1000);
@@ -68,7 +69,6 @@ const CodeEditorPanel = ({
           isMobile ? "justify-between" : "justify-start"
         }`}
       >
-        {/* Back Button (Mobile Only) */}
         {isMobile && (
           <button
             onClick={onBackToDescription}
@@ -90,18 +90,16 @@ const CodeEditorPanel = ({
             </option>
           ))}
           <option value="java" disabled>
-            Java 
+            Java
           </option>
           <option value="go" disabled>
-            Go 
+            Go
           </option>
         </select>
-          
+
         {/* Save Status Indicator */}
         <div className="absolute sm:left-35 left-46">
-          {saving && (
-            <Loader2 className="animate-spin text-gray-600" size={25} />
-          )}
+          {saving && <Loader2 className="animate-spin text-gray-600" size={25} />}
           {!saving && saveSuccess && (
             <CheckCheck
               className={`text-gray-500 transition-opacity duration-1000 ${
@@ -115,16 +113,26 @@ const CodeEditorPanel = ({
         {/* Run & Submit Buttons */}
         <div className="md:absolute md:left-1/2 md:transform md:-translate-x-1/2 flex gap-3">
           <button
-            className="bg-blue-500 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
+            className="bg-blue-500 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100 flex items-center gap-1"
             onClick={onRun}
+            disabled={loading}
           >
-            Run
+            {loading && lastAction === "run" ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              "Run"
+            )}
           </button>
           <button
-            className="bg-green-600 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
+            className="bg-green-600 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100 flex items-center gap-1"
             onClick={onSubmit}
+            disabled={loading}
           >
-            Submit
+            {loading && lastAction === "submit" ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              "Submit"
+            )}
           </button>
         </div>
       </div>

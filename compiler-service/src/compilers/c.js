@@ -3,6 +3,7 @@ import path from "path";
 import os from "os";
 import { mkdirSync, existsSync, unlink } from "fs";
 import { runInSandbox } from "../utils/sandbox.js";
+import { cleanCompilerError } from "../utils/cleanError.js";
 
 const outputDir = path.join(path.resolve(), "temp", "outputs");
 
@@ -17,7 +18,6 @@ export const executeC = async (filePath, input = "") => {
 
   return new Promise((resolve) => {
     const compile = spawn("gcc", [filePath, "-o", outputFile]);
-
     let compileError = "";
 
     compile.stderr.on("data", (data) => {
@@ -31,8 +31,8 @@ export const executeC = async (filePath, input = "") => {
         return resolve({
           success: false,
           output: null,
-          error: compileError || `Compilation failed with code ${code}`,
-          time: null
+          error: cleanCompilerError(compileError) || `Compilation failed with code ${code}`,
+          time: null,
         });
       }
 

@@ -1,6 +1,6 @@
-import path from "path";
 import { unlink } from "fs";
 import { runInSandbox } from "../utils/sandbox.js";
+import { cleanCompilerError } from "../utils/cleanError.js";
 
 export const executeNode = async (filePath, input = "") => {
   try {
@@ -12,19 +12,14 @@ export const executeNode = async (filePath, input = "") => {
     });
 
     unlink(filePath, () => {});
-    return {
-      success: true,
-      output: result.output,
-      error: null,
-      time: result.time
-    };
+    return result;
   } catch (err) {
     unlink(filePath, () => {});
     return {
       success: false,
       output: null,
-      error: err.error || "Runtime error",
-      time: null
+      error: cleanCompilerError(err.error || "Runtime error"),
+      time: null,
     };
   }
 };

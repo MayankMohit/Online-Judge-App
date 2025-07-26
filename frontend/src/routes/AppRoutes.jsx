@@ -18,6 +18,7 @@ import ContestsPage from "../pages/ContestsPage";
 import LeaderboardPage from "../pages/LeaderboardPage";
 import ProblemDetailsPage from "../pages/ProblemDetailsPage";
 import AllSubmissions from "../pages/AllSubmissions";
+import SubmissionView from "../pages/SubmissionView";
 import UpdateProfilePage from "../pages/UpdateProfilePage";
 import AdminDashboard from "../pages/adminPages/AdminDashboard";
 import UserManagement from "../pages/adminPages/UserManagement";
@@ -97,6 +98,7 @@ const AppRoutes = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/submissions" element={<AllSubmissions />} />
+            <Route path="/submissions/:id" element={<SubmissionView />} />
             <Route path="/update-profile" element={<UpdateProfilePage />} />
             <Route path="/problems/:number" element={<ProblemDetailsPage />} />
             <Route element={<MainLayout />}>

@@ -1,73 +1,119 @@
-import { motion, AnimatePresence } from "framer-motion";
-import TestCase from "./TestCase";
+const OutputTab = ({
+  output,
+  error,
+  verdict,
+  failedCase,
+  time,
+  loading,
+  lastAction,
+  onClose,
+}) => {
+  const scrollBoxClasses =
+    "bg-gray-800 p-1.5 rounded max-h-40 overflow-auto whitespace-pre-wrap text-gray-100 hide-scrollbar";
 
-const OutputTab = ({ output, error, verdict, failedCase, time, onClose }) => {
-  const hasError = !!error;
+  const verdictMessage = {
+    accepted: "Accepted, all test cases passed!",
+    compilation_error: "Compilation Error!",
+    wrong_answer: "Test Case Failed!",
+    time_limit_exceeded: "Time Limit Exceeded!",
+  };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ duration: 0.35 }}
-        className="bg-gray-900 p-4 text-sm flex flex-col gap-3 overflow-y-auto hide-scrollbar border-t border-purple-900"
-        style={{ height: "50%", minHeight: "200px" }}
-      >
-        <div className="flex justify-between items-center">
-          <h3 className="text-purple-400 font-semibold text-lg">
-            Output Result
-          </h3>
+    <div className="bg-gray-900 p-4 text-sm flex flex-col gap-2 h-full">
+      {/* Close Button */}
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-purple-400 font-semibold">Output</h3>
+        {onClose && (
           <button
-            className="bg-gray-800 px-2 py-1 rounded text-purple-300 text-xs"
+            className="text-gray-400 hover:text-white text-xs"
             onClick={onClose}
           >
-            Show Input ↧
+            ✕ Close
           </button>
-        </div>
-
-        {hasError ? (
-          <div className="bg-red-950 text-red-400 p-2 rounded">{error}</div>
-        ) : (
-          <>
-            {verdict && (
-              <p className="text-gray-300">
-                <span className="text-purple-400">Verdict:</span>{" "}
-                <span
-                  className={
-                    verdict === "accepted" ? "text-green-400" : "text-red-400"
-                  }
-                >
-                  {verdict}
-                </span>
-              </p>
-            )}
-            {typeof time === "number" && (
-              <p className="text-gray-300">
-                <span className="text-purple-400">Time Taken:</span> {time} ms
-              </p>
-            )}
-            {failedCase && verdict !== "accepted" && !hasError && (
-              <>
-                <p className="text-purple-400 mt-2">Failed Test Case</p>
-                <TestCase
-                  input={failedCase.input}
-                  output={failedCase.expectedOutput}
-                />
-              </>
-            )}
-            {output && (
-              <>
-                <p className="text-purple-400 mt-2">Program Output</p>
-                <pre className="bg-gray-800 text-white p-2 rounded whitespace-pre-wrap overflow-x-auto hide-scrollbar">
-                  {output}
-                </pre>
-              </>
-            )}
-          </>
         )}
-      </motion.div>
-    </AnimatePresence>
+      </div>
+
+      {/* Loader */}
+      {lastAction === "run" && loading && (
+        <div className="text-gray-400 italic">Running your code...</div>
+      )}
+      {lastAction === "submit" && loading && (
+        <div className="text-gray-400 italic">
+          Running your code with the test cases...
+        </div>
+      )}
+
+      {/* Show Run Output */}
+      {lastAction === "run" && !loading && (
+        <div className={scrollBoxClasses}>
+          {error ? (
+            <span className="text-red-400">{error}</span>
+          ) : (
+            <pre>{output || "No Output"}</pre>
+          )}
+        </div>
+      )}
+
+      {/* Show Submission Result */}
+      {lastAction === "submit" && !loading && (
+        <div className="space-y-3">
+          {/* Verdict */}
+          <p className="mb-1 text-xl">
+            <span
+              className={
+                verdict === "accepted"
+                  ? "text-green-400 font-semibold"
+                  : "text-red-400 font-semibold"
+              }
+            >
+              {verdictMessage[verdict] || "N/A"}
+            </span>
+          </p>
+
+          {/* Compilation Error */}
+          {verdict === "compilation_error" && (
+            <div className={scrollBoxClasses}>
+              <pre className="text-red-400">
+                {failedCase?.actualOutput || error || "Compilation failed."}
+              </pre>
+            </div>
+          )}
+
+          {/* Wrong Answer Details */}
+          {verdict === "wrong_answer" && (
+            <div className="space-y-1">
+              <div>
+                <p className="text-purple-300">Input:</p>
+                <div className={scrollBoxClasses}>
+                  <pre>{failedCase?.input || "Not Available"}</pre>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-green-400">Expected Output:</p>
+                <div className={scrollBoxClasses}>
+                  <pre>{failedCase?.expectedOutput || "Not Available"}</pre>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-red-400">Your Output:</p>
+                <div className={scrollBoxClasses}>
+                  <pre>{failedCase?.actualOutput || "No Output"}</pre>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Time Limit Exceeded */}
+          {verdict === "time_limit_exceeded" && error && (
+            <div className={scrollBoxClasses}>
+              <pre className="text-red-400">{error}</pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

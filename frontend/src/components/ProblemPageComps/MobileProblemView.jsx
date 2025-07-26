@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowBigUp } from "lucide-react";
 import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
+import OutputTab from "./OutputTab";
 
 const MobileProblemView = ({
   activeTab,
@@ -25,9 +26,13 @@ const MobileProblemView = ({
   averageTime,
   time,
   mobileScrollRef,
+  lastAction,
 }) => {
   return (
-    <div className="flex flex-row md:hidden w-full h-full overflow-x-hidden scroll-smooth" ref={mobileScrollRef}>
+    <div
+      className="flex flex-row md:hidden w-full h-full overflow-x-hidden scroll-smooth"
+      ref={mobileScrollRef}
+    >
       {/* Description Panel (mobile) */}
       <div className="min-w-full h-full flex flex-col border-r border-gray-800">
         <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
@@ -40,7 +45,9 @@ const MobileProblemView = ({
             </button>
             <button
               className={`text-sm px-2 py-1 rounded ${
-                activeTab === "description" ? "bg-purple-700 text-white" : "bg-gray-700 text-purple-300"
+                activeTab === "description"
+                  ? "bg-purple-700 text-white"
+                  : "bg-gray-700 text-purple-300"
               }`}
               onClick={() => setActiveTab("description")}
             >
@@ -48,7 +55,9 @@ const MobileProblemView = ({
             </button>
             <button
               className={`text-sm px-2 py-1 rounded ${
-                activeTab === "submissions" ? "bg-purple-700 text-white" : "bg-gray-700 text-purple-300"
+                activeTab === "submissions"
+                  ? "bg-purple-700 text-white"
+                  : "bg-gray-700 text-purple-300"
               }`}
               onClick={() => setActiveTab("submissions")}
             >
@@ -111,38 +120,16 @@ const MobileProblemView = ({
         </div>
 
         {/* Output Display (mobile) */}
-        <div className="px-4 pb-4 text-sm">
-          {codeError ? (
-            <p className="text-red-500 text-sm">Error: {codeError}</p>
-          ) : output ? (
-            <div className="text-sm">
-              <p>
-                <span className="text-purple-400">Output:</span>
-                <pre className="bg-gray-800 rounded p-2 mt-1 whitespace-pre-wrap">{output}</pre>
-              </p>
-              {time && (
-                <p className="text-gray-400 mt-1 text-xs">Execution Time: {time}ms</p>
-              )}
-            </div>
-          ) : verdict && (
-            <div className="mt-2 text-sm">
-              <p>
-                <span className="text-purple-400">Verdict:</span>{" "}
-                <span className={verdict === "accepted" ? "text-green-400" : "text-red-400"}>
-                  {verdict}
-                </span>
-              </p>
-              {failedCase && (
-                <div className="mt-1 text-xs text-red-400">
-                  Failed on input:
-                  <pre className="whitespace-pre-wrap">{failedCase.input}</pre>
-                </div>
-              )}
-              {averageTime && (
-                <p className="text-gray-400 mt-1 text-xs">Avg Time: {averageTime}ms</p>
-              )}
-            </div>
-          )}
+        <div className="px-4 pb-4 text-sm max-h-52 overflow-auto">
+          <OutputTab
+            output={output}
+            error={codeError}
+            verdict={verdict}
+            failedCase={failedCase}
+            time={time || averageTime}
+            loading={loading}
+            lastAction={lastAction}
+          />
         </div>
       </div>
     </div>

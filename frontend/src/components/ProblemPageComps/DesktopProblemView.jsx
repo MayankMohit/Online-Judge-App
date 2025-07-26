@@ -3,7 +3,6 @@ import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
 import OutputTab from "./OutputTab";
 import { ArrowLeft } from "lucide-react";
-import TabButton from "./TabButton";
 
 const DesktopProblemView = ({
   activeTab,
@@ -36,6 +35,7 @@ const DesktopProblemView = ({
   containerRef,
   leftWidth,
   setLeftWidth,
+  lastAction
 }) => {
   const isDraggingRef = useRef(false);
   const isDraggingHeight = useRef(false);
@@ -106,7 +106,9 @@ const DesktopProblemView = ({
             </button>
             <button
               className={`text-sm px-2 py-2 rounded ${
-                activeTab === "description" ? "bg-purple-700 text-white" : "bg-gray-700 text-purple-300"
+                activeTab === "description"
+                  ? "bg-purple-700 text-white"
+                  : "bg-gray-700 text-purple-300"
               }`}
               onClick={() => setActiveTab("description")}
             >
@@ -114,24 +116,15 @@ const DesktopProblemView = ({
             </button>
             <button
               className={`text-sm px-2 py-2 rounded ${
-                activeTab === "submissions" ? "bg-purple-700 text-white" : "bg-gray-700 text-purple-300"
+                activeTab === "submissions"
+                  ? "bg-purple-700 text-white"
+                  : "bg-gray-700 text-purple-300"
               }`}
               onClick={() => setActiveTab("submissions")}
             >
               Submissions
             </button>
           </div>
-          <button
-            onClick={() => {
-              mobileScrollRef.current?.scrollTo({
-                left: window.innerWidth,
-                behavior: "smooth",
-              });
-            }}
-            className="text-purple-200 text-sm bg-gray-700 px-2 py-1 rounded"
-          >
-            Code →
-          </button>
         </div>
         <ProblemDescriptionPanel
           activeTab={activeTab}
@@ -173,14 +166,21 @@ const DesktopProblemView = ({
         <div className="h-2 bg-gray-700"></div>
 
         {isOutputVisible ? (
-          <OutputTab
-            output={output}
-            error={codeError}
-            verdict={verdict}
-            failedCase={failedCase}
-            time={time}
-            onClose={() => setIsOutputVisible(false)}
-          />
+          <div
+            className="flex-1 overflow-auto hide-scrollbar bg-gray-900"
+            style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
+          >
+            <OutputTab
+              output={output}
+              error={codeError}
+              verdict={verdict}
+              failedCase={failedCase}
+              time={time || averageTime}
+              loading={loading}
+              lastAction={lastAction}
+              onClose={() => setIsOutputVisible(false)}
+            />
+          </div>
         ) : (
           <div
             className="bg-gray-900 p-4 text-sm flex flex-col gap-2 overflow-hidden hide-scrollbar"

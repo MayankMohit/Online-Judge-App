@@ -6,9 +6,9 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 // 🔹 Run Code Thunk
 export const runCode = createAsyncThunk(
   "code/run",
-  async ({code, language, input}, thunkAPI) => {
+  async ({ code, language, input }, thunkAPI) => {
     try {
-      const res = await axios.post(`${BASE_URL}/api/run/`, {code, language, input});
+      const res = await axios.post(`${BASE_URL}/api/run/`, { code, language, input });
       return res.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(
@@ -37,39 +37,39 @@ export const submitCode = createAsyncThunk(
   }
 );
 
+const initialState = {
+  loading: false,
+  lastAction: "", // "run" or "submit"
+  output: "",
+  error: null,
+  time: null,
+  verdict: "",
+  failedCase: null,
+  averageTime: null,
+};
+
 const codeSlice = createSlice({
   name: "code",
-  initialState: {
-    loading: false,
-    output: "",
-    error: null,
-    time: null,
-    verdict: "",
-    failedCase: null,
-    averageTime: null,
-  },
+  initialState,
   reducers: {
-    clearCodeState: (state) => {
-      state.loading = false;
-      state.output = "";
-      state.error = null;
-      state.time = null;
-      state.verdict = "";
-      state.failedCase = null;
-      state.averageTime = null;
-    },
+    clearCodeState: () => ({
+      ...initialState, // Ensures full reset
+    }),
   },
   extraReducers: (builder) => {
     builder
       // RUN
       .addCase(runCode.pending, (state) => {
         state.loading = true;
+        state.lastAction = "run";
         state.output = "";
         state.error = null;
         state.time = null;
+        state.verdict = "";
+        state.failedCase = null;
       })
       .addCase(runCode.fulfilled, (state, action) => {
-        const { success, output, error, time } = action.payload;
+        const { output, error, time } = action.payload;
         state.loading = false;
         state.output = output || "";
         state.error = error || null;
@@ -84,16 +84,19 @@ const codeSlice = createSlice({
       // SUBMIT
       .addCase(submitCode.pending, (state) => {
         state.loading = true;
+        state.lastAction = "submit";
         state.verdict = "";
         state.failedCase = null;
         state.averageTime = null;
+        state.output = ""; // Clear run output
       })
       .addCase(submitCode.fulfilled, (state, action) => {
-        const { verdict, averageTime, failedCase } = action.payload;
+        const { verdict, averageTime, failedCase, error } = action.payload;
         state.loading = false;
-        state.verdict = verdict;
-        state.averageTime = averageTime;
+        state.verdict = verdict || "";
         state.failedCase = failedCase || null;
+        state.averageTime = averageTime || null;
+        state.error = error || null;
       })
       .addCase(submitCode.rejected, (state, action) => {
         state.loading = false;

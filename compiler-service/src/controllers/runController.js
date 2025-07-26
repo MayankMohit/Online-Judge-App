@@ -16,7 +16,9 @@ export const runRoute = async (req, res) => {
       cpp: "cpp",
       c: "c",
       py: "py",
-      js: "js"
+      js: "js",
+      python: "py",      
+      javascript: "js",
     };
 
     const extension = extensionMap[language];

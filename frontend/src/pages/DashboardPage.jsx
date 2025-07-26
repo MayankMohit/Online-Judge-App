@@ -7,12 +7,7 @@ import { ArrowBigLeftDashIcon, Edit3Icon, LogOutIcon } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { fetchFavoriteProblems } from "../features/favorites/favoritesSlice";
 import ProblemCard from "../components/ProblemCard";
-import {
-  UserRound,
-  Mail,
-  CheckCircle,
-  FileCode,
-} from "lucide-react";
+import { UserRound, Mail, CheckCircle, FileCode } from "lucide-react";
 
 const COLORS = ["#4CAF50", "#FFD301", "#E03C32"];
 
@@ -23,6 +18,16 @@ const shortFormatDate = (isoString) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = String(date.getFullYear()).slice(-2);
   return `${day}/${month}/${year}`;
+};
+
+const formatDate = (isoString) => {
+  if (!isoString) return "N/A";
+  const date = new Date(isoString);
+  return date.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  });
 };
 
 export default function DashboardPage() {
@@ -146,9 +151,8 @@ export default function DashboardPage() {
               </h2>
               <div className="flex items-center gap-5 pointer-events-none ">
                 {/* Pie Chart */}
-                
+
                 <div className="w-32 h-32">
-                  
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -272,16 +276,24 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {recentSubmissions.map((sub, idx) => (
-                  <tr key={idx} className="border-b border-gray-700">
+                  <tr
+                    key={idx}
+                    onClick={() => navigate(`/submissions/${sub._id}`)}
+                    className="border-b border-gray-700 hover:bg-gray-700 transition cursor-pointer"
+                  >
                     <td className="py-2">{sub.problem?.title || "N/A"}</td>
                     <td className="py-2">{sub.language}</td>
                     <td
-                      className={`py-2 ${sub.verdict === "accepted" ? "text-green-400" : "text-red-400"}`}
+                      className={`py-2 ${
+                        sub.verdict === "accepted"
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}
                     >
                       {sub.verdict}
                     </td>
                     <td className="py-2 sm:block hidden">
-                      {shortFormatDate(sub.submittedAt)}
+                      {formatDate(sub.submittedAt)}
                     </td>
                   </tr>
                 ))}

@@ -20,7 +20,6 @@ import {
   fetchSavedCode,
   saveCodeToDB,
   updateCodeLocally,
-  clearSaveSuccess,
 } from "../features/code/codePersistenceSlice";
 
 import { languageBoilerplates } from "../components/ProblemPageComps/LanguageBoilerplates";
@@ -41,11 +40,7 @@ const ProblemDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [customInput, setCustomInput] = useState("");
   const [language, setLanguage] = useState("cpp");
-  const {
-    codeMap,
-    saving,
-    saveSuccess,
-  } = useSelector((state) => state.codePersistence);
+  const { codeMap } = useSelector((state) => state.codePersistence);
 
   const { number } = useParams();
   const dispatch = useDispatch();
@@ -56,7 +51,7 @@ const ProblemDetailsPage = () => {
   );
   const {
     items: userSubmissions,
-    loading,
+    loading: submissionsLoading,
     error,
   } = useSelector((state) => state.problemSubmissions);
   const {
@@ -67,55 +62,83 @@ const ProblemDetailsPage = () => {
     verdict,
     failedCase,
     averageTime,
+    lastAction,
   } = useSelector((state) => state.code);
 
+  // Load submissions
   useEffect(() => {
     dispatch(fetchSubmissionsByProblem(number));
-    return () => {
-      dispatch(clearProblemSubmissions());
-    };
+    return () => dispatch(clearProblemSubmissions());
   }, [dispatch, number]);
 
   const isSolved = userSubmissions.some((sub) => sub.verdict === "accepted");
 
+  // Load problem & reset code state
   useEffect(() => {
     dispatch(fetchProblemByNumber(number));
+    dispatch(clearCodeState()); // Reset run/submit state
+    setIsOutputVisible(false); // Ensure OutputTab is closed
+    setActiveTab("description"); // Reset to description tab
     return () => dispatch(clearCurrentProblem());
   }, [dispatch, number]);
 
+  // Show OutputTab only if there is new output or submission result
   useEffect(() => {
     if (output || verdict || codeError) {
       setIsOutputVisible(true);
     }
   }, [output, verdict, codeError]);
 
-  const code = codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language];
+  const code =
+    codeMap?.[currentProblem?._id]?.[language] ||
+    languageBoilerplates[language];
 
   useEffect(() => {
     if (currentProblem?._id && language) {
       dispatch(fetchSavedCode({ problemId: currentProblem._id, language }));
     }
   }, [currentProblem?._id, language]);
-  
+
   const handleCodeChange = (newCode) => {
-    dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
+    dispatch(
+      updateCodeLocally({
+        problemId: currentProblem._id,
+        language,
+        code: newCode,
+      })
+    );
 
     if (saveTimeout.current) {
       clearTimeout(saveTimeout.current);
     }
 
     saveTimeout.current = setTimeout(() => {
-      dispatch(saveCodeToDB({ problemId: currentProblem._id, language, code: newCode }));
+      dispatch(
+        saveCodeToDB({ problemId: currentProblem._id, language, code: newCode })
+      );
     }, 2000);
   };
 
+  const backendLanguageMap = {
+    python: "py",
+    javascript: "js",
+    cpp: "cpp",
+    c: "c",
+  };
+
   const handleRun = () => {
-    dispatch(runCode({ code, language, input: customInput }));
+    dispatch(
+      runCode({
+        code,
+        language : backendLanguageMap[language] || language,
+        input: customInput.trim() === "" ? "0\n" : customInput,
+      })
+    );
   };
 
   const handleSubmit = () => {
     dispatch(
-      submitCode({ problemId: currentProblem._id, code, language })
+      submitCode({ problemId: currentProblem._id, code, language: backendLanguageMap[language] || language })
     ).then(() => {
       dispatch(fetchSubmissionsByProblem(number));
     });
@@ -134,6 +157,7 @@ const ProblemDetailsPage = () => {
         <div className="text-red-500 text-lg">{problemError}</div>
       </div>
     );
+
   if (!currentProblem) return null;
 
   return (
@@ -146,7 +170,7 @@ const ProblemDetailsPage = () => {
         setActiveTab={setActiveTab}
         currentProblem={currentProblem}
         userSubmissions={userSubmissions}
-        loading={loading}
+        loading={codeLoading}
         error={error}
         navigate={navigate}
         isSolved={isSolved}
@@ -158,14 +182,14 @@ const ProblemDetailsPage = () => {
         handleRun={handleRun}
         handleSubmit={handleSubmit}
         output={output}
-        codeLoading={codeLoading}
         codeError={codeError}
         verdict={verdict}
         failedCase={failedCase}
         averageTime={averageTime}
-        time={time}
+        time={lastAction === "run" ? null : time}
         mobileScrollRef={mobileScrollRef}
         handleCodeChange={handleCodeChange}
+        lastAction={lastAction}
       />
 
       <DesktopProblemView
@@ -173,7 +197,7 @@ const ProblemDetailsPage = () => {
         setActiveTab={setActiveTab}
         currentProblem={currentProblem}
         userSubmissions={userSubmissions}
-        loading={loading}
+        loading={codeLoading}
         error={error}
         navigate={navigate}
         isSolved={isSolved}
@@ -185,12 +209,11 @@ const ProblemDetailsPage = () => {
         handleRun={handleRun}
         handleSubmit={handleSubmit}
         output={output}
-        codeLoading={codeLoading}
         codeError={codeError}
         verdict={verdict}
         failedCase={failedCase}
         averageTime={averageTime}
-        time={time}
+        time={lastAction === "run" ? null : time}
         isOutputVisible={isOutputVisible}
         setIsOutputVisible={setIsOutputVisible}
         editorHeight={editorHeight}
@@ -201,6 +224,7 @@ const ProblemDetailsPage = () => {
         leftWidth={leftWidth}
         setLeftWidth={setLeftWidth}
         handleCodeChange={handleCodeChange}
+        lastAction={lastAction}
       />
     </div>
   );

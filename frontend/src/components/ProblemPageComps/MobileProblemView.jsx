@@ -134,7 +134,7 @@ const MobileProblemView = ({
             
           </h3>
           <textarea
-            className="bg-gray-800 text-white p-2 rounded resize-none min-h-[100px] hide-scrollbar"
+            className="bg-gray-800 text-white p-2 rounded resize-none min-h-[100px] custom-scrollbar"
             placeholder="Enter input here..."
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}

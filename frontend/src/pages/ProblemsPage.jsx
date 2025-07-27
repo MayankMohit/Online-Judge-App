@@ -50,7 +50,7 @@ const ProblemsPage = () => {
   );
 
   return (
-    <div className="bg-gray-900 text-white px-6 py-25 sm:py-20 min-h-[calc(100vh-8rem)] relative min-w-screen select-none">
+    <div className="bg-gray-900 text-white px-6 py-25 sm:py-20 min-h-[calc(100vh-8rem)] relative min-w-screen select-none ">
       <ProblemControls direction={direction} setDirection={setDirection} />
 
       {/* Problem List */}

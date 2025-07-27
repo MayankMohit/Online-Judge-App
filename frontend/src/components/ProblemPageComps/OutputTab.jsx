@@ -11,7 +11,7 @@ const OutputTab = ({
   onClose,
 }) => {
   const scrollBoxClasses =
-    "bg-gray-800 p-1.5 rounded max-h-40 overflow-auto whitespace-pre-wrap text-gray-100 hide-scrollbar";
+    "bg-gray-800 p-1.5 rounded max-h-40 overflow-auto whitespace-pre-wrap text-gray-100 custom-scrollbar";
 
   const verdictMessage = {
     accepted: "Accepted, all test cases passed!",

@@ -111,8 +111,9 @@ const AppRoutes = () => {
           {/* Admin Protected Routes */}
           <Route path="/admin" element={<ProtectedAdminRoute />}>
             <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="problems" element={<ProblemManagement />} />
+            <Route path="users/:userId" element={<UserManagement />} />
+            <Route path="problems/:problemId" element={<ProblemManagement />} />
+            <Route path="problems/new" element={<ProblemManagement />} />
           </Route>
 
           <Route path="/unauthorized" element={<Unauthorized />} />

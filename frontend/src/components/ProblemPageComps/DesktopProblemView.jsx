@@ -93,7 +93,7 @@ const DesktopProblemView = ({
     >
       {/* LEFT PANEL */}
       <div
-        className="h-full flex flex-col border-r border-gray-800 min-w-[25vw] hide-scrollbar"
+        className="h-full flex flex-col border-r border-gray-800 min-w-[25vw] custom-scrollbar"
         style={{ width: `${leftWidth}%` }}
       >
         <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
@@ -167,7 +167,7 @@ const DesktopProblemView = ({
 
         {isOutputVisible ? (
           <div
-            className="flex-1 overflow-auto hide-scrollbar bg-gray-900"
+            className="flex-1 overflow-auto custom-scrollbar bg-gray-900"
             style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
           >
             <OutputTab
@@ -183,14 +183,14 @@ const DesktopProblemView = ({
           </div>
         ) : (
           <div
-            className="bg-gray-900 p-4 text-sm flex flex-col gap-2 overflow-hidden hide-scrollbar"
+            className="bg-gray-900 p-4 text-sm flex flex-col gap-2 overflow-hidden custom-scrollbar"
             style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
           >
             <h3 className="text-purple-400 font-semibold mb-1">
               Custom Test Case
             </h3>
             <textarea
-              className="bg-gray-800 text-white p-2 rounded resize-none h-full hide-scrollbar"
+              className="bg-gray-800 text-white p-2 rounded resize-none h-full custom-scrollbar"
               placeholder="Enter input here..."
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}

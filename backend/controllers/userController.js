@@ -34,9 +34,9 @@ export const getAllUsers = async (req, res) => {
  
 export const getFilteredUsers = async (req, res) => {
   try {
-    const { role, search } = req.query;
-    const filter = {};
+    const { role, search, page = 1, limit = 10 } = req.query;
 
+    const filter = {};
     if (role) filter.role = role;
 
     if (search) {
@@ -44,11 +44,26 @@ export const getFilteredUsers = async (req, res) => {
       filter.$or = [{ name: { $regex: regex } }, { email: { $regex: regex } }];
     }
 
-    const users = await User.find(filter).select(
-      "name email role totalProblemsSolved totalSubmissions createdAt"
-    );
+    // Sorting by most solved first
+    const sortOption = { totalProblemsSolved: -1 };
 
-    res.status(200).json({ success: true, users });
+    // Pagination
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const users = await User.find(filter)
+      .select("name email role totalProblemsSolved createdAt")
+      .sort(sortOption)
+      .skip(skip)
+      .limit(Number(limit));
+
+    const totalUsers = await User.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      users,
+      totalPages: Math.ceil(totalUsers / limit),
+      currentPage: Number(page),
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch users" });
   }

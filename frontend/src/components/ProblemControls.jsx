@@ -138,7 +138,7 @@ const ProblemControls = ({ direction, setDirection }) => {
               {/* Tag Filter */}
               <div>
                 <label className="block mb-2">Tags</label>
-                <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 hide-scrollbar">
+                <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
                   {tagsLoading ? (
                     <span className="text-gray-400 text-sm">Loading...</span>
                   ) : tagsError ? (

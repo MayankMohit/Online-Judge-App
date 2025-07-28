@@ -51,13 +51,14 @@ export default function AdminProblemList({ adminId }) {
       <div className="flex flex-col gap-2 overflow-y-auto h-[65vh] pr-1 custom-scrollbar">
         {filteredProblems.map((problem) => {
           const visibleTags = problem.tags?.slice(0, 3) || [];
-          const extraTagsCount = problem.tags?.length > 3 ? problem.tags.length - 3 : 0;
+          const extraTagsCount =
+            problem.tags?.length > 3 ? problem.tags.length - 3 : 0;
 
           return (
             <div
               key={problem._id}
               className="px-3 py-2 bg-gray-900 rounded-md shadow-lg flex justify-between items-center hover:bg-gray-900/70 transition cursor-pointer"
-              onClick={() => navigate(`/problems/${problem.problemNumber}`)}
+              onClick={() => navigate(`/problems/edit`)}
             >
               {/* Left Section */}
               <div className="flex flex-col">
@@ -65,14 +66,14 @@ export default function AdminProblemList({ adminId }) {
                   <p className="font-medium text-purple-300 px-2">
                     {problem.problemNumber}.
                   </p>
-                          <p className="font-medium">{problem.title}</p>
-                          <span
+                  <p className="font-medium">{problem.title}</p>
+                  <span
                     className={`px-2 ml-4 py-1 text-xs rounded-md font-semibold ${
                       problem.difficulty === "Easy"
                         ? "bg-green-800 text-green-200"
                         : problem.difficulty === "Medium"
-                        ? "bg-yellow-800 text-yellow-200"
-                        : "bg-red-800 text-red-200"
+                          ? "bg-yellow-800 text-yellow-200"
+                          : "bg-red-800 text-red-200"
                     }`}
                   >
                     {problem.difficulty}
@@ -100,15 +101,19 @@ export default function AdminProblemList({ adminId }) {
                 </div>
               </div>
 
-              
               <div
                 className="p-2 cursor-pointer text-blue-300 hover:text-blue-500"
                 onClick={(e) => {
-                  e.stopPropagation(); 
-                  navigate(`/admin/problems/${problem.problemNumber}`);
+                  e.stopPropagation();
+                  navigate("/admin/problems/edit", {
+                    state: {
+                      mode: "edit",
+                      problemData: problem,
+                    },
+                  });
                 }}
               >
-                <Pencil size={20}  />
+                <Pencil size={20} />
               </div>
             </div>
           );

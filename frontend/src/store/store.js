@@ -13,6 +13,7 @@ import adminUserDashboardReducer from "../features/dashboard/adminUserDashboardS
 import adminToggleRoleReducer from "../features/dashboard/adminToggleRoleSlice"
 import userSubmissionsReducer from "../features/submissions/userSubmissionsSlice"
 import adminProblemSubmissionsReducer from "../features/submissions/allSubmissionsOfProblemSlice"
+import problemMutationReducer from "../features/problems/problemMutationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -30,5 +31,6 @@ export const store = configureStore({
     adminToggleRole: adminToggleRoleReducer,
     userSubmissions: userSubmissionsReducer,
     adminProblemSubmissions: adminProblemSubmissionsReducer,
+    problemMutation: problemMutationReducer,
   },
 })

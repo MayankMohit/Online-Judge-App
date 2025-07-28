@@ -9,7 +9,9 @@ import {
     getLeaderboard,
     getCurrentUser,
     updateUserProfile,
-    deleteUserAccount
+    deleteUserAccount,
+    getUserDashboardForAdmin,
+    toggleUserRole,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -29,5 +31,9 @@ router.get("/leaderboard", verifyToken, getLeaderboard);
 router.put("/profile", verifyToken, updateUserProfile);
 
 router.delete("/delete", verifyToken, deleteUserAccount);
+
+router.get("/dashboard/:userId", verifyToken, isAdmin, getUserDashboardForAdmin);
+
+router.patch("/toggle/:userId", verifyToken, isAdmin, toggleUserRole);
 
 export default router;

@@ -5,24 +5,26 @@ import { useAuthStore } from "../store/authStore";
 import ProtectedRoute from "../components/ProtectedRoute";
 import ProtectedAdminRoute from "../components/ProtectedAdminRoute";
 import Unauthorized from "../components/Unauthorized";
-import Landing from "../pages/Landing";
-import SignUpPage from "../pages/SignUpPage";
-import LoginPage from "../pages/LoginPage";
-import EmailVerificationPage from "../pages/EmailVerificationPage";
-import ForgotPasswordPage from "../pages/ForgotPasswordPage";
-import ResetPasswordPage from "../pages/ResetPasswordPage";
-import DashboardPage from "../pages/DashboardPage";
+import Landing from "../pages/authPages/Landing";
+import SignUpPage from "../pages/authPages/SignUpPage";
+import LoginPage from "../pages/authPages/LoginPage";
+import EmailVerificationPage from "../pages/authPages/EmailVerificationPage";
+import ForgotPasswordPage from "../pages/authPages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/authPages/ResetPasswordPage";
+import DashboardPage from "../pages/mainPages/DashboardPage";
 import MainLayout from "../layouts/MainLayout";
-import ProblemsPage from "../pages/ProblemsPage";
-import ContestsPage from "../pages/ContestsPage";
-import LeaderboardPage from "../pages/LeaderboardPage";
-import ProblemDetailsPage from "../pages/ProblemDetailsPage";
+import ProblemsPage from "../pages/mainPages/ProblemsPage";
+import ContestsPage from "../pages/mainPages/ContestsPage";
+import LeaderboardPage from "../pages/mainPages/LeaderboardPage";
+import ProblemDetailsPage from "../pages/mainPages/ProblemDetailsPage";
 import AllSubmissions from "../pages/AllSubmissions";
 import SubmissionView from "../pages/SubmissionView";
-import UpdateProfilePage from "../pages/UpdateProfilePage";
+import UpdateProfilePage from "../pages/authPages/UpdateProfilePage";
 import AdminDashboard from "../pages/adminPages/AdminDashboard";
 import UserManagement from "../pages/adminPages/UserManagement";
 import ProblemManagement from "../pages/adminPages/ProblemManagement";
+import AllSubmissionsOfUser from "../pages/AllSubmissionsOfUser";
+import AllSubmissionsOfProblem from "../pages/submissionPages/AllSubmissionsOfProblem";
 
 const RedirectAuthenticatedUser = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -114,6 +116,8 @@ const AppRoutes = () => {
             <Route path="users/:userId" element={<UserManagement />} />
             <Route path="problems/:problemId" element={<ProblemManagement />} />
             <Route path="problems/new" element={<ProblemManagement />} />
+            <Route path="users/:userId/submissions" element={<AllSubmissionsOfUser />} />
+            <Route path="problem/:problemId/submissions" element={<AllSubmissionsOfProblem />} />
           </Route>
 
           <Route path="/unauthorized" element={<Unauthorized />} />

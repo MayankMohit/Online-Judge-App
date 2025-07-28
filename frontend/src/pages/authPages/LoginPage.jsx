@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Loader } from "lucide-react";
 import { Link } from "react-router-dom";
-import Input from "../components/Input";
-import { useAuthStore } from "../store/authStore";
+import Input from "../../components/Input";
+import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
@@ -13,7 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const { login, isLoading, error, setError } = useAuthStore();
-  if(error) setError(null);
+  if (error) setError(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -21,7 +21,7 @@ const LoginPage = () => {
       await login(email, password);
       navigate("/problems");
     } catch (error) {
-      toast.error("Something went wrong! Please check your password.")
+      toast.error("Something went wrong! Please check your password.");
       setError(error);
       setTimeout(() => setError(null), 3000);
     }

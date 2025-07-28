@@ -1,19 +1,13 @@
-import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { fetchSubmissions } from "../features/submissions/submissionsSlice";
+import { useParams, useNavigate } from "react-router-dom";
 import SubmissionsPage from "../components/SubmissionsPage";
+import { useUserSubmissionsForAdmin } from "../hooks/adminHooks/useUserSubmissionsForAdmin";
 import { ArrowLeft } from "lucide-react";
 
-export default function AllSubmissions() {
-  const dispatch = useDispatch();
+export default function AllSubmissionsOfUser() {
+  const { userId } = useParams();
   const navigate = useNavigate();
-  const { items, loading, error } = useSelector((state) => state.submissions);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    dispatch(fetchSubmissions());
-  }, [dispatch]);
+  const { submissions, loading, error } = useUserSubmissionsForAdmin(userId);
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -29,7 +23,11 @@ export default function AllSubmissions() {
       </div>
 
       {/* Submissions List */}
-      <SubmissionsPage submissions={items} loading={loading} error={error} />
+      <SubmissionsPage
+        submissions={submissions}
+        loading={loading}
+        error={error}
+      />
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAdminProblemSearch } from "../../hooks/adminHooks/useAdminProblemSearch";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminProblemSearch() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
   const {
     problems,
     loading,
@@ -13,7 +15,6 @@ export default function AdminProblemSearch() {
     hasMore,
   } = useAdminProblemSearch();
 
-  // Debounced search (similar to ProblemControls)
   useEffect(() => {
     const debounce = setTimeout(() => {
       updateSearch(search.trim());
@@ -46,12 +47,11 @@ export default function AdminProblemSearch() {
         )}
         {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
-        {/* Show results only if search is not empty */}
         {search && problems.map((problem) => (
           <div
             key={problem._id}
-            className="p-2 bg-gray-900 rounded mt-1 cursor-pointer hover:bg-purple-700 transition"
-            onClick={() => console.log("Selected problem:", problem)}
+            className="p-2 bg-gray-900 rounded mt-1 cursor-pointer hover:bg-gray-900/50 transition"
+            onClick={() => navigate(`/admin/problem/${problem._id}/submissions`)}
           >
             <p className="text-white text-sm font-medium">
               {problem.problemNumber}. {problem.title}
@@ -67,7 +67,7 @@ export default function AdminProblemSearch() {
           <div className="flex justify-center">
             <button
               onClick={loadMore}
-              className="mt-2 px-3 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-white rounded-md"
+              className="mt-2 px-2 py-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-white rounded-md"
             >
               Load More
             </button>

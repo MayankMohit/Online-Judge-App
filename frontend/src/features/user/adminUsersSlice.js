@@ -41,6 +41,8 @@ const adminUsersSlice = createSlice({
   name: "adminUsers",
   initialState: {
     users: [],
+    filteredUsers: [],
+    visibleCount: 5,
     loading: false,
     error: null,
     currentPage: 1,
@@ -52,6 +54,8 @@ const adminUsersSlice = createSlice({
   reducers: {
     resetAdminUsers(state) {
       state.users = [];
+      state.filteredUsers = [];
+      state.visibleCount = 5;
       state.loading = false;
       state.error = null;
       state.currentPage = 1;
@@ -59,6 +63,10 @@ const adminUsersSlice = createSlice({
       state.totalUsers = 0;
       state.search = "";
       state.role = "";
+    },
+    increaseVisibleCount(state) {
+      state.visibleCount += 5;
+      state.hasMore = state.visibleCount < state.filteredUsers.length;
     },
   },
   extraReducers: (builder) => {
@@ -74,15 +82,21 @@ const adminUsersSlice = createSlice({
         state.role = role;
         state.totalUsers = total;
 
-        if (append) {
-          state.users = [...state.users, ...users];
-        } else {
-          state.users = users;
-          state.currentPage = 1; // Reset page when a new filter/search is applied
-        }
+        const isFilterActive = search || role;
 
-        state.currentPage = page;
-        state.hasMore = page * limit < total; // true if we have more users left
+        if (isFilterActive) {
+          state.filteredUsers = users;
+          state.visibleCount = 5;
+          state.hasMore = users.length > 5;
+        } else {
+          if (append) {
+            state.users = [...state.users, ...users];
+          } else {
+            state.users = users;
+          }
+          state.currentPage = page;
+          state.hasMore = page * limit < total;
+        }
       })
       .addCase(fetchAdminUsers.rejected, (state, action) => {
         state.loading = false;
@@ -91,5 +105,5 @@ const adminUsersSlice = createSlice({
   },
 });
 
-export const { resetAdminUsers } = adminUsersSlice.actions;
+export const { resetAdminUsers, increaseVisibleCount } = adminUsersSlice.actions;
 export default adminUsersSlice.reducer;

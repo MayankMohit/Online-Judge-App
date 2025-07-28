@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import ProblemCard from "../components/ProblemCard";
+import ProblemCard from "../../components/ProblemCard";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchFavoriteProblems } from "../features/favorites/favoritesSlice";
-import ProblemControls from "../components/ProblemControls";
+import { fetchFavoriteProblems } from "../../features/favorites/favoritesSlice";
+import ProblemControls from "../../components/ProblemControls";
 import {
   fetchProblems,
   incrementPage,
-} from "../features/problems/problemsSlice";
+} from "../../features/problems/problemsSlice";
 
 const ProblemsPage = () => {
   const observer = useRef();

@@ -44,10 +44,7 @@ export const getFilteredUsers = async (req, res) => {
       filter.$or = [{ name: { $regex: regex } }, { email: { $regex: regex } }];
     }
 
-    // Sorting by most solved first
     const sortOption = { totalProblemsSolved: -1 };
-
-    // Pagination
     const skip = (Number(page) - 1) * Number(limit);
 
     const users = await User.find(filter)
@@ -61,6 +58,7 @@ export const getFilteredUsers = async (req, res) => {
     res.status(200).json({
       success: true,
       users,
+      total: totalUsers,
       totalPages: Math.ceil(totalUsers / limit),
       currentPage: Number(page),
     });
@@ -195,5 +193,94 @@ export const deleteUserAccount = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to delete account" });
+  }
+};
+
+export const getUserDashboardForAdmin = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId)
+      .populate({
+        path: "submissions",
+        populate: {
+          path: "problem",
+          select: "title difficulty problemNumber",
+        },
+      })
+      .select(
+        "name email role createdAt lastLogin totalProblemsSolved submissions"
+      );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const difficultySets = {
+      Easy: new Set(),
+      Medium: new Set(),
+      Hard: new Set(),
+    };
+
+    const solvedProblemsMap = new Map();
+
+    user.submissions.forEach((submission) => {
+      const problem = submission.problem;
+      if (
+        submission.verdict === "accepted" &&
+        problem &&
+        problem.difficulty
+      ) {
+        difficultySets[problem.difficulty].add(problem._id.toString());
+        solvedProblemsMap.set(problem._id.toString(), problem); 
+      }
+    });
+
+    const difficultyStats = {
+      Easy: difficultySets.Easy.size,
+      Medium: difficultySets.Medium.size,
+      Hard: difficultySets.Hard.size,
+    };
+
+    const recentSubmissions = [...user.submissions]
+      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+      .slice(0, 10);
+
+    const solvedProblemsList = Array.from(solvedProblemsMap.values());
+
+    res.status(200).json({
+      success: true,
+      userData: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin,
+        totalProblemsSolved: user.totalProblemsSolved,
+        difficultyStats,
+      },
+      submissionsList: recentSubmissions,
+      problemsList: solvedProblemsList,
+    });
+  } catch (err) {
+    console.error("Error in getUserDashboardForAdmin:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch user dashboard" });
+  }
+};
+
+export const toggleUserRole = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.role = user.role === "admin" ? "user" : "admin";
+    await user.save();
+
+    res.status(200).json({ role: user.role, message: "Role updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
 };

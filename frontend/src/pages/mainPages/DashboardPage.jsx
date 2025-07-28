@@ -1,24 +1,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../../store/authStore";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchDashboardData } from "../features/dashboard/dashboardSlice";
-import { ArrowBigLeftDashIcon, Edit3Icon, LogOutIcon } from "lucide-react";
+import { fetchDashboardData } from "../../features/dashboard/dashboardSlice";
+import { fetchFavoriteProblems } from "../../features/favorites/favoritesSlice";
+import ProblemCard from "../../components/ProblemCard";
+
+import {
+  ArrowBigLeftDashIcon,
+  Edit3Icon,
+  LogOutIcon,
+  UserRound,
+  Mail,
+  CheckCircle,
+  FileCode,
+} from "lucide-react";
+
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { fetchFavoriteProblems } from "../features/favorites/favoritesSlice";
-import ProblemCard from "../components/ProblemCard";
-import { UserRound, Mail, CheckCircle, FileCode } from "lucide-react";
+import ConfirmSignOutDialog from "../../components/ConfirmSignOutDialog";
 
 const COLORS = ["#4CAF50", "#FFD301", "#E03C32"];
-
-const shortFormatDate = (isoString) => {
-  if (!isoString) return "N/A";
-  const date = new Date(isoString);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = String(date.getFullYear()).slice(-2);
-  return `${day}/${month}/${year}`;
-};
 
 const formatDate = (isoString) => {
   if (!isoString) return "N/A";
@@ -35,10 +36,11 @@ export default function DashboardPage() {
   const dispatch = useDispatch();
   const { logout } = useAuthStore();
 
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+
   const {
     name,
     email,
-    lastLogin,
     totalProblemsSolved,
     submissions,
     difficultyStats,
@@ -63,26 +65,23 @@ export default function DashboardPage() {
     navigate("/update-profile");
   };
 
-  const handleLogout = () => {
+  const handleConfirmSignOut = () => {
     logout();
     navigate("/login");
   };
 
   const [favPage, setFavPage] = useState(0);
   const problemsPerPage = 3;
-
   const startIdx = favPage * problemsPerPage;
   const endIdx = startIdx + problemsPerPage;
-
   const currentFavorites = favoriteProblems.slice(startIdx, endIdx);
-
   const totalPages = Math.ceil(favoriteProblems.length / problemsPerPage);
 
   return (
     <div className="w-full min-h-screen bg-purple-900 text-white relative select-none">
-      {/* Banner */}
+      {/* Header */}
       <div className="h-[30vh] w-full bg-gray-950 px-6 py-4 shadow-md hi sm:block hidden">
-        <div className="flex items-center justify-start ">
+        <div className="flex items-center justify-start">
           <button
             onClick={() => navigate("/problems")}
             className="bg-purple-700 hover:bg-purple-800 text-black font-semibold py-2 px-2 pr-1 rounded-sm transition text-sm"
@@ -95,7 +94,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Dashboard */}
+      {/* Dashboard Main */}
       <div className="relative z-10 sm:-mt-[20vh] sm:max-w-[80vw] mx-auto bg-gray-800 sm:rounded-2xl sm:p-6 p-2 shadow-2xl">
         {error && (
           <p className="text-red-400 mb-4 text-center">Error: {error}</p>
@@ -115,27 +114,20 @@ export default function DashboardPage() {
               </h2>
 
               <div className="flex flex-col gap-4">
-                {/* Name */}
                 <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
                   <UserRound className="text-purple-400" size={20} />
                   <span className="text-white text-sm">{name}</span>
                 </div>
-
-                {/* Email */}
                 <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
                   <Mail className="text-purple-400" size={20} />
                   <span className="text-white text-sm">{email}</span>
                 </div>
-
-                {/* Problems Solved */}
                 <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
                   <CheckCircle className="text-purple-400" size={20} />
                   <span className="text-white text-sm">
                     Problems Solved: {totalProblemsSolved}
                   </span>
                 </div>
-
-                {/* Total Submissions */}
                 <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
                   <FileCode className="text-purple-400" size={20} />
                   <span className="text-white text-sm">
@@ -144,14 +136,13 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            {/* Mini Problem Stats */}
+
+            {/* Pie Chart */}
             <div className="sm:mt-6 w-full sm:ml-10 ml-20 mt-5 flex flex-col items-center justify-center sm:mr-10 mr-20">
               <h2 className="text-xl font-semibold mb-4 text-purple-300 sm:block hidden">
                 Problem Stats
               </h2>
-              <div className="flex items-center gap-5 pointer-events-none ">
-                {/* Pie Chart */}
-
+              <div className="flex items-center gap-5 pointer-events-none">
                 <div className="w-32 h-32">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -172,15 +163,14 @@ export default function DashboardPage() {
                         outerRadius={50}
                         stroke="none"
                       >
-                        <Cell fill={COLORS[0]} /> {/* Easy */}
-                        <Cell fill={COLORS[1]} /> {/* Medium */}
-                        <Cell fill={COLORS[2]} /> {/* Hard */}
+                        <Cell fill={COLORS[0]} />
+                        <Cell fill={COLORS[1]} />
+                        <Cell fill={COLORS[2]} />
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
 
-                {/* Labels */}
                 <div className="flex flex-col gap-2 text-sm font-semibold">
                   <span className="bg-green-700 text-green-200 px-3 py-1 rounded-full w-fit">
                     Easy: {difficultyStats?.Easy || 0}
@@ -195,18 +185,17 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Favorite Problems Section */}
+            {/* Favorites */}
             <div className="bg-gray-900 rounded-xl px-2 w-90 md:w-[140%] mt-5 sm:mt-0">
               <h2 className="text-xl font-semibold mb-4 text-purple-300">
                 Favourite Problems
               </h2>
-
               {favoriteProblems.length === 0 ? (
                 <p className="text-sm text-gray-400">No favorites added yet.</p>
               ) : (
                 <>
                   <div className="space-y-3 mb-4">
-                    {currentFavorites.map((problem, idx) => (
+                    {currentFavorites.map((problem) => (
                       <ProblemCard
                         key={problem._id}
                         problem={problem}
@@ -244,7 +233,9 @@ export default function DashboardPage() {
 
                     <button
                       onClick={() =>
-                        setFavPage((prev) => Math.min(prev + 1, totalPages - 1))
+                        setFavPage((prev) =>
+                          Math.min(prev + 1, totalPages - 1)
+                        )
                       }
                       disabled={endIdx >= favoriteProblems.length}
                       className={`px-2 py-1 rounded-md ${
@@ -260,7 +251,8 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-          {/* Submissions */}
+
+          {/* Submissions Table */}
           <div className="lg:col-span-3 bg-gray-900 rounded-xl p-6 shadow-md">
             <h2 className="text-xl font-semibold mb-4 text-purple-300">
               🧾 Recent Submissions
@@ -275,9 +267,9 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {recentSubmissions.map((sub, idx) => (
+                {recentSubmissions.map((sub) => (
                   <tr
-                    key={idx}
+                    key={sub._id}
                     onClick={() => navigate(`/submissions/${sub._id}`)}
                     className="border-b border-gray-700 hover:bg-gray-700 transition cursor-pointer"
                   >
@@ -299,25 +291,31 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
-            <div className="flex items-center justify-between ">
+
+            <div className="flex items-center justify-between">
               <button
                 className="text-red-400 cursor-pointer"
-                onClick={handleLogout}
+                onClick={() => setShowSignOutDialog(true)}
               >
-                SignOut <LogOutIcon className="inline ml-1" size={16} />
+                Sign Out <LogOutIcon className="inline ml-1" size={16} />
               </button>
-              <div className="relative w-fit">
-                <button
-                  onClick={() => navigate("/submissions")}
-                  className="text-purple-400  text-sm cursor-pointer"
-                >
-                  View all submissions →
-                </button>
-              </div>
+              <button
+                onClick={() => navigate("/submissions")}
+                className="text-purple-400 text-sm cursor-pointer"
+              >
+                View all submissions →
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Sign-out confirmation modal */}
+      <ConfirmSignOutDialog
+        open={showSignOutDialog}
+        onClose={() => setShowSignOutDialog(false)}
+        onConfirm={handleConfirmSignOut}
+      />
     </div>
   );
 }

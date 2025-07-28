@@ -9,6 +9,10 @@ import problemSubmissionsReducer from "../features/submissions/problemSubmission
 import codePersistenceReducer from "../features/code/codePersistenceSlice"
 import adminProblemsReducer from "../features/problems/adminProblemsSlice"
 import adminUsersReducer from "../features/user/adminUsersSlice"
+import adminUserDashboardReducer from "../features/dashboard/adminUserDashboardSlice"
+import adminToggleRoleReducer from "../features/dashboard/adminToggleRoleSlice"
+import userSubmissionsReducer from "../features/submissions/userSubmissionsSlice"
+import adminProblemSubmissionsReducer from "../features/submissions/allSubmissionsOfProblemSlice"
 
 export const store = configureStore({
   reducer: {
@@ -22,5 +26,9 @@ export const store = configureStore({
     codePersistence: codePersistenceReducer,
     adminProblems: adminProblemsReducer,
     adminUsers: adminUsersReducer,
+    adminUserDashboard: adminUserDashboardReducer,
+    adminToggleRole: adminToggleRoleReducer,
+    userSubmissions: userSubmissionsReducer,
+    adminProblemSubmissions: adminProblemSubmissionsReducer,
   },
 })

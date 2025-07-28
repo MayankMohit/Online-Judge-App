@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchLeaderboard } from "../features/leaderboard/leaderboardSlice";
+import { fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
 import { Crown } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
@@ -51,10 +51,10 @@ const LeaderboardPage = () => {
                   globalRank === 1
                     ? "bg-yellow-700"
                     : globalRank === 2
-                    ? "bg-gray-600"
-                    : globalRank === 3
-                    ? "bg-orange-900/60"
-                    : "hover:bg-gray-700";
+                      ? "bg-gray-600"
+                      : globalRank === 3
+                        ? "bg-orange-900/60"
+                        : "hover:bg-gray-700";
 
                 return (
                   <tr
@@ -93,9 +93,7 @@ const LeaderboardPage = () => {
             </span>
             <button
               onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(prev + 1, totalPages - 1)
-                )
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
               }
               disabled={endIdx >= users.length}
               className={`px-3 py-1 rounded ${

@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, Lock, Loader } from "lucide-react";
-import Input from "../components/Input";
-import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
-import { useAuthStore } from "../store/authStore";
+import Input from "../../components/Input";
+import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
+import { useAuthStore } from "../../store/authStore";
 import { toast } from "react-hot-toast";
 
 const UpdateProfilePage = () => {
@@ -53,7 +53,7 @@ const UpdateProfilePage = () => {
         navigate("/dashboard");
       }, 1500);
     } catch (err) {
-      toast.error(err.message?.data || err.message)
+      toast.error(err.message?.data || err.message);
     }
   };
 

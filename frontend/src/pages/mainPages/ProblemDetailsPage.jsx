@@ -6,25 +6,25 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   fetchProblemByNumber,
   clearCurrentProblem,
-} from "../features/problems/problemsSlice";
+} from "../../features/problems/problemsSlice";
 import {
   fetchSubmissionsByProblem,
   clearProblemSubmissions,
-} from "../features/submissions/problemSubmissionsSlice";
+} from "../../features/submissions/problemSubmissionsSlice";
 import {
   runCode,
   submitCode,
   clearCodeState,
-} from "../features/code/codeSlice";
+} from "../../features/code/codeSlice";
 import {
   fetchSavedCode,
   saveCodeToDB,
   updateCodeLocally,
-} from "../features/code/codePersistenceSlice";
+} from "../../features/code/codePersistenceSlice";
 
-import { languageBoilerplates } from "../components/ProblemPageComps/LanguageBoilerplates";
-import MobileProblemView from "../components/ProblemPageComps/MobileProblemView";
-import DesktopProblemView from "../components/ProblemPageComps/DesktopProblemView";
+import { languageBoilerplates } from "../../components/ProblemPageComps/LanguageBoilerplates";
+import MobileProblemView from "../../components/ProblemPageComps/MobileProblemView";
+import DesktopProblemView from "../../components/ProblemPageComps/DesktopProblemView";
 
 const ProblemDetailsPage = () => {
   // Layout state

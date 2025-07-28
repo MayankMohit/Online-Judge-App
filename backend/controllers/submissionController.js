@@ -164,10 +164,10 @@ export const getSubmissionById = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Submission not found" });
     }
-
+    const user = await User.findById(req.userId);
     if (
       submission.user._id.toString() !== req.userId &&
-      req.user.role !== "admin"
+      user.role !== "admin"
     ) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
@@ -262,5 +262,19 @@ export const getUserSubmissionsForProblem = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch submissions." });
+  }
+};
+
+export const getUserSubmissionsForAdmin = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const submissions = await Submission.find({ user: userId })
+      .populate("problem", "title") // populate problem title
+      .sort({ submittedAt: -1 });
+
+    res.json(submissions);
+  } catch (err) {
+    console.error("Failed to fetch user submissions:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };

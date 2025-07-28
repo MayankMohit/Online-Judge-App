@@ -77,3 +77,19 @@ body{
   background-color: #4b5563;
   border-radius: 20px;
 }
+
+
+@keyframes grow {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-grow {
+  animation: grow 0.2s ease-out;
+}

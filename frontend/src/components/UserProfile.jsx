@@ -102,34 +102,49 @@ export default function UserProfile({
                 <div className="w-32 h-32">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={[
-                          {
-                            name: "Easy",
-                            value: userData?.difficultyStats?.Easy || 0,
-                          },
-                          {
-                            name: "Medium",
-                            value: userData?.difficultyStats?.Medium || 0,
-                          },
-                          {
-                            name: "Hard",
-                            value: userData?.difficultyStats?.Hard || 0,
-                          },
-                        ]}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={30}
-                        outerRadius={50}
-                        stroke="none"
-                      >
-                        <Cell fill={COLORS[0]} />
-                        <Cell fill={COLORS[1]} />
-                        <Cell fill={COLORS[2]} />
-                      </Pie>
-                    </PieChart>
+  <Pie
+    data={
+      (userData?.difficultyStats?.Easy || 0) +
+        (userData?.difficultyStats?.Medium || 0) +
+        (userData?.difficultyStats?.Hard || 0) > 0
+        ? [
+            {
+              name: "Easy",
+              value: userData?.difficultyStats?.Easy || 0,
+            },
+            {
+              name: "Medium",
+              value: userData?.difficultyStats?.Medium || 0,
+            },
+            {
+              name: "Hard",
+              value: userData?.difficultyStats?.Hard || 0,
+            },
+          ]
+        : [{ name: "None", value: 1 }]
+    }
+    dataKey="value"
+    nameKey="name"
+    cx="50%"
+    cy="50%"
+    innerRadius={30}
+    outerRadius={50}
+    stroke="none"
+  >
+    {(userData?.difficultyStats?.Easy ||
+      userData?.difficultyStats?.Medium ||
+      userData?.difficultyStats?.Hard) > 0 ? (
+      <>
+        <Cell fill={COLORS[0]} />
+        <Cell fill={COLORS[1]} />
+        <Cell fill={COLORS[2]} />
+      </>
+    ) : (
+      <Cell fill="#888888" />
+    )}
+  </Pie>
+</PieChart>
+
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-col gap-2 text-sm font-semibold">

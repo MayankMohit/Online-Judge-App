@@ -3,7 +3,6 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-// Fetch all problems created by a specific admin
 export const fetchProblemsByAdmin = createAsyncThunk(
   "adminProblems/fetchByAdmin",
   async (adminId, { rejectWithValue }) => {
@@ -21,7 +20,6 @@ export const fetchProblemsByAdmin = createAsyncThunk(
   }
 );
 
-// Create a new problem
 export const createProblem = createAsyncThunk(
   "adminProblems/createProblem",
   async (problemData, { rejectWithValue }) => {

@@ -55,12 +55,10 @@ export const createProblem = async (req, res) => {
   try {
     const exists = await Problem.findOne({ title });
     if (exists) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Problem with this title already exists",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Problem with this title already exists",
+      });
     }
 
     const problemNumber = await getNextProblemNumber();
@@ -83,9 +81,11 @@ export const createProblem = async (req, res) => {
     await problem.save();
     res.status(201).json({ success: true, problem });
   } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to create problem" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create problem",
+      error: err.message,
+    });
   }
 };
 
@@ -189,7 +189,10 @@ export const searchProblems = async (req, res) => {
 
     // ✅ Use $in for tags
     if (tag) {
-      const tagArray = tag.split(",").map((t) => t.trim()).filter(Boolean);
+      const tagArray = tag
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
       if (tagArray.length > 0) filter.tags = { $in: tagArray };
     }
 
@@ -247,5 +250,22 @@ export const getProblemsByAdmin = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch problems by admin" });
+  }
+};
+
+export const getProblemByAdmin = async (req, res) => {
+  try {
+    const { problemNumber } = req.params;
+    const problem = await Problem.findOne({ problemNumber });
+    if (!problem) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Problem not found" });
+    }
+    res.status(200).json({ success: true, problem });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch problem" });
   }
 };

@@ -114,8 +114,8 @@ const AppRoutes = () => {
           <Route path="/admin" element={<ProtectedAdminRoute />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users/:userId" element={<UserManagement />} />
-            <Route path="problems/edit" element={<ProblemManagement />} />
-            <Route path="problems/new" element={<ProblemManagement />} />
+            <Route path="problem/new" element={<ProblemManagement />} />
+            <Route path="problem/edit/:problemNumber" element={<ProblemManagement />} />
             <Route path="users/:userId/submissions" element={<AllSubmissionsOfUser />} />
             <Route path="problem/:problemId/submissions" element={<AllSubmissionsOfProblem />} />
           </Route>

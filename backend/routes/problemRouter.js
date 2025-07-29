@@ -11,7 +11,8 @@ import {
   removeFavorite,
   searchProblems,
   getUniqueTags,
-  getProblemsByAdmin
+  getProblemsByAdmin,
+  getProblemByAdmin
 } from "../controllers/problemController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
@@ -36,5 +37,7 @@ router.get("/search", searchProblems);
 router.get("/tags", getUniqueTags);
 
 router.get("/admin/:adminId", verifyToken, isAdmin, getProblemsByAdmin);
+
+router.get("/:problemNumber", verifyToken, isAdmin, getProblemByAdmin);
 
 export default router;

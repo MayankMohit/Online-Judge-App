@@ -4,6 +4,7 @@ import {
   UserRound,
   Mail,
   FileCode,
+  CheckCircle,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
@@ -57,7 +58,7 @@ export default function UserProfile({
           {/* User Info + Stats + Role */}
           <div className="bg-gray-900 rounded-xl p-6 shadow-md flex sm:flex-row flex-col items-start justify-between">
             {/* User Details */}
-            <div className="sm:w-[60%] w-full min-w-[350px]">
+            <div className="min-w-[330px]">
               <h2 className="text-xl font-semibold mb-6 text-purple-300 flex items-center gap-3">
                 👤 User Details
                 {onEdit && isOwnProfile && (
@@ -79,7 +80,7 @@ export default function UserProfile({
                   <span className="text-white text-sm">{userData?.email}</span>
                 </div>
                 <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
-                  <FileCode className="text-purple-400" size={20} />
+                  <CheckCircle className="text-purple-400" size={20} />
                   <span className="text-white text-sm">
                     Problems Solved: {userData?.totalProblemsSolved || 0}
                   </span>
@@ -90,11 +91,11 @@ export default function UserProfile({
                     Submissions: {submissionsList.length}
                   </span>
                 </div>
-              </div>  
+              </div>
             </div>
 
             {/* Mini Problem Stats */}
-            <div className="sm:mt-6 w-full sm:ml-10 ml-20 mt-5 flex flex-col items-center justify-center sm:mr-10 mr-20">
+            <div className="sm:mt-6 w-full sm:ml-10 mt-5 flex flex-col items-center justify-center sm:mr-10 mr-20">
               <h2 className="text-xl font-semibold mb-4 text-purple-300 sm:block hidden">
                 Problem Stats
               </h2>
@@ -102,49 +103,49 @@ export default function UserProfile({
                 <div className="w-32 h-32">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-  <Pie
-    data={
-      (userData?.difficultyStats?.Easy || 0) +
-        (userData?.difficultyStats?.Medium || 0) +
-        (userData?.difficultyStats?.Hard || 0) > 0
-        ? [
-            {
-              name: "Easy",
-              value: userData?.difficultyStats?.Easy || 0,
-            },
-            {
-              name: "Medium",
-              value: userData?.difficultyStats?.Medium || 0,
-            },
-            {
-              name: "Hard",
-              value: userData?.difficultyStats?.Hard || 0,
-            },
-          ]
-        : [{ name: "None", value: 1 }]
-    }
-    dataKey="value"
-    nameKey="name"
-    cx="50%"
-    cy="50%"
-    innerRadius={30}
-    outerRadius={50}
-    stroke="none"
-  >
-    {(userData?.difficultyStats?.Easy ||
-      userData?.difficultyStats?.Medium ||
-      userData?.difficultyStats?.Hard) > 0 ? (
-      <>
-        <Cell fill={COLORS[0]} />
-        <Cell fill={COLORS[1]} />
-        <Cell fill={COLORS[2]} />
-      </>
-    ) : (
-      <Cell fill="#888888" />
-    )}
-  </Pie>
-</PieChart>
-
+                      <Pie
+                        data={
+                          (userData?.difficultyStats?.Easy || 0) +
+                            (userData?.difficultyStats?.Medium || 0) +
+                            (userData?.difficultyStats?.Hard || 0) >
+                          0
+                            ? [
+                                {
+                                  name: "Easy",
+                                  value: userData?.difficultyStats?.Easy || 0,
+                                },
+                                {
+                                  name: "Medium",
+                                  value: userData?.difficultyStats?.Medium || 0,
+                                },
+                                {
+                                  name: "Hard",
+                                  value: userData?.difficultyStats?.Hard || 0,
+                                },
+                              ]
+                            : [{ name: "None", value: 1 }]
+                        }
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={50}
+                        stroke="none"
+                      >
+                        {(userData?.difficultyStats?.Easy ||
+                          userData?.difficultyStats?.Medium ||
+                          userData?.difficultyStats?.Hard) > 0 ? (
+                          <>
+                            <Cell fill={COLORS[0]} />
+                            <Cell fill={COLORS[1]} />
+                            <Cell fill={COLORS[2]} />
+                          </>
+                        ) : (
+                          <Cell fill="#888888" />
+                        )}
+                      </Pie>
+                    </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-col gap-2 text-sm font-semibold">
@@ -160,7 +161,7 @@ export default function UserProfile({
                 </div>
               </div>
             </div>
-            <div className="bg-gray-900 rounded-xl px-4 py-5 w-90 md:w-[140%] mt-5 sm:mt-0 text-center">
+            <div className="bg-gray-900 sm:py-5 w-full md:w-[140%] mt-5 sm:mt-0 text-center">
               <h2 className="text-xl font-semibold mb-4 text-purple-300">
                 Role: {userData?.role === "admin" ? "Admin" : "User"}
               </h2>

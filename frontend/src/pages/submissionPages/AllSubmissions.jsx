@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchSubmissions } from "../features/submissions/submissionsSlice";
-import SubmissionsPage from "../components/SubmissionsPage";
+import { fetchSubmissions } from "../../features/submissions/submissionsSlice";
+import SubmissionsPage from "../../components/SubmissionsPage";
 import { ArrowLeft } from "lucide-react";
 
 export default function AllSubmissions() {

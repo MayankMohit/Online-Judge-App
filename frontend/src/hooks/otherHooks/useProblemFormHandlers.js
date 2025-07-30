@@ -79,7 +79,7 @@ export const useProblemFormHandlers = ({
 
     const testCases = problem?.testCases || [];
     if (testCases.length < 5) {
-      errors.testCases = "Minimum 5 test cases required";
+      errors.testCases = "Minimum 5 Test Cases Required";
     }
 
     const inputSet = new Set();
@@ -92,20 +92,21 @@ export const useProblemFormHandlers = ({
 
       if (!output) {
         errors[`testCases_${i}_output`] = "Output required";
+        errors.testCases = errors.testCases || "Output are Required!";
       }
 
       const ioKey = `${input}::${output}`;
       const inputKey = input;
 
       if (ioPairSet.has(ioKey)) {
-        errors.testCases = "Duplicate test cases found (same input & output)";
+        errors.testCases = "Duplicate Test Cases Found!";
       } else {
         ioPairSet.add(ioKey);
       }
 
       if (inputSet.has(inputKey)) {
-        errors[`testCases_${i}_input`] = "Duplicate input not allowed";
-        errors.testCases = "Test cases must have unique inputs";
+        errors[`testCases_${i}_input`] = "Duplicate Input not allowed!";
+        errors.testCases = "Unique Inputs Required!";
       } else {
         inputSet.add(inputKey);
       }

@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import ProblemHeader from "../components/ProblemPageComps/ProblemHeader";
-import { fetchSubmissionById } from "../features/submissions/submissionsSlice";
+import ProblemHeader from "../../components/ProblemPageComps/ProblemHeader";
+import { fetchSubmissionById } from "../../features/submissions/submissionsSlice";
 import Editor from "@monaco-editor/react";
-import LoadingScreen from "../components/LoadingScreen";
+import LoadingScreen from "../../components/LoadingScreen";
 import { ArrowLeft } from "lucide-react";
 
 const languageMap = {
@@ -82,8 +82,8 @@ const SubmissionViewPage = () => {
                 language === "py"
                   ? "python"
                   : language === "js"
-                  ? "javascript"
-                  : language
+                    ? "javascript"
+                    : language
               }
               value={code}
               theme="vs-dark"
@@ -105,9 +105,7 @@ const SubmissionViewPage = () => {
               <strong>Verdict:</strong>{" "}
               <span
                 className={`font-bold ${
-                  verdict === "accepted"
-                    ? "text-green-400"
-                    : "text-red-400"
+                  verdict === "accepted" ? "text-green-400" : "text-red-400"
                 }`}
               >
                 {verdict}

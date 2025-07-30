@@ -26,7 +26,7 @@ export default function ProblemManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-
+  
   const defaultProblem = {
     title: "",
     statement: "",
@@ -37,7 +37,9 @@ export default function ProblemManagement() {
     constraints: "",
     sampleInput: "",
     sampleOutput: "",
-    testCases: [{ input: "", expectedOutput: "", isHidden: false, id: uuidv4() }],
+    testCases: [
+      { input: "", expectedOutput: "", isHidden: false, id: uuidv4() },
+    ],
   };
 
   const [problem, setProblem] = useState(defaultProblem);
@@ -45,7 +47,7 @@ export default function ProblemManagement() {
 
   useEffect(() => {
     if (isEditing && fetchedProblem) {
-      const testCasesWithIds = (fetchedProblem.testCases || []).map(tc => ({
+      const testCasesWithIds = (fetchedProblem.testCases || []).map((tc) => ({
         ...tc,
         id: tc.id || uuidv4(),
       }));
@@ -105,26 +107,28 @@ export default function ProblemManagement() {
     }
   }, [showAddDialog, showEditDialog, showDeleteDialog, isEditing, navigate]);
 
+  
+
   if (isEditing && loading) {
     return <p className="text-center text-gray-400">Loading problem...</p>;
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-900 text-white p-6 custom-scrollbar overflow-auto">
-      <div className="w-[70vw] mx-auto">
+    <div className="w-full min-h-screen bg-gray-900 text-white sm:p-6 p-1 custom-scrollbar overflow-auto">
+      <div className="sm:w-[70vw] w-full mx-auto sm:mt-0 mt-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 fixed top-5 left-5 z-50 rounded-md bg-gray-800 px-2 py-1 text-white hover:text-blue-400 transition"
+          className="flex items-center gap-2 fixed top-8 sm:top-5 left-5 z-50 rounded-md bg-gray-800 px-2 py-1 text-white hover:text-blue-400 transition"
         >
           <ArrowLeft size={20} />
-          <span>Back</span>
+          <span className="sm:block hidden">Back</span>
         </button>
 
         <h1 className="text-3xl font-bold text-purple-400 text-center mb-6">
           {isEditing ? "Edit Problem" : "Add New Problem"}
         </h1>
 
-        <div className="bg-gray-800 rounded-xl p-6 shadow-lg space-y-4">
+        <div className="bg-gray-800 rounded-xl sm:p-6 p-3 shadow-lg sm:space-y-4 space-y-2">
           <TitleStatementFields
             problem={problem}
             handleChange={handleChange}

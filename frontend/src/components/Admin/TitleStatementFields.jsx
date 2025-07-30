@@ -3,7 +3,7 @@ export default function TitleStatementFields({ problem, handleChange, formErrors
     <>
       {/* Title */}
       <div className="flex items-center gap-4">
-        <label className="w-32 text-sm">
+        <label className="sm:w-32 w-21 text-sm">
           Title <span className="text-red-500">*</span>
         </label>
         <input
@@ -17,12 +17,12 @@ export default function TitleStatementFields({ problem, handleChange, formErrors
       </div>
 
       {/* Statement */}
-      <div className="flex gap-4">
-        <label className="w-32 text-sm">
+      <div className="flex sm:gap-4">
+        <label className="sm:w-32 w-25 text-sm">
           Statement <span className="text-red-500">*</span>
         </label>
         <textarea
-          className={`flex-1 bg-gray-700 rounded-lg p-2 h-[100px] resize-none custom-scrollbar ${
+          className={`flex-1 bg-gray-700 rounded-lg p-2 sm:h-[100px] resize-none custom-scrollbar ${
             formErrors.statement ? "border border-red-500" : ""
           }`}
           value={problem.statement}

@@ -19,7 +19,7 @@ export default function AdminDashboard() {
           className="flex items-center gap-2 text-white hover:text-blue-400 transition"
         >
           <ArrowLeft size={20} />
-          <span>Back</span>
+          <span className="sm:block hidden">Back</span>
         </button>
       </div>
 
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
       </h1>
 
       {/* Layout */}
-      <div className="flex flex-col sm:flex-row gap-2 w-full max-w-[1400px] mx-auto">
+      <div className="flex flex-col-reverse sm:flex-row gap-2 w-full max-w-[1400px] mx-auto">
         <div className="w-full sm:w-[40%] flex flex-col gap-2">
           <AdminUserList />
           <AdminProblemSearch />

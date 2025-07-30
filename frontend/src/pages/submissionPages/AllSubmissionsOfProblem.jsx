@@ -11,13 +11,13 @@ export default function AllSubmissionsOfProblem() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="fixed top-5 left-10 z-50 rounded-md bg-gray-700 px-2 py-1">
+      <div className="fixed top-8 left-10 sm:top-5 z-50 rounded-md bg-gray-700 px-2 py-1">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-white hover:text-blue-400 transition"
         >
           <ArrowLeft size={20} />
-          <span>Back</span>
+          <span className="sm:block hidden">Back</span>
         </button>
       </div>
 

@@ -17,13 +17,13 @@ import ProblemsPage from "../pages/mainPages/ProblemsPage";
 import ContestsPage from "../pages/mainPages/ContestsPage";
 import LeaderboardPage from "../pages/mainPages/LeaderboardPage";
 import ProblemDetailsPage from "../pages/mainPages/ProblemDetailsPage";
-import AllSubmissions from "../pages/AllSubmissions";
-import SubmissionView from "../pages/SubmissionView";
+import AllSubmissions from "../pages/submissionPages/AllSubmissions";
+import SubmissionView from "../pages/submissionPages/SubmissionView";
 import UpdateProfilePage from "../pages/authPages/UpdateProfilePage";
 import AdminDashboard from "../pages/adminPages/AdminDashboard";
 import UserManagement from "../pages/adminPages/UserManagement";
 import ProblemManagement from "../pages/adminPages/ProblemManagement";
-import AllSubmissionsOfUser from "../pages/AllSubmissionsOfUser";
+import AllSubmissionsOfUser from "../pages/submissionPages/AllSubmissionsOfUser";
 import AllSubmissionsOfProblem from "../pages/submissionPages/AllSubmissionsOfProblem";
 
 const RedirectAuthenticatedUser = ({ children }) => {
@@ -115,9 +115,18 @@ const AppRoutes = () => {
             <Route index element={<AdminDashboard />} />
             <Route path="users/:userId" element={<UserManagement />} />
             <Route path="problem/new" element={<ProblemManagement />} />
-            <Route path="problem/edit/:problemNumber" element={<ProblemManagement />} />
-            <Route path="users/:userId/submissions" element={<AllSubmissionsOfUser />} />
-            <Route path="problem/:problemId/submissions" element={<AllSubmissionsOfProblem />} />
+            <Route
+              path="problem/edit/:problemNumber"
+              element={<ProblemManagement />}
+            />
+            <Route
+              path="users/:userId/submissions"
+              element={<AllSubmissionsOfUser />}
+            />
+            <Route
+              path="problem/:problemId/submissions"
+              element={<AllSubmissionsOfProblem />}
+            />
           </Route>
 
           <Route path="/unauthorized" element={<Unauthorized />} />

@@ -92,20 +92,15 @@ export default function TestCaseCard({
         </div>
       ) : (
         <div className="flex flex-col justify-between items-center h-full py-2 px-1">
-          <div className="flex flex-col items-center gap-1">
-            <button
-              onClick={() => toggleExpand(index)}
-              type="button"
-              className="text-white"
-              title="Expand"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <span className="text-white text-sm font-semibold">
-              {index + 1}.
-            </span>
-          </div>
-
+          <button
+            onClick={() => toggleExpand(index)}
+            type="button"
+            className="flex flex-col items-center gap-3 h-55 text-white focus:outline-none"
+            title="Expand"
+          >
+            <ChevronRight size={18} />
+            <span className="text-sm font-semibold">{index + 1}.</span>
+          </button>
           <button
             onClick={() => onRemove(index)}
             type="button"

@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "backend/index.js",
-  "scripts": {
+  "scripts": { 
     "dev": "nodemon backend/index.ts",
-    "build:emails": "tsc -p tsconfig.email.json",
     "seed": "node backend/scripts/benchmarkAndSeed.js"
   },
   "repository": {

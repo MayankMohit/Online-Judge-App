@@ -2,10 +2,10 @@
   "name": "online-judge-app",
   "version": "1.0.0",
   "description": "",
-  "main": "backend/index.js",
+  "main": "index.js",
   "scripts": { 
-    "dev": "nodemon backend/index.ts",
-    "seed": "node backend/scripts/benchmarkAndSeed.js"
+    "dev": "nodemon index.ts",
+    "seed": "node scripts/benchmarkAndSeed.js"
   },
   "repository": {
     "type": "git",

@@ -38,12 +38,12 @@ const startServer = async () => {
     app.use(express.json());
 
     // Routes
-    app.use("/api/auth", authRoute);
-    app.use("/api/problems", problemRoute);
-    app.use("/api/users", userRoute);
-    app.use("/api/submissions", submissionRoute);   
-    app.use("/api/run", runRoute);
-    app.use("/api/code", codeRoute);
+    app.use("/auth", authRoute);
+    app.use("/problems", problemRoute);
+    app.use("/users", userRoute);
+    app.use("/submissions", submissionRoute);   
+    app.use("/run", runRoute);
+    app.use("/code", codeRoute);
 
     // Start listening
     app.listen(PORT, '0.0.0.0', () => {

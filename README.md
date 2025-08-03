@@ -101,7 +101,7 @@ sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.com
 ```
 
-## Development Setup (Optional)
+## Development Setup
 
 ### Backend
 

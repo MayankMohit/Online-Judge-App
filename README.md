@@ -1,61 +1,77 @@
-# Code Junkie – Full-Stack Online Judge
+# Code Junkie – Full-Stack Online Judge😍🧑‍💻
 
 Code Junkie is a full-stack MERN-based online judge platform with real-time code execution, admin dashboard, and user management. It supports Dockerized microservices and HTTPS deployment with custom domain support.
 
 ## Features
 
-- User authentication with email verification (Resend)
-- Run and submit code in multiple languages via compiler microservice
-- Admin dashboard for managing problems, users, and submissions
-- Add/edit/delete problems with test cases and tags
-- User performance charts and submission history
-- Role-based access control (admin/user)
-- Code persistence: Auto-saves user code per problem even after refresh
-- Rate limiting on compile and auth endpoints to prevent abuse
-- Fully responsive layout for all screen sizes (mobile, tablet, desktop)
-- Docker-based microservices with production-ready deployment
-- Live deployment with HTTPS via NGINX and Let's Encrypt
+📩 User Authentication with email verification (via Resend)
+
+💻 Run & Submit Code in multiple languages via compiler microservice
+
+🛠️ Admin Dashboard for managing problems, users, and submissions
+
+📝 Add/Edit/Delete Problems with test cases and tags
+
+📊 User Performance Charts and submission history
+
+🛡️ Role-Based Access Control (admin/user)
+
+💾 Code Persistence: Auto-saves user code per problem even after refresh
+
+🚫 Rate Limiting on compile and auth endpoints to prevent abuse
+
+📱 Fully Responsive Layout for all screen sizes (mobile, tablet, desktop)
+
+🐳 Docker-Based Microservices with production-ready deployment
+
+🔒 Live Deployment with HTTPS via NGINX & Let's Encrypt
 
 ## Tech Stack
 
-- Frontend: React + Vite + TailwindCSS
-- Backend: Node.js + Express
-- Compiler: Node.js microservice
-- Database: MongoDB Atlas
-- Auth: JWT + Resend (Email verification)
-- DevOps: Docker, Docker Compose, NGINX, Certbot, AWS EC2
+* 💻 **Frontend**: React + Vite + TailwindCSS
+* 🛠️ **Backend**: Node.js + Express
+* ⚙️ **Compiler**: Node.js microservice
+* 🗄️ **Database**: MongoDB Atlas
+* 🔐 **Auth**: JWT + Resend (Email verification)
+* 🚀 **DevOps**: Docker, Docker Compose, NGINX, Certbot, AWS EC2
+
 
 ## Live Demo
 
-Visit [https://cj.bymayank.com](https://cj.bymayank.com) to try the hosted version.
+> ✅ Visit [https://cj.bymayank.com](https://cj.bymayank.com) to try the hosted version.
+
+> 📽️ View [Demo Video Here](https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21?sid=9871d966-f303-4c7c-9583-901d9da7862c) 
 
 > To self-host this app, follow the setup instructions below and configure your own domain or use `localhost`.
+
 
 ## Project Structure
 
 ```
+
 Online-Judge-App/
 ├── backend/              # Express API
 ├── frontend/             # React client
 ├── compiler-service/     # Code execution microservice
 ├── docker-compose.yml    # Service orchestration
 └── README.md
-```
+
+````
 
 ## Setup Instructions
 
 ### Prerequisites
 
-- AWS EC2 instance or local machine with Docker and Docker Compose
-- MongoDB Atlas cluster
-- (Optional) Domain name and NGINX for HTTPS
+- AWS EC2 instance or local machine with Docker and Docker Compose  
+- MongoDB Atlas cluster  
+- (Optional) Domain name and NGINX for HTTPS  
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/MayankMohit/Online-Judge-App.git
 cd Online-Judge-App
-```
+````
 
 ### 2. Configure Environment Variables
 
@@ -63,7 +79,7 @@ Create `.env` files for each service:
 
 #### backend/.env
 
-```
+```env
 PORT=5000
 MONGODB_URI=your_mongodb_uri
 JWT_KEY=your_jwt_secret
@@ -74,7 +90,7 @@ COMPILER_URL=http://localhost:5001
 
 #### frontend/.env
 
-```
+```env
 VITE_API_URL=http://localhost:5000
 # For production, use your own domain:
 # VITE_API_URL=https://your-domain.com
@@ -82,7 +98,7 @@ VITE_API_URL=http://localhost:5000
 
 #### compiler-service/.env
 
-```
+```env
 PORT=5001
 ```
 
@@ -93,8 +109,6 @@ docker-compose up --build -d
 ```
 
 ### 4. Enable HTTPS (Production)
-
-To enable HTTPS on a domain:
 
 ```bash
 sudo apt install certbot python3-certbot-nginx
@@ -137,6 +151,7 @@ To make a user an admin, update their role via dashboard or in the database:
   "role": "admin"
 }
 ```
+
 
 ## Roadmap
 

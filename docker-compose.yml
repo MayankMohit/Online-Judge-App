@@ -1,4 +1,3 @@
-
 services:
   frontend:
     build:
@@ -6,12 +5,17 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "80:80"
+      - "80:80"    # HTTP
+      - "443:443"  # HTTPS
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro  # for SSL certs
     depends_on:
       - backend
     restart: unless-stopped
     networks:
       - mern-net
+    env_file:
+      - ./frontend/.env
 
   backend:
     build:
@@ -31,6 +35,8 @@ services:
       context: ./compiler-service
       dockerfile: Dockerfile
     container_name: compiler-service
+    env_file:
+      - ./compiler-service/.env
     restart: unless-stopped
     networks:
       - mern-net

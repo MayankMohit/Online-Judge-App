@@ -3,6 +3,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 export const resend = new Resend(process.env.RESEND_API_KEY);
 export const sender = {
-    email: "onboarding@resend.dev",
-    name: "Mayank",
+    email: "code-junkie@bymayank.com",
+    name: "Code Junkie",
 };

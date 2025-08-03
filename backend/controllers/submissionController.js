@@ -27,7 +27,7 @@ export const createSubmission = async (req, res) => {
     let testCaseCount = 0;
 
     for (const testCase of testCases) {
-      const { data } = await axios.post(`${BASE_URL}/api/run/`, {
+      const { data } = await axios.post(`${BASE_URL}/compiler/run/`, {
         code,
         language,
         input: testCase.input,

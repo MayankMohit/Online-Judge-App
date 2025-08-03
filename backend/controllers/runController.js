@@ -13,7 +13,7 @@ export const runCode = async (req, res) => {
   }
 
   try {
-    const compilerResponse = await axios.post(`${BASE_URL}/api/run/`, {
+    const compilerResponse = await axios.post(`${BASE_URL}/compiler/run/`, {
       code,
       language,
       input,

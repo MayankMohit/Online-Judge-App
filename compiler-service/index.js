@@ -13,7 +13,7 @@ try {
     app.use(cors());
     app.use(bodyParser.json());
 
-    app.use("/api", runRouter);
+    app.use("/compiler", runRouter);
 
     app.listen(PORT, '0.0.0.0', () => {
     console.log(`Compiler service is running on port ${PORT}`);

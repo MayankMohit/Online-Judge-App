@@ -45,16 +45,6 @@ const startServer = async () => {
     app.use("/api/run", runRoute);
     app.use("/api/code", codeRoute);
 
-    // Static files
-    app.use('/static', express.static(path.join(__dirname, "/frontend/public")));
-
-    if (process.env.NODE_ENV === "production") {
-      app.use(express.static(path.join(__dirname, "/frontend/dist")));
-      app.get("/*", (req, res) => {
-        res.sendFile(path.join(__dirname, "/frontend/dist/index.html"));
-      });
-    }
-
     // Start listening
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running on port ${PORT}`);

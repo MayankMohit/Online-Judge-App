@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import logo from "../assets/images/dark_long.png";
 import { Menu, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import ProfileDropdown from "./ProfileDropDown";
+import ProfileDropdown from "./ProfileDropdown";
 import { useAuthStore } from "../store/authStore";
 
 const Navbar = () => {

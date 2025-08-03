@@ -1,0 +1,40 @@
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - mern-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - compiler-service
+    restart: unless-stopped
+    networks:
+      - mern-net
+
+  compiler-service:
+    build:
+      context: ./compiler-service
+      dockerfile: Dockerfile
+    container_name: compiler-service
+    restart: unless-stopped
+    networks:
+      - mern-net
+
+networks:
+  mern-net:
+    driver: bridge

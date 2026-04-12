@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Pencil } from "lucide-react";
+import { Search, Pencil, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminProblems } from "../../hooks/adminHooks/adminProblemsHooks";
 
@@ -16,39 +16,45 @@ export default function AdminProblemList({ adminId }) {
     p.title.toLowerCase().includes(searchProblem.toLowerCase())
   );
 
+  const difficultyStyle = {
+    Easy:   "bg-green-500/10 text-green-400 border border-green-500/30",
+    Medium: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/30",
+    Hard:   "bg-red-500/10 text-red-400 border border-red-500/30",
+  };
+
   return (
-    <div className="w-full bg-gray-800 rounded-lg px-4 py-4 shadow-md flex flex-col gap-3">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col gap-3 h-full">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-purple-300">Problems</h2>
+        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">My Problems</h2>
         <button
-          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md"
+          className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm transition"
           onClick={() => navigate("/admin/problem/new")}
         >
-          + Add Problem
+          <Plus size={14} />
+          Add Problem
         </button>
       </div>
 
       {/* Search */}
-      <div className="flex items-center bg-gray-700 rounded-md px-3 py-2">
-        <Search size={18} className="text-gray-400" />
+      <div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 focus-within:border-purple-500 transition-colors">
+        <Search size={15} className="text-zinc-500 shrink-0" />
         <input
           type="text"
           value={searchProblem}
           onChange={(e) => setSearchProblem(e.target.value)}
           placeholder="Search problems..."
-          className="bg-transparent text-sm text-white w-full px-2 focus:outline-none"
+          className="bg-transparent text-sm text-white w-full px-2 focus:outline-none placeholder-zinc-500"
         />
       </div>
 
-      {/* Loading / Error */}
       {loading && problems.length === 0 && (
-        <p className="text-gray-400 text-sm">Loading problems...</p>
+        <p className="text-zinc-500 text-sm">Loading problems...</p>
       )}
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      {/* Problem Cards */}
-      <div className="flex flex-col gap-2 overflow-y-auto h-[65vh] pr-1 custom-scrollbar">
+      {/* Problem list */}
+      <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-[50vh] max-h-[65vh] pr-1 custom-scrollbar">
         {filteredProblems.map((problem) => {
           const { problemNumber, title, difficulty, tags = [], _id } = problem;
           const visibleTags = tags.slice(0, 3);
@@ -57,63 +63,47 @@ export default function AdminProblemList({ adminId }) {
           return (
             <div
               key={_id}
-              className="px-3 py-2 bg-gray-900 rounded-md shadow-lg flex justify-between items-center hover:bg-gray-900/70 transition cursor-pointer"
+              className="px-3 py-3 bg-zinc-800 border border-zinc-700 rounded-xl flex justify-between items-start hover:bg-zinc-700 hover:border-zinc-600 transition cursor-pointer group"
               onClick={() => navigate(`/problems/${problemNumber}`)}
             >
-              {/* Problem Info */}
-              <div className="flex flex-col">
-                <div className="flex items-center">
-                  <p className="font-medium text-purple-300 px-2">
-                    {problemNumber}.
-                  </p>
-                  <p className="font-medium">{title}</p>
-                  <span
-                    className={`px-2 ml-4 py-1 text-xs rounded-md font-semibold ${
-                      difficulty === "Easy"
-                        ? "bg-green-800 text-green-200"
-                        : difficulty === "Medium"
-                        ? "bg-yellow-800 text-yellow-200"
-                        : "bg-red-800 text-red-200"
-                    }`}
-                  >
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-zinc-500 shrink-0">#{problemNumber}</span>
+                  <p className="font-medium text-sm text-white truncate">{title}</p>
+                  <span className={`px-2 py-0.5 text-xs rounded-full font-semibold shrink-0 ${difficultyStyle[difficulty]}`}>
                     {difficulty}
                   </span>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <p className="pl-2 text-xs font-medium text-purple-200/70">Tags:</p>
+                <div className="flex flex-wrap items-center gap-1.5">
                   {visibleTags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 text-xs rounded-md bg-gray-800 text-gray-300"
-                    >
+                    <span key={idx} className="px-2 py-0.5 text-xs rounded-full bg-zinc-700 text-zinc-400 border border-zinc-600">
                       {tag}
                     </span>
                   ))}
                   {extraTags > 0 && (
-                    <span className="px-2 py-1 text-xs rounded-md bg-gray-700 text-gray-400">
-                      +{extraTags} more
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-zinc-700 text-zinc-500">
+                      +{extraTags}
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Edit Icon */}
-              <div
-                className="p-2 text-blue-300 hover:text-blue-500"
+              <button
+                className="p-1.5 text-zinc-500 hover:text-purple-400 hover:bg-zinc-600 rounded-lg transition ml-2 shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/admin/problem/edit/${problemNumber}`);
                 }}
               >
-                <Pencil size={20} />
-              </div>
+                <Pencil size={15} />
+              </button>
             </div>
           );
         })}
 
         {filteredProblems.length === 0 && !loading && (
-          <p className="text-gray-400 text-sm">No problems found.</p>
+          <p className="text-zinc-500 text-sm text-center py-8">No problems found</p>
         )}
       </div>
     </div>

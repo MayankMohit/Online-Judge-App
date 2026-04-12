@@ -1,40 +1,36 @@
-import { motion } from "framer-motion";
-import stop from "../assets/images/stop.png";
-
-const ComingSoon = ({ title }) => {
+const ComingSoon = ({ title, description, features = [] }) => {
   return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.5 }}
-        className="flex min-w-screen pt-30 sm:flex-row flex-col items-center justify-center max-h-[calc(100vh-9rem)]"
-      >
-      <div className="">
-        <img src={stop} alt="Under Construction" className="sm:w-2xl w-[18rem] drop-shadow-lg drop-shadow-amber-100/40 " />
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] w-screen px-4 text-center select-none">
+      {/* Badge */}
+      <div className="mb-6 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-widest">
+        Coming Soon
       </div>
-      <div className=" flex flex-col items-center justify-center text-center px-4">
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-gray-300 text-2xl md:text-3xl font-bold mb-4"
-        >
-          <span className="text-3xl md:text-4xl font-bold text-purple-400 mb-4">
-            {title}
-          </span>{" "}
-          is under construction!
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-gray-400 sm:text-2xl text-left text-lg"
-        >
-          Stay tuned for updates!
-        </motion.p>
-      </div>
-    </motion.div>
+
+      {/* Title */}
+      <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 tracking-tight">
+        {title}
+      </h1>
+
+      {/* Description */}
+      <p className="text-zinc-400 text-base sm:text-lg max-w-md mb-10 leading-relaxed">
+        {description || "This feature is currently in development. Check back soon."}
+      </p>
+
+      {/* Feature preview list */}
+      {features.length > 0 && (
+        <div className="flex flex-col gap-2 max-w-xs w-full mb-10">
+          {features.map((f, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm text-zinc-400 text-left">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+              {f}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Subtle divider line */}
+      <div className="w-16 h-px bg-zinc-800" />
+    </div>
   );
 };
 

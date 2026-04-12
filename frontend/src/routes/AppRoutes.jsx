@@ -42,15 +42,9 @@ const AppRoutes = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-800 to-violet-900
-      flex items-center justify-center relative overflow-hidden shadow-inner shadow-purple-900/20"
+      className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#1a0533_0%,_#0a0a0a_60%,_#000000_100%)]
+      flex items-center justify-center relative overflow-hidden"
     >
-      <div className="absolute inset-0 pointer-events-none -z-10">
-        <div className="absolute w-96 h-96 bg-purple-600/30 rounded-full blur-3xl top-[-10%] left-[-10%] animate-pulse" />
-        <div className="absolute w-96 h-96 bg-violet-400/30 rounded-full blur-2xl bottom-[-10%] right-[-10%] animate-pulse delay-1500" />
-        <div className="absolute w-120 h-120 bg-purple-400/20 rounded-full blur-3xl top-[0%] right-[25%] animate-pulse delay-500" />
-        <div className="absolute w-120 h-120 bg-violet-500/20 rounded-full blur-2xl bottom-[-45%] left-[15%] animate-pulse delay-2000" />
-      </div>
       <BrowserRouter>
         <Toaster position="bottom-right" reverseOrder={false} />
         <Routes>

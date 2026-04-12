@@ -5,52 +5,49 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchDashboardData } from "../../features/dashboard/dashboardSlice";
 import { fetchFavoriteProblems } from "../../features/favorites/favoritesSlice";
 import ProblemCard from "../../components/ProblemCard";
-
 import {
-  ArrowBigLeftDashIcon,
-  Edit3Icon,
-  LogOutIcon,
-  UserRound,
-  Mail,
-  CheckCircle,
-  FileCode,
+  Edit3Icon, LogOutIcon, UserRound, Mail,
+  CheckCircle, FileCode, ArrowLeft, Star, Clock,
 } from "lucide-react";
-
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import ConfirmSignOutDialog from "../../components/ConfirmSignOutDialog";
 
-const COLORS = ["#4CAF50", "#FFD301", "#E03C32"];
+const DIFFICULTY_COLORS = {
+  Easy:   { fill: "#4ade80", bg: "bg-green-500/10",  text: "text-green-400",  border: "border-green-500/30"  },
+  Medium: { fill: "#facc15", bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/30" },
+  Hard:   { fill: "#f87171", bg: "bg-red-500/10",    text: "text-red-400",    border: "border-red-500/30"    },
+};
+
+const COLORS = [DIFFICULTY_COLORS.Easy.fill, DIFFICULTY_COLORS.Medium.fill, DIFFICULTY_COLORS.Hard.fill];
 
 const formatDate = (isoString) => {
   if (!isoString) return "N/A";
-  const date = new Date(isoString);
-  return date.toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
+  return new Date(isoString).toLocaleString("en-IN", {
+    dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata",
   });
 };
+
+const verdictStyle = (verdict) =>
+  verdict === "accepted" ? "text-green-400" : "text-red-400";
+
+const verdictLabel = (verdict) =>
+  verdict === "accepted" ? "Accepted" :
+  verdict === "wrong_answer" ? "Wrong Answer" :
+  verdict === "time_limit_exceeded" ? "TLE" :
+  verdict === "compilation_error" ? "CE" :
+  verdict === "runtime_error" ? "RE" : verdict;
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { logout } = useAuthStore();
-
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [favPage, setFavPage] = useState(0);
+  const problemsPerPage = 3;
 
-  const {
-    name,
-    email,
-    totalProblemsSolved,
-    submissions,
-    difficultyStats,
-    loading,
-    error,
-  } = useSelector((state) => state.dashboard);
-
-  const favoriteProblems = useSelector(
-    (state) => state.favorites.favoriteProblems
-  );
+  const { name, email, totalProblemsSolved, submissions, difficultyStats, loading, error } =
+    useSelector((state) => state.dashboard);
+  const favoriteProblems = useSelector((state) => state.favorites.favoriteProblems);
 
   useEffect(() => {
     dispatch(fetchDashboardData());
@@ -61,260 +58,223 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
     .slice(0, 5);
 
-  const handleEdit = () => {
-    navigate("/update-profile");
-  };
-
-  const handleConfirmSignOut = () => {
-    logout();
-    navigate("/login");
-  };
-
-  const [favPage, setFavPage] = useState(0);
-  const problemsPerPage = 3;
   const startIdx = favPage * problemsPerPage;
-  const endIdx = startIdx + problemsPerPage;
-  const currentFavorites = favoriteProblems.slice(startIdx, endIdx);
+  const currentFavorites = favoriteProblems.slice(startIdx, startIdx + problemsPerPage);
   const totalPages = Math.ceil(favoriteProblems.length / problemsPerPage);
 
+  const pieData = [
+    { name: "Easy",   value: difficultyStats?.Easy   || 0 },
+    { name: "Medium", value: difficultyStats?.Medium || 0 },
+    { name: "Hard",   value: difficultyStats?.Hard   || 0 },
+  ];
+
+  const totalSolved = (difficultyStats?.Easy || 0) + (difficultyStats?.Medium || 0) + (difficultyStats?.Hard || 0);
+
+  if (loading) return (
+    <div className="w-screen h-screen flex items-center justify-center bg-black">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-purple-500" />
+    </div>
+  );
+
   return (
-    <div className="w-full min-h-screen bg-purple-900 text-white relative select-none">
-      {/* Header */}
-      <div className="h-[30vh] w-full bg-gray-950 px-6 py-4 shadow-md hi sm:block hidden">
-        <div className="flex items-center justify-start">
-          <button
-            onClick={() => navigate("/problems")}
-            className="bg-purple-700 hover:bg-purple-800 text-black font-semibold py-2 px-2 pr-1 rounded-sm transition text-sm"
-          >
-            <ArrowBigLeftDashIcon className="inline mr-2" size={25} />
-          </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-purple-200 ml-20">
-            {loading ? "Loading..." : `Welcome, ${name || "User"}`}
-          </h1>
-        </div>
+    <div className="w-full min-h-screen bg-black text-white select-none">
+      {/* Top bar */}
+      <div className="sticky top-0 z-10 bg-black border-b border-zinc-800 px-6 py-3 flex items-center justify-between">
+        <button
+          onClick={() => navigate("/problems")}
+          className="flex items-center gap-2 text-zinc-400 hover:text-white transition text-sm"
+        >
+          <ArrowLeft size={16} />
+          <span>Problems</span>
+        </button>
+        <h1 className="text-base font-semibold text-white">
+          {loading ? "Loading..." : `${name || "User"}'s Profile`}
+        </h1>
+        <button
+          onClick={() => navigate("/update-profile")}
+          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition"
+        >
+          <Edit3Icon size={14} />
+          Edit
+        </button>
       </div>
 
-      {/* Dashboard Main */}
-      <div className="relative z-10 sm:-mt-[20vh] sm:max-w-[80vw] mx-auto bg-gray-800 sm:rounded-2xl sm:p-6 p-2 shadow-2xl">
-        {error && (
-          <p className="text-red-400 mb-4 text-center">Error: {error}</p>
-        )}
+      <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6">
+        {error && <p className="text-red-400 text-center">Error: {error}</p>}
 
-        <div className="flex flex-col sm:gap-6 gap-3">
-          {/* User Info */}
-          <div className="bg-gray-900 rounded-xl p-6 shadow-md flex sm:flex-row flex-col items-center justify-between">
-            <div className="sm:w-1/2 w-full">
-              <h2 className="text-xl font-semibold mb-6 text-purple-300 flex items-center gap-3">
-                👤 User Details
-                <Edit3Icon
-                  onClick={handleEdit}
-                  className="text-white opacity-50 cursor-pointer hover:opacity-90"
-                  title="Edit Profile"
-                />
-              </h2>
-
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
-                  <UserRound className="text-purple-400" size={20} />
-                  <span className="text-white text-sm">{name}</span>
+        {/* Top row: User Info + Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* User Info Card */}
+          <div className="sm:col-span-1 bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Account</h2>
+            <div className="flex flex-col gap-3">
+              {[
+                { icon: <UserRound size={16} className="text-purple-400" />, value: name },
+                { icon: <Mail size={16} className="text-purple-400" />, value: email },
+                { icon: <CheckCircle size={16} className="text-green-400" />, value: `${totalProblemsSolved} problems solved` },
+                { icon: <FileCode size={16} className="text-blue-400" />, value: `${submissions.length} submissions` },
+              ].map(({ icon, value }, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm text-zinc-300">
+                  {icon}
+                  <span className="truncate">{value}</span>
                 </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
-                  <Mail className="text-purple-400" size={20} />
-                  <span className="text-white text-sm">{email}</span>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
-                  <CheckCircle className="text-purple-400" size={20} />
-                  <span className="text-white text-sm">
-                    Problems Solved: {totalProblemsSolved}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg shadow-sm">
-                  <FileCode className="text-purple-400" size={20} />
-                  <span className="text-white text-sm">
-                    Submissions: {submissions.length}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Pie Chart */}
-            <div className="sm:mt-6 w-full sm:ml-10 ml-20 mt-5 flex flex-col items-center justify-center sm:mr-10 mr-20">
-              <h2 className="text-xl font-semibold mb-4 text-purple-300 sm:block hidden">
-                Problem Stats
-              </h2>
-              <div className="flex items-center gap-5 pointer-events-none">
-                <div className="w-32 h-32">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: "Easy", value: difficultyStats?.Easy || 0 },
-                          {
-                            name: "Medium",
-                            value: difficultyStats?.Medium || 0,
-                          },
-                          { name: "Hard", value: difficultyStats?.Hard || 0 },
-                        ]}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={30}
-                        outerRadius={50}
-                        stroke="none"
-                      >
-                        <Cell fill={COLORS[0]} />
-                        <Cell fill={COLORS[1]} />
-                        <Cell fill={COLORS[2]} />
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="flex flex-col gap-2 text-sm font-semibold">
-                  <span className="bg-green-700 text-green-200 px-3 py-1 rounded-full w-fit">
-                    Easy: {difficultyStats?.Easy || 0}
-                  </span>
-                  <span className="bg-yellow-700 text-yellow-200 px-3 py-1 rounded-full w-fit">
-                    Medium: {difficultyStats?.Medium || 0}
-                  </span>
-                  <span className="bg-red-700 text-red-200 px-3 py-1 rounded-full w-fit">
-                    Hard: {difficultyStats?.Hard || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Favorites */}
-            <div className="bg-gray-900 rounded-xl px-2 w-90 md:w-[140%] mt-5 sm:mt-0">
-              <h2 className="text-xl font-semibold mb-4 text-purple-300">
-                Favourite Problems
-              </h2>
-              {favoriteProblems.length === 0 ? (
-                <p className="text-sm text-gray-400">No favorites added yet.</p>
-              ) : (
-                <>
-                  <div className="space-y-3 mb-4">
-                    {currentFavorites.map((problem) => (
-                      <ProblemCard
-                        key={problem._id}
-                        problem={problem}
-                        index={problem.problemNumber}
-                      />
-                    ))}
-                    {Array.from({
-                      length: problemsPerPage - currentFavorites.length,
-                    }).map((_, idx) => (
-                      <div
-                        key={`empty-${idx}`}
-                        className="h-[52px] bg-gray-800 rounded-lg opacity-0"
-                      />
-                    ))}
-                  </div>
-
-                  <div className="flex justify-between items-center text-sm text-gray-300">
-                    <button
-                      onClick={() =>
-                        setFavPage((prev) => Math.max(prev - 1, 0))
-                      }
-                      disabled={favPage === 0}
-                      className={`px-2 py-1 rounded-md ${
-                        favPage === 0
-                          ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                          : "bg-purple-700 hover:bg-purple-800"
-                      }`}
-                    >
-                      Prev
-                    </button>
-
-                    <span className="px-2 text-gray-400">
-                      Page {favPage + 1} of {totalPages}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        setFavPage((prev) =>
-                          Math.min(prev + 1, totalPages - 1)
-                        )
-                      }
-                      disabled={endIdx >= favoriteProblems.length}
-                      className={`px-2 py-1 rounded-md ${
-                        endIdx >= favoriteProblems.length
-                          ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                          : "bg-purple-700 hover:bg-purple-800"
-                      }`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </>
-              )}
+              ))}
             </div>
           </div>
 
-          {/* Submissions Table */}
-          <div className="lg:col-span-3 bg-gray-900 rounded-xl p-6 shadow-md">
-            <h2 className="text-xl font-semibold mb-4 text-purple-300">
-              🧾 Recent Submissions
-            </h2>
-            <table className="w-full text-sm mb-4">
-              <thead>
-                <tr className="text-left border-b border-gray-700">
-                  <th className="py-2">Problem</th>
-                  <th className="py-2">Language</th>
-                  <th className="py-2">Verdict</th>
-                  <th className="py-2 sm:block hidden">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentSubmissions.map((sub) => (
-                  <tr
-                    key={sub._id}
-                    onClick={() => navigate(`/submissions/${sub._id}`)}
-                    className="border-b border-gray-700 hover:bg-gray-700 transition cursor-pointer"
-                  >
-                    <td className="py-2">{sub.problem?.title || "N/A"}</td>
-                    <td className="py-2">{sub.language}</td>
-                    <td
-                      className={`py-2 ${
-                        sub.verdict === "accepted"
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
+          {/* Difficulty Stats Card */}
+          <div className="sm:col-span-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Problems Solved</h2>
+            <div className="flex items-center gap-6">
+              {/* Donut chart */}
+              <div className="relative w-32 h-32 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={totalSolved === 0 ? [{ name: "None", value: 1 }] : pieData}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={38}
+                      outerRadius={56}
+                      stroke="none"
                     >
-                      {sub.verdict}
-                    </td>
-                    <td className="py-2 sm:block hidden">
-                      {formatDate(sub.submittedAt)}
-                    </td>
+                      {totalSolved === 0
+                        ? <Cell fill="#27272a" />
+                        : pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)
+                      }
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 8 }}
+                      itemStyle={{ color: "#fff" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-bold text-white">{totalSolved}</span>
+                  <span className="text-xs text-zinc-500">solved</span>
+                </div>
+              </div>
+
+              {/* Difficulty breakdown */}
+              <div className="flex flex-col gap-3 flex-1">
+                {Object.entries(DIFFICULTY_COLORS).map(([level, { bg, text, border, fill }]) => {
+                  const count = difficultyStats?.[level] || 0;
+                  return (
+                    <div key={level} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${bg} ${border}`}>
+                      <span className={`text-sm font-medium ${text}`}>{level}</span>
+                      <span className="text-sm font-bold text-white">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Submissions */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Recent Submissions</h2>
+            <button
+              onClick={() => navigate("/submissions")}
+              className="text-xs text-purple-400 hover:text-purple-300 transition"
+            >
+              View all →
+            </button>
+          </div>
+
+          {recentSubmissions.length === 0 ? (
+            <p className="text-zinc-500 text-sm text-center py-4">No submissions yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-zinc-800">
+                    <th className="pb-2 text-xs text-zinc-500 font-medium">Problem</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium">Lang</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium">Verdict</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium hidden sm:table-cell">Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex items-center justify-between">
-              <button
-                className="text-red-400 cursor-pointer"
-                onClick={() => setShowSignOutDialog(true)}
-              >
-                Sign Out <LogOutIcon className="inline ml-1" size={16} />
-              </button>
-              <button
-                onClick={() => navigate("/submissions")}
-                className="text-purple-400 text-sm cursor-pointer"
-              >
-                View all submissions →
-              </button>
+                </thead>
+                <tbody>
+                  {recentSubmissions.map((sub) => (
+                    <tr
+                      key={sub._id}
+                      onClick={() => navigate(`/submissions/${sub._id}`)}
+                      className="border-b border-zinc-800/50 hover:bg-zinc-800/50 transition cursor-pointer"
+                    >
+                      <td className="py-2.5 text-zinc-300 truncate max-w-[140px]">{sub.problem?.title || "N/A"}</td>
+                      <td className="py-2.5 text-zinc-400 uppercase text-xs">{sub.language}</td>
+                      <td className={`py-2.5 font-medium ${verdictStyle(sub.verdict)}`}>
+                        {verdictLabel(sub.verdict)}
+                      </td>
+                      <td className="py-2.5 text-zinc-500 text-xs hidden sm:table-cell">
+                        {formatDate(sub.submittedAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          )}
+        </div>
+
+        {/* Favourite Problems */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Star size={15} className="text-yellow-400 fill-yellow-400" />
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Favourite Problems</h2>
           </div>
+
+          {favoriteProblems.length === 0 ? (
+            <p className="text-zinc-500 text-sm text-center py-4">No favourites added yet</p>
+          ) : (
+            <>
+              <div className="flex flex-col gap-2 mb-3">
+                {currentFavorites.map((problem) => (
+                  <ProblemCard key={problem._id} problem={problem} index={problem.problemNumber} dashboard={true} />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center text-sm">
+                  <button
+                    onClick={() => setFavPage((p) => Math.max(p - 1, 0))}
+                    disabled={favPage === 0}
+                    className="px-3 py-1 rounded-lg bg-zinc-800 text-zinc-400 disabled:opacity-30 hover:bg-zinc-700 transition text-xs"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-xs text-zinc-500">{favPage + 1} / {totalPages}</span>
+                  <button
+                    onClick={() => setFavPage((p) => Math.min(p + 1, totalPages - 1))}
+                    disabled={startIdx + problemsPerPage >= favoriteProblems.length}
+                    className="px-3 py-1 rounded-lg bg-zinc-800 text-zinc-400 disabled:opacity-30 hover:bg-zinc-700 transition text-xs"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Sign out */}
+        <div className="flex justify-center pb-4">
+          <button
+            onClick={() => setShowSignOutDialog(true)}
+            className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition"
+          >
+            <LogOutIcon size={15} />
+            Sign out
+          </button>
         </div>
       </div>
 
-      {/* Sign-out confirmation modal */}
       <ConfirmSignOutDialog
         open={showSignOutDialog}
         onClose={() => setShowSignOutDialog(false)}
-        onConfirm={handleConfirmSignOut}
+        onConfirm={() => { logout(); navigate("/login"); }}
       />
     </div>
   );

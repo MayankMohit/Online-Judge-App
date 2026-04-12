@@ -7,6 +7,8 @@ import {
   fetchProblems,
   incrementPage,
 } from "../../features/problems/problemsSlice";
+import { SearchX } from "lucide-react";
+import LoadingScreen from "../../components/LoadingScreen";
 
 const ProblemsPage = () => {
   const observer = useRef();
@@ -39,9 +41,7 @@ const ProblemsPage = () => {
             }, 600);
           }
         },
-        {
-          rootMargin: "0px 0px 500px 0px", // load earlier
-        }
+        { rootMargin: "0px 0px 500px 0px" }
       );
 
       if (node) observer.current.observe(node);
@@ -49,15 +49,40 @@ const ProblemsPage = () => {
     [loading, hasMore, dispatch]
   );
 
+  const hasActiveFilters = searchQuery || filters.difficulty || filters.tag || filters.sort;
+
   return (
-    <div className="bg-gray-900 text-white px-6 py-25 sm:py-20 min-h-[calc(100vh-8rem)] relative min-w-screen select-none ">
-      <ProblemControls direction={direction} setDirection={setDirection} />
+    <div className="bg-black text-white px-4 sm:px-6 py-25 sm:py-20 min-h-[calc(100vh-8rem)] relative min-w-screen h-screen select-none">
+      <div className="flex items-center justify-center">
+        <ProblemControls direction={direction} setDirection={setDirection} />
+      </div>
+
+      {/* Problem count */}
+      <div className="sm:max-w-3xl sm:mx-auto mb-3 ml-15 ">
+        {!loading && items.length > 0 && (
+          <p className="text-zinc-500 text-sm">
+            Showing <span className="text-zinc-300 font-medium">{items.length}</span> problems
+            {!hasMore && " · All loaded"}
+          </p>
+        )}
+      </div>
 
       {/* Problem List */}
-      <div className="grid gap-2 md:px-50">
-        {loading && (
-          <div className="w-6 h-6 m-auto rounded-full border-2 border-t-purple-500 border-b-purple-300 animate-spin"></div>
+      <div className="grid gap-2 sm:max-w-3xl sm:mx-auto">
+
+        {/* Empty state */}
+        {!loading && items.length === 0 && !error && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <SearchX size={48} className="text-zinc-600 mb-4" />
+            <h3 className="text-zinc-300 font-semibold text-lg mb-1">No problems found</h3>
+            <p className="text-zinc-500 text-sm">
+              {hasActiveFilters
+                ? "Try adjusting your search or filters"
+                : "No problems available yet"}
+            </p>
+          </div>
         )}
+
         {error && <p className="text-red-500 m-auto">Error: {error}</p>}
 
         {items.map((problem, index) => {
@@ -69,6 +94,9 @@ const ProblemsPage = () => {
             </div>
           );
         })}
+
+        {/* Loading spinner */}
+        {loading && <LoadingScreen />}
       </div>
     </div>
   );

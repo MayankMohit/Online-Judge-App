@@ -1,47 +1,41 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { FileX } from "lucide-react";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 const formatDate = (isoString) => {
   if (!isoString) return "N/A";
-  const date = new Date(isoString);
-  return date.toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
+  return new Date(isoString).toLocaleString("en-IN", {
+    dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata",
   });
 };
 
-const languageMap = {
-  cpp: "C++",
-  c: "C",
-  py: "Python",
-  js: "JavaScript",
+const languageMap = { cpp: "C++", c: "C", py: "Python", js: "JavaScript" };
+
+const verdictConfig = (verdict) => {
+  switch (verdict) {
+    case "accepted":           return { label: "Accepted",    cls: "text-green-400 bg-green-400/10 border-green-400/20" };
+    case "wrong_answer":       return { label: "Wrong Answer",cls: "text-red-400 bg-red-400/10 border-red-400/20" };
+    case "time_limit_exceeded":return { label: "TLE",         cls: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" };
+    case "compilation_error":  return { label: "CE",          cls: "text-orange-400 bg-orange-400/10 border-orange-400/20" };
+    case "runtime_error":      return { label: "RE",          cls: "text-pink-400 bg-pink-400/10 border-pink-400/20" };
+    default:                   return { label: verdict,       cls: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20" };
+  }
 };
 
-/**
- * @param {Array} submissions - Submission array with user and problem populated
- * @param {boolean} loading
- * @param {string} error
- * @param {string} viewMode - "user" | "problem"
- * @param {string} heading - Optional custom heading
- */
 export default function SubmissionsPage({
   submissions = [],
   loading,
   error,
   viewMode = "user",
-  heading = "All Submissions",
+  heading = "",
 }) {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
   const totalPages = Math.ceil(submissions.length / ITEMS_PER_PAGE);
-  const paginatedItems = submissions.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
+  const paginatedItems = submissions.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -49,117 +43,114 @@ export default function SubmissionsPage({
   };
 
   const getPaginationNumbers = () => {
-    const pages = [];
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    pages.push(1);
+    const pages = [1];
     if (page > 3) pages.push("...");
-    const start = Math.max(2, page - 1);
-    const end = Math.min(totalPages - 1, page + 1);
-    for (let i = start; i <= end; i++) pages.push(i);
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
     if (page < totalPages - 2) pages.push("...");
     pages.push(totalPages);
     return pages;
   };
 
   return (
-    <div className="min-h-screen sm:w-[80vw] w-full mx-auto bg-gray-900 text-white px-2 sm:px-8 py-8 select-none z-10 opacity-95">
-      <h1 className="text-2xl sm:text-3xl font-bold text-purple-400 mb-6 text-center">
-        {heading}
-      </h1>
+    <div className="min-h-screen w-full bg-black text-white px-4 sm:px-8 py-8 select-none">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-xl font-bold text-white mb-6">{heading}</h1>
 
-      {loading ? (
-        <div className="text-center text-gray-400">Loading submissions...</div>
-      ) : error ? (
-        <div className="text-center text-red-500">{error}</div>
-      ) : submissions.length === 0 ? (
-        <div className="text-center text-gray-400">No submissions yet.</div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto bg-gray-800/40 rounded-lg overflow-hidden">
-              <thead>
-                <tr className="bg-gray-700 text-sm text-purple-300 text-left">
-                  <th className="py-3 px-4">
-                    {viewMode === "user" ? "Problem" : "User"}
-                  </th>
-                  <th className="py-3 px-4">Language</th>
-                  <th className="py-3 px-4">Verdict</th>
-                  <th className="py-3 px-4 hidden sm:table-cell">Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedItems.map((sub, idx) => (
-                  <tr
-                    key={idx}
-                    onClick={() => navigate(`/submissions/${sub._id}`)}
-                    className="border-t border-gray-700 hover:bg-gray-700 transition cursor-pointer"
-                  >
-                    <td className="py-3 px-4">
-                      {viewMode === "user"
-                        ? sub.problem?.title || "N/A"
-                        : sub.user?.name || "Unknown"}
-                    </td>
-                    <td className="py-3 px-4">
-                      {languageMap[sub.language] || sub.language}
-                    </td>
-                    <td
-                      className={`py-3 px-4 font-semibold ${
-                        sub.verdict === "accepted"
-                          ? "text-green-400"
-                          : "text-red-400"
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-6 h-6 rounded-full border-2 border-t-purple-500 animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-400 py-10">{error}</div>
+        ) : submissions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <FileX size={40} className="text-zinc-600" />
+            <p className="text-zinc-500 text-sm">No submissions yet</p>
+          </div>
+        ) : (
+          <>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="py-3 px-4 text-left text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                      {viewMode === "user" ? "Problem" : "User"}
+                    </th>
+                    <th className="py-3 px-4 text-left text-xs text-zinc-500 font-medium uppercase tracking-wider">Lang</th>
+                    <th className="py-3 px-4 text-left text-xs text-zinc-500 font-medium uppercase tracking-wider">Verdict</th>
+                    <th className="py-3 px-4 text-left text-xs text-zinc-500 font-medium uppercase tracking-wider hidden sm:table-cell">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((sub, idx) => {
+                    const { label, cls } = verdictConfig(sub.verdict);
+                    return (
+                      <tr
+                        key={idx}
+                        onClick={() => navigate(`/submissions/${sub._id}`)}
+                        className="border-b border-zinc-800/50 hover:bg-zinc-800/50 transition cursor-pointer"
+                      >
+                        <td className="py-3 px-4 text-zinc-300 truncate max-w-[160px] sm:max-w-xs">
+                          {viewMode === "user" ? sub.problem?.title || "N/A" : sub.user?.name || "Unknown"}
+                        </td>
+                        <td className="py-3 px-4 text-zinc-400 text-xs uppercase font-mono">
+                          {languageMap[sub.language] || sub.language}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+                            {label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-zinc-500 text-xs hidden sm:table-cell">
+                          {formatDate(sub.submittedAt)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1.5 mt-6">
+                <button
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white disabled:opacity-30 transition text-sm"
+                  disabled={page === 1}
+                  onClick={() => handlePageChange(page - 1)}
+                >
+                  ← Prev
+                </button>
+                {getPaginationNumbers().map((num, idx) =>
+                  num === "..." ? (
+                    <span key={idx} className="px-2 text-zinc-600">...</span>
+                  ) : (
+                    <button
+                      key={idx}
+                      onClick={() => handlePageChange(num)}
+                      className={`w-8 h-8 rounded-lg text-sm transition ${
+                        page === num
+                          ? "bg-purple-600 text-white"
+                          : "bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white"
                       }`}
                     >
-                      {sub.verdict}
-                    </td>
-                    <td className="py-3 px-4 hidden sm:table-cell">
-                      {formatDate(sub.submittedAt)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="flex justify-center items-center gap-2 mt-6">
-            <button
-              className="px-3 py-1 rounded bg-purple-700 text-white disabled:opacity-50"
-              disabled={page === 1}
-              onClick={() => handlePageChange(page - 1)}
-            >
-              Prev
-            </button>
-
-            {getPaginationNumbers().map((num, idx) =>
-              num === "..." ? (
-                <span key={idx} className="px-3 py-1 text-gray-400">
-                  ...
-                </span>
-              ) : (
+                      {num}
+                    </button>
+                  )
+                )}
                 <button
-                  key={idx}
-                  onClick={() => handlePageChange(num)}
-                  className={`px-3 py-1 rounded ${
-                    page === num
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-700 text-gray-300"
-                  }`}
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white disabled:opacity-30 transition text-sm"
+                  disabled={page === totalPages}
+                  onClick={() => handlePageChange(page + 1)}
                 >
-                  {num}
+                  Next →
                 </button>
-              )
+              </div>
             )}
-
-            <button
-              className="px-3 py-1 rounded bg-purple-700 text-white disabled:opacity-50"
-              disabled={page === totalPages}
-              onClick={() => handlePageChange(page + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,11 +1,17 @@
-import { motion } from "framer-motion";
 import ComingSoon from "../../components/ComingSoon";
 
 const ContestsPage = () => {
   return (
-    <div className="select-none">
-      <ComingSoon title="Contests" />
-    </div>
+    <ComingSoon
+      title="Contests"
+      description="Compete in timed coding contests, climb the rankings, and test your skills under pressure."
+      features={[
+        "Timed contests with live leaderboard",
+        "Rated & unrated contest modes",
+        "Post-contest editorial & solutions",
+        "Contest history & performance stats",
+      ]}
+    />
   );
 };
 

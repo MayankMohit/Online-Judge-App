@@ -16,7 +16,7 @@ import {
 
 const Landing = () => {
   return (
-    <div className="relative h-screen w-screen overflow-hidden sm:bg-radial-[at_50%_30%] sm:from-purple-800 sm:via-purple-950 sm:to-black bg-gradient-to-b from-black to-purple-900">
+    <div className="relative h-screen w-screen overflow-hidden sm:bg-radial-[at_50%_30%] sm:from-purple-950 sm:to-black bg-gradient-to-b from-black to-purple-950">
       <div
         className="absolute inset-0 z-0 bg-cover opacity-15 pointer-events-none -top-10 -left-10 -right-10"
         style={{ backgroundImage: `url(${Grid})` }}

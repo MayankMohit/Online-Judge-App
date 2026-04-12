@@ -14,6 +14,7 @@ export default function DifficultyTagsRow({ problem, setProblem, formErrors, exi
           value={problem.difficulty}
           onChange={(e) => setProblem({ ...problem, difficulty: e.target.value })}
         >
+          <option value="">Select difficulty</option>
           <option value="Easy">Easy</option>
           <option value="Medium">Medium</option>
           <option value="Hard">Hard</option>

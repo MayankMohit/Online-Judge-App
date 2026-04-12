@@ -6,14 +6,7 @@ import { useNavigate } from "react-router-dom";
 export default function AdminProblemSearch() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
-  const {
-    problems,
-    loading,
-    error,
-    updateSearch,
-    loadMore,
-    hasMore,
-  } = useAdminProblemSearch();
+  const { problems, loading, error, updateSearch, loadMore, hasMore } = useAdminProblemSearch();
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -23,58 +16,50 @@ export default function AdminProblemSearch() {
   }, [search, updateSearch]);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 shadow-md">
-      <h3 className="text-lg font-semibold text-purple-300 mb-2">
-        Find Submissions for a Problem
-      </h3>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col gap-3">
+      <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Find Problem Submissions</h2>
 
-      {/* Search */}
-      <div className="flex items-center bg-gray-700 rounded-md px-3 py-2">
-        <Search size={18} className="text-gray-400" />
+      <div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 focus-within:border-purple-500 transition-colors">
+        <Search size={15} className="text-zinc-500 shrink-0" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search problem..."
-          className="bg-transparent text-sm text-white w-full px-2 focus:outline-none"
+          className="bg-transparent text-sm text-white w-full px-2 focus:outline-none placeholder-zinc-500"
         />
       </div>
 
-      {/* Results */}
-      <div className="h-[20vh] mt-2 overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col gap-1.5 max-h-[20vh] overflow-y-auto custom-scrollbar">
         {loading && problems.length === 0 && (
-          <p className="text-gray-400 text-sm mt-2">Loading problems...</p>
+          <p className="text-zinc-500 text-sm">Searching...</p>
         )}
-        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+        {error && <p className="text-red-400 text-sm">{error}</p>}
 
         {search && problems.map((problem) => (
           <div
             key={problem._id}
-            className="p-2 bg-gray-900 rounded mt-1 cursor-pointer hover:bg-gray-900/50 transition"
+            className="px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition"
             onClick={() => navigate(`/admin/problem/${problem._id}/submissions`)}
           >
             <p className="text-white text-sm font-medium">
-              {problem.problemNumber}. {problem.title}
+              <span className="text-zinc-500 mr-2">#{problem.problemNumber}</span>
+              {problem.title}
             </p>
           </div>
         ))}
 
         {search && problems.length === 0 && !loading && (
-          <p className="text-gray-400 text-sm mt-2">No problems found.</p>
+          <p className="text-zinc-500 text-sm text-center py-3">No problems found</p>
         )}
 
         {search && hasMore && !loading && (
-          <div className="flex justify-center">
-            <button
-              onClick={loadMore}
-              className="mt-2 px-2 py-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-white rounded-md"
-            >
-              Load More
-            </button>
-          </div>
-        )}
-        {loading && problems.length > 0 && (
-          <p className="text-gray-400 text-xs mt-1">Loading more...</p>
+          <button
+            onClick={loadMore}
+            className="text-xs text-zinc-400 hover:text-white transition text-center py-1"
+          >
+            Load more
+          </button>
         )}
       </div>
     </div>

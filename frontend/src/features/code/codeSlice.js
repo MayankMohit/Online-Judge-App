@@ -3,7 +3,7 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-// 🔹 Run Code Thunk
+// Run a single test case
 export const runCode = createAsyncThunk(
   "code/run",
   async ({ code, language, input }, thunkAPI) => {
@@ -11,54 +11,68 @@ export const runCode = createAsyncThunk(
       const res = await axios.post(`${BASE_URL}/api/run/`, { code, language, input });
       return res.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(
-        err.response?.data || { error: "Run failed" }
-      );
+      return thunkAPI.rejectWithValue(err.response?.data || { error: "Run failed" });
     }
   }
 );
 
-// 🔹 Submit Code Thunk
+// Run all test cases in parallel
+export const runAllTestCases = createAsyncThunk(
+  "code/runAll",
+  async ({ code, language, testCases }, thunkAPI) => {
+    try {
+      const results = await Promise.all(
+        testCases.map((tc) =>
+          axios
+            .post(`${BASE_URL}/api/run/`, { code, language, input: tc.input || "" })
+            .then((res) => res.data)
+            .catch((err) => ({ success: false, error: err.response?.data?.error || "Run failed", output: null, time: null }))
+        )
+      );
+      return results;
+    } catch (err) {
+      return thunkAPI.rejectWithValue({ error: "Run failed" });
+    }
+  }
+);
+
+// Submit code
 export const submitCode = createAsyncThunk(
   "code/submit",
   async ({ problemId, code, language }, thunkAPI) => {
     try {
-      const res = await axios.post(`${BASE_URL}/api/submissions/`, {
-        problemId,
-        code,
-        language,
-      });
+      const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language });
       return res.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(
-        err.response?.data || { error: "Submit failed" }
-      );
+      return thunkAPI.rejectWithValue(err.response?.data || { error: "Submit failed" });
     }
   }
 );
 
 const initialState = {
   loading: false,
-  lastAction: "", // "run" or "submit"
+  lastAction: "", // "run" | "runAll" | "submit"
+  // Single run result (legacy, still used for submit)
   output: "",
   error: null,
   time: null,
+  // Submit result
   verdict: "",
   failedCase: null,
   averageTime: null,
+  // Multi test case results: array of { output, error, time }
+  testCaseResults: [],
 };
 
 const codeSlice = createSlice({
   name: "code",
   initialState,
   reducers: {
-    clearCodeState: () => ({
-      ...initialState, // Ensures full reset
-    }),
+    clearCodeState: () => ({ ...initialState }),
   },
   extraReducers: (builder) => {
     builder
-      // RUN
+      // Single RUN
       .addCase(runCode.pending, (state) => {
         state.loading = true;
         state.lastAction = "run";
@@ -67,6 +81,7 @@ const codeSlice = createSlice({
         state.time = null;
         state.verdict = "";
         state.failedCase = null;
+        state.testCaseResults = [];
       })
       .addCase(runCode.fulfilled, (state, action) => {
         const { output, error, time } = action.payload;
@@ -77,7 +92,29 @@ const codeSlice = createSlice({
       })
       .addCase(runCode.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload?.error || "Run failed";
+      })
+
+      // RUN ALL
+      .addCase(runAllTestCases.pending, (state) => {
+        state.loading = true;
+        state.lastAction = "runAll";
+        state.testCaseResults = [];
+        state.verdict = "";
+        state.failedCase = null;
         state.output = "";
+        state.error = null;
+      })
+      .addCase(runAllTestCases.fulfilled, (state, action) => {
+        state.loading = false;
+        state.testCaseResults = action.payload.map((r) => ({
+          output: r.output ?? null,
+          error: r.error ?? null,
+          time: r.time ?? null,
+        }));
+      })
+      .addCase(runAllTestCases.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload?.error || "Run failed";
       })
 
@@ -88,7 +125,8 @@ const codeSlice = createSlice({
         state.verdict = "";
         state.failedCase = null;
         state.averageTime = null;
-        state.output = ""; // Clear run output
+        state.output = "";
+        state.testCaseResults = [];
       })
       .addCase(submitCode.fulfilled, (state, action) => {
         const { verdict, averageTime, failedCase, error } = action.payload;

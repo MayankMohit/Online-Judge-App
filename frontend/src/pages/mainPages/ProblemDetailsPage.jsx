@@ -2,68 +2,53 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 
-// Slice Imports
-import {
-  fetchProblemByNumber,
-  clearCurrentProblem,
-} from "../../features/problems/problemsSlice";
-import {
-  fetchSubmissionsByProblem,
-  clearProblemSubmissions,
-} from "../../features/submissions/problemSubmissionsSlice";
-import {
-  runCode,
-  submitCode,
-  clearCodeState,
-} from "../../features/code/codeSlice";
-import {
-  fetchSavedCode,
-  saveCodeToDB,
-  updateCodeLocally,
-} from "../../features/code/codePersistenceSlice";
+import { fetchProblemByNumber, clearCurrentProblem } from "../../features/problems/problemsSlice";
+import { fetchSubmissionsByProblem, clearProblemSubmissions } from "../../features/submissions/problemSubmissionsSlice";
+import { runAllTestCases, submitCode, clearCodeState } from "../../features/code/codeSlice";
+import { fetchSavedCode, saveCodeToDB, updateCodeLocally } from "../../features/code/codePersistenceSlice";
 
 import { languageBoilerplates } from "../../components/ProblemPageComps/LanguageBoilerplates";
 import MobileProblemView from "../../components/ProblemPageComps/MobileProblemView";
 import DesktopProblemView from "../../components/ProblemPageComps/DesktopProblemView";
+import LoadingScreen from "../../components/LoadingScreen";
+
+// Build initial test cases from problem's visible (non-hidden) test cases
+const buildInitialTestCases = (problem) => {
+  const visible = problem?.testCases?.filter((tc) => !tc.isHidden) || [];
+  if (visible.length === 0) {
+    return [{ id: Date.now(), label: "Case 1", input: "" }];
+  }
+  return visible.map((tc, i) => ({
+    id: tc._id || i,
+    label: `Case ${i + 1}`,
+    input: tc.input || "",
+  }));
+};
 
 const ProblemDetailsPage = () => {
-  // Layout state
-  const [leftWidth, setLeftWidth] = useState(35);
+  const [leftWidth, setLeftWidth] = useState(38);
   const containerRef = useRef(null);
-  const [editorHeight, setEditorHeight] = useState(70);
-  const [testcaseHeight, setTestcaseHeight] = useState(30);
+  const [editorHeight, setEditorHeight] = useState(65);
+  const [testcaseHeight, setTestcaseHeight] = useState(35);
   const mobileScrollRef = useRef(null);
-  const [isOutputVisible, setIsOutputVisible] = useState(false);
   const saveTimeout = useRef(null);
 
-  // Problem state
   const [activeTab, setActiveTab] = useState("description");
-  const [customInput, setCustomInput] = useState("");
   const [language, setLanguage] = useState("cpp");
-  const { codeMap } = useSelector((state) => state.codePersistence);
+  const [isOutputMode, setIsOutputMode] = useState(false); // false=testcase, true=output
 
+  // Test cases state — array of { id, label, input }
+  const [testCases, setTestCases] = useState([{ id: 1, label: "Case 1", input: "" }]);
+  const [activeTestCaseIdx, setActiveTestCaseIdx] = useState(0);
+
+  const { codeMap } = useSelector((state) => state.codePersistence);
   const { number } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { currentProblem, problemLoading, problemError } = useSelector(
-    (state) => state.problems
-  );
-  const {
-    items: userSubmissions,
-    loading: submissionsLoading,
-    error,
-  } = useSelector((state) => state.problemSubmissions);
-  const {
-    output,
-    loading: codeLoading,
-    error: codeError,
-    time,
-    verdict,
-    failedCase,
-    averageTime,
-    lastAction,
-  } = useSelector((state) => state.code);
+  const { currentProblem, problemLoading, problemError } = useSelector((state) => state.problems);
+  const { items: userSubmissions, loading: submissionsLoading, error } = useSelector((state) => state.problemSubmissions);
+  const { loading: codeLoading, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
 
   // Load submissions
   useEffect(() => {
@@ -73,25 +58,32 @@ const ProblemDetailsPage = () => {
 
   const isSolved = userSubmissions.some((sub) => sub.verdict === "accepted");
 
-  // Load problem & reset code state
+  // Load problem & reset state
   useEffect(() => {
     dispatch(fetchProblemByNumber(number));
-    dispatch(clearCodeState()); // Reset run/submit state
-    setIsOutputVisible(false); // Ensure OutputTab is closed
-    setActiveTab("description"); // Reset to description tab
+    dispatch(clearCodeState());
+    setIsOutputMode(false);
+    setActiveTab("description");
     return () => dispatch(clearCurrentProblem());
   }, [dispatch, number]);
 
-  // Show OutputTab only if there is new output or submission result
+  // Auto-fill test cases from problem's visible test cases once loaded
   useEffect(() => {
-    if (output || verdict || codeError) {
-      setIsOutputVisible(true);
+    if (currentProblem) {
+      const initial = buildInitialTestCases(currentProblem);
+      setTestCases(initial);
+      setActiveTestCaseIdx(0);
     }
-  }, [output, verdict, codeError]);
+  }, [currentProblem?._id]);
 
-  const code =
-    codeMap?.[currentProblem?._id]?.[language] ||
-    languageBoilerplates[language];
+  // Switch to output mode when results come in
+  useEffect(() => {
+    if (testCaseResults?.length > 0 || verdict || lastAction === "submit") {
+      setIsOutputMode(true);
+    }
+  }, [testCaseResults, verdict, lastAction]);
+
+  const code = codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language];
 
   useEffect(() => {
     if (currentProblem?._id && language) {
@@ -100,128 +92,69 @@ const ProblemDetailsPage = () => {
   }, [currentProblem?._id, language]);
 
   const handleCodeChange = (newCode) => {
-    dispatch(
-      updateCodeLocally({
-        problemId: currentProblem._id,
-        language,
-        code: newCode,
-      })
-    );
-
-    if (saveTimeout.current) {
-      clearTimeout(saveTimeout.current);
-    }
-
+    dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(() => {
-      dispatch(
-        saveCodeToDB({ problemId: currentProblem._id, language, code: newCode })
-      );
+      dispatch(saveCodeToDB({ problemId: currentProblem._id, language, code: newCode }));
     }, 2000);
   };
 
-  const backendLanguageMap = {
-    python: "py",
-    javascript: "js",
-    cpp: "cpp",
-    c: "c",
-  };
+  const backendLanguageMap = { python: "py", javascript: "js", cpp: "cpp", c: "c" };
 
   const handleRun = () => {
-    dispatch(
-      runCode({
-        code,
-        language: backendLanguageMap[language] || language,
-        input: customInput.trim() === "" ? "0\n" : customInput,
-      })
-    );
+    setIsOutputMode(true);
+    dispatch(runAllTestCases({
+      code,
+      language: backendLanguageMap[language] || language,
+      testCases,
+    }));
   };
 
   const handleSubmit = () => {
-    dispatch(
-      submitCode({
-        problemId: currentProblem._id,
-        code,
-        language: backendLanguageMap[language] || language,
-      })
-    ).then(() => {
+    dispatch(submitCode({
+      problemId: currentProblem._id,
+      code,
+      language: backendLanguageMap[language] || language,
+    })).then(() => {
       dispatch(fetchSubmissionsByProblem(number));
     });
   };
 
-  if (problemLoading)
-    return (
-      <div className="w-screen h-screen flex items-center justify-center bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-purple-500 border-opacity-60"></div>
-      </div>
-    );
+  if (problemLoading) return (
+    <LoadingScreen />
+  );
 
-  if (problemError)
-    return (
-      <div className="w-screen h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-red-500 text-lg">{problemError}</div>
-      </div>
-    );
+  if (problemError) return (
+    <div className="w-screen h-screen flex items-center justify-center bg-zinc-950 text-red-400">
+      {problemError}
+    </div>
+  );
 
   if (!currentProblem) return null;
 
-  return (
-    <div
-      ref={containerRef}
-      className="w-screen h-screen md:flex bg-gray-900 text-white overflow-hidden"
-    >
-      <MobileProblemView
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        currentProblem={currentProblem}
-        userSubmissions={userSubmissions}
-        loading={codeLoading}
-        error={error}
-        navigate={navigate}
-        isSolved={isSolved}
-        language={language}
-        setLanguage={setLanguage}
-        code={code}
-        customInput={customInput}
-        setCustomInput={setCustomInput}
-        handleRun={handleRun}
-        handleSubmit={handleSubmit}
-        output={output}
-        codeError={codeError}
-        verdict={verdict}
-        failedCase={failedCase}
-        averageTime={averageTime}
-        time={lastAction === "run" ? null : time}
-        mobileScrollRef={mobileScrollRef}
-        handleCodeChange={handleCodeChange}
-        lastAction={lastAction}
-        isOutputVisible={isOutputVisible}
-        setIsOutputVisible={setIsOutputVisible}
-      />
+  const sharedProps = {
+    activeTab, setActiveTab,
+    currentProblem, userSubmissions,
+    loading: codeLoading, error,
+    navigate, isSolved,
+    language, setLanguage,
+    code,
+    handleRun, handleSubmit,
+    handleCodeChange,
+    verdict, failedCase, averageTime,
+    lastAction,
+    // Test case panel props
+    testCases, setTestCases,
+    activeTestCaseIdx, setActiveTestCaseIdx,
+    testCaseResults,
+    isOutputMode, setIsOutputMode,
+  };
 
+  return (
+    <div ref={containerRef} className="w-screen h-screen md:flex bg-zinc-950 text-white overflow-hidden">
+      <MobileProblemView {...sharedProps} mobileScrollRef={mobileScrollRef} />
       <DesktopProblemView
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        currentProblem={currentProblem}
-        userSubmissions={userSubmissions}
-        loading={codeLoading}
-        error={error}
-        navigate={navigate}
-        isSolved={isSolved}
-        language={language}
-        setLanguage={setLanguage}
-        code={code}
-        customInput={customInput}
-        setCustomInput={setCustomInput}
-        handleRun={handleRun}
-        handleSubmit={handleSubmit}
-        output={output}
-        codeError={codeError}
-        verdict={verdict}
-        failedCase={failedCase}
-        averageTime={averageTime}
-        time={lastAction === "run" ? null : time}
-        isOutputVisible={isOutputVisible}
-        setIsOutputVisible={setIsOutputVisible}
+        {...sharedProps}
         editorHeight={editorHeight}
         testcaseHeight={testcaseHeight}
         setEditorHeight={setEditorHeight}
@@ -229,8 +162,6 @@ const ProblemDetailsPage = () => {
         containerRef={containerRef}
         leftWidth={leftWidth}
         setLeftWidth={setLeftWidth}
-        handleCodeChange={handleCodeChange}
-        lastAction={lastAction}
       />
     </div>
   );

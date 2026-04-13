@@ -1,46 +1,21 @@
 import { Editor } from "@monaco-editor/react";
-import { ArrowLeft, CheckCheck } from "lucide-react";
+import { ArrowLeft, CheckCheck, Play, Send } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  updateCodeLocally,
-  saveCodeToDB,
-  clearSaveSuccess,
-} from "../../features/code/codePersistenceSlice";
+import { clearSaveSuccess } from "../../features/code/codePersistenceSlice";
 import { languageBoilerplates } from "./LanguageBoilerplates";
 
 const CodeEditorPanel = ({
-  language,
-  setLanguage,
-  code,
-  customInput,
-  setCustomInput,
-  onBackToDescription,
-  isMobile,
-  onRun,
-  onSubmit,
-  currentProblem,
+  language, setLanguage, code,
+  handleCodeChange,
+  onBackToDescription, isMobile, onRun, onSubmit, currentProblem,
 }) => {
   const dispatch = useDispatch();
-  const saveDebounceRef = useRef(null);
   const tickTimeoutRef = useRef(null);
   const [fadeTick, setFadeTick] = useState(false);
 
   const { saving, saveSuccess } = useSelector((state) => state.codePersistence);
   const { loading, lastAction } = useSelector((state) => state.code);
-
-  // Debounced save on code change
-  const handleCodeChange = (val) => {
-    const problemId = currentProblem?._id;
-    if (!problemId) return;
-
-    dispatch(updateCodeLocally({ problemId, language, code: val }));
-
-    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
-    saveDebounceRef.current = setTimeout(() => {
-      dispatch(saveCodeToDB({ problemId, language, code: val }));
-    }, 2000);
-  };
 
   useEffect(() => {
     if (saveSuccess) {
@@ -51,30 +26,26 @@ const CodeEditorPanel = ({
     return () => clearTimeout(tickTimeoutRef.current);
   }, [saveSuccess, dispatch]);
 
+  
+
+  const isLoading = loading && (lastAction === "run" || lastAction === "submit");
+
   return (
-    <div
-      className={`flex flex-col ${
-        isMobile ? "min-w-full h-full bg-gray-950" : "h-full"
-      }`}
-    >
-      {/* Top Toolbar */}
-      <div
-        className={`relative flex items-center px-2 py-2 bg-gray-800 border-b border-gray-700 ${
-          isMobile ? "justify-between" : "justify-start"
-        }`}
-      >
+    <div className={`flex flex-col ${isMobile ? "min-w-full h-full bg-zinc-950" : "h-full"}`}>
+      {/* Toolbar */}
+      <div className={`flex items-center px-3 py-2 bg-zinc-900 border-b border-zinc-800 gap-2 ${isMobile ? "justify-between" : ""}`}>
         {isMobile && (
           <button
             onClick={onBackToDescription}
-            className="text-purple-300 text-sm bg-gray-700 px-2 py-1 rounded"
+            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
           >
-            <ArrowLeft size={15} strokeWidth={3} />
+            <ArrowLeft size={15} strokeWidth={2.5} />
           </button>
         )}
 
-        {/* Language Selector */}
+        {/* Language selector */}
         <select
-          className="bg-gray-900 text-white px-3 py-2 rounded text-sm sm:ml-0 -ml-15"
+          className="bg-zinc-800 border border-zinc-700 text-white px-2.5 py-1.5 rounded-lg text-xs focus:outline-none focus:border-purple-500 transition"
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
         >
@@ -83,46 +54,43 @@ const CodeEditorPanel = ({
               {lang.charAt(0).toUpperCase() + lang.slice(1)}
             </option>
           ))}
-          <option value="java" disabled>
-            Java
-          </option>
-          <option value="go" disabled>
-            Go
-          </option>
+          <option value="java" disabled>Java</option>
+          <option value="go" disabled>Go</option>
         </select>
 
-        {/* Save Status Indicator */}
-        <div className="absolute sm:left-35 left-46">
-          {saving && <span className="text-gray-600 text-xs">Saving...</span>}
+        {/* Save indicator */}
+        <div className="flex-1 flex items-center">
+          {saving && <span className="text-zinc-600 text-xs">Saving...</span>}
           {!saving && saveSuccess && (
             <CheckCheck
-              className={`text-gray-500 transition-opacity duration-1000 ${
-                fadeTick ? "opacity-0" : "opacity-100"
-              }`}
-              size={25}
+              className={`text-zinc-600 transition-opacity duration-1000 ${fadeTick ? "opacity-0" : "opacity-100"}`}
+              size={14}
             />
           )}
         </div>
 
-        {/* Run & Submit Buttons */}
-        <div className="md:absolute md:left-1/2 md:transform md:-translate-x-1/2 flex gap-3">
+        {/* Run & Submit */}
+        <div className="flex gap-2">
           <button
-            className="bg-blue-500 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
+            className="flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
             onClick={onRun}
-            disabled={loading}
+            disabled={isLoading}
           >
+            <Play size={11} />
             Run
           </button>
           <button
-            className="bg-green-600 px-4 py-1.5 text-white rounded text-sm opacity-80 hover:opacity-100"
+            className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
             onClick={onSubmit}
-            disabled={loading}
+            disabled={isLoading}
           >
+            <Send size={11} />
             Submit
           </button>
         </div>
       </div>
 
+      {/* Monaco Editor */}
       <Editor
         height={isMobile ? "80vh" : "100%"}
         defaultLanguage={language}
@@ -131,7 +99,7 @@ const CodeEditorPanel = ({
         onChange={handleCodeChange}
         theme="vs-dark"
         options={{
-          fontSize: 14,
+          fontSize: 13,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           automaticLayout: true,
@@ -140,6 +108,7 @@ const CodeEditorPanel = ({
           formatOnType: true,
           formatOnPaste: true,
           lineNumbersMinChars: 3,
+          padding: { top: 8 },
         }}
       />
     </div>

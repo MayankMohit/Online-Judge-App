@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { FileX } from "lucide-react";
+import LoadingScreen from "./LoadingScreen";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -58,9 +59,7 @@ export default function SubmissionsPage({
         <h1 className="text-xl font-bold text-white mb-6">{heading}</h1>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-6 h-6 rounded-full border-2 border-t-purple-500 animate-spin" />
-          </div>
+          <LoadingScreen />
         ) : error ? (
           <div className="text-center text-red-400 py-10">{error}</div>
         ) : submissions.length === 0 ? (

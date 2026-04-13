@@ -1,46 +1,38 @@
 import { CircleCheckBig } from "lucide-react";
 
-const difficultyColors = {
-  Easy: "text-green-400 bg-green-950",
-  Medium: "text-yellow-400 bg-yellow-950",
-  Hard: "text-red-400 bg-red-950",
+const difficultyConfig = {
+  Easy:   { text: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" },
+  Medium: { text: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/20" },
+  Hard:   { text: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/20" },
 };
 
-const ProblemHeader = ({
-  problemNumber,
-  title,
-  difficulty,
-  tags,
-  isSolved,
-}) => (
-  <div className="flex items-center gap-4 mb-4">
-    <div>
-      <h1 className="text-2xl font-bold flex justify-between mb-2 gap-20">
-        {problemNumber}. {title}
-        {isSolved && <CircleCheckBig className="text-green-400" />}
-      </h1>
-      <div className="flex items-center gap-2 mt-1">
-        <span
-          className={`px-2 py-1 rounded text-xs ${difficultyColors[difficulty] || "text-gray-400 bg-gray-700"}`}
-        >
-          {difficulty}
-        </span>
-        {tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1 items-center ml-5">
-            Topics:
-            {tags.map((tag, i) => (
-              <span
-                key={i}
-                className="bg-gray-800 text-purple-400 px-2 py-1 rounded text-xs capitalize"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+const ProblemHeader = ({ problemNumber, title, difficulty, tags, isSolved }) => {
+  const diff = difficultyConfig[difficulty] || { text: "text-zinc-400", bg: "bg-zinc-800", border: "border-zinc-700" };
+
+  return (
+    <div className="mb-5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <h1 className="text-lg font-bold text-white leading-snug">
+          <span className="text-zinc-500 mr-1.5">#{problemNumber}</span>
+          {title}
+        </h1>
+        {isSolved && (
+          <CircleCheckBig size={18} className="text-green-400 shrink-0 mt-0.5" />
         )}
       </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${diff.text} ${diff.bg} ${diff.border}`}>
+          {difficulty}
+        </span>
+        {tags?.map((tag, i) => (
+          <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-zinc-800 text-zinc-400 border border-zinc-700 capitalize">
+            {tag}
+          </span>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default ProblemHeader;

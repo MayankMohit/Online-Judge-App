@@ -1,88 +1,60 @@
-import { ArrowLeft, ArrowBigUpDash } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
 import OutputTab from "./OutputTab";
+import TestCasePanel from "./TestCasePanel";
 
 const MobileProblemView = ({
-  activeTab,
-  setActiveTab,
-  currentProblem,
-  userSubmissions,
-  loading,
-  error,
-  navigate,
-  isSolved,
-  language,
-  setLanguage,
-  code,
-  customInput,
-  setCustomInput,
-  handleRun,
-  handleSubmit,
-  output,
-  codeError,
-  verdict,
-  failedCase,
-  averageTime,
-  time,
+  activeTab, setActiveTab, currentProblem, userSubmissions,
+  loading, error, navigate, isSolved, language, setLanguage,
+  code, handleRun, handleSubmit, handleCodeChange,
+  verdict, failedCase, averageTime, lastAction,
+  testCases, setTestCases, activeTestCaseIdx, setActiveTestCaseIdx,
+  testCaseResults, isOutputMode, setIsOutputMode,
   mobileScrollRef,
-  lastAction,
-  isOutputVisible,
-  setIsOutputVisible,
 }) => {
+  const isSubmitResult = lastAction === "submit" && !loading && verdict;
+  const showDrawer = isOutputMode || isSubmitResult;
+
   return (
     <div
       className="flex flex-row md:hidden w-full h-full overflow-x-hidden scroll-smooth"
       ref={mobileScrollRef}
     >
-      {/* Description Panel (mobile) */}
-      <div className="min-w-full h-full flex flex-col border-r border-gray-800">
-        <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
-          <div className="flex gap-2">
+      {/* DESCRIPTION PANEL */}
+      <div className="min-w-full h-full flex flex-col border-r border-zinc-800 bg-zinc-950">
+        <div className="flex items-center justify-between px-3 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(-1)}
-              className="text-purple-400 hover:text-purple-300"
+              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
             >
-              <ArrowLeft size={28} strokeWidth={2.5} />
+              <ArrowLeft size={15} strokeWidth={2.5} />
             </button>
-            <button
-              className={`text-sm px-2 py-1 rounded ${
-                activeTab === "description"
-                  ? "bg-purple-700 text-white"
-                  : "bg-gray-700 text-purple-300"
-              }`}
-              onClick={() => setActiveTab("description")}
-            >
-              Description
-            </button>
-            <button
-              className={`text-sm px-2 py-1 rounded ${
-                activeTab === "submissions"
-                  ? "bg-purple-700 text-white"
-                  : "bg-gray-700 text-purple-300"
-              }`}
-              onClick={() => setActiveTab("submissions")}
-            >
-              Submissions
-            </button>
+            {["description", "submissions"].map((tab) => (
+              <button
+                key={tab}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                  activeTab === tab ? "bg-zinc-700 text-white" : "text-zinc-400 hover:bg-zinc-800"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
           <button
             onClick={() => {
-              setIsOutputVisible(false);
-              mobileScrollRef.current?.scrollTo({
-                left: window.innerWidth,
-                behavior: "smooth",
-              });
+              setIsOutputMode(false);
+              mobileScrollRef.current?.scrollTo({ left: window.innerWidth, behavior: "smooth" });
             }}
-            className="text-purple-200 text-sm bg-gray-700 px-2 py-1 rounded"
+            className="text-xs text-zinc-300 bg-zinc-800 border border-zinc-700 px-2.5 py-1.5 rounded-lg hover:bg-zinc-700 transition"
           >
             Code →
           </button>
         </div>
-
         <ProblemDescriptionPanel
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
           problem={currentProblem}
           submissions={userSubmissions}
           loading={loading}
@@ -92,82 +64,45 @@ const MobileProblemView = ({
         />
       </div>
 
-      {/* Code Editor Panel (mobile) */}
-      <div className="min-w-full h-full flex flex-col bg-gray-950 relative">
+      {/* CODE PANEL */}
+      <div className="min-w-full h-full flex flex-col bg-zinc-950 relative">
         <CodeEditorPanel
           language={language}
           setLanguage={setLanguage}
           code={code}
-          customInput={customInput}
-          setCustomInput={setCustomInput}
+          handleCodeChange={handleCodeChange}
           onBackToDescription={() => {
-            setIsOutputVisible(false);
+            setIsOutputMode(false);
             mobileScrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
           }}
           isMobile={true}
-          onRun={() => {
-            setIsOutputVisible(true);
-            handleRun();
-          }}
-          onSubmit={() => {
-            setIsOutputVisible(true);
-            handleSubmit();
-          }}
+          onRun={() => handleRun()}
+          onSubmit={() => handleSubmit()}
           currentProblem={currentProblem}
         />
 
-        {/* Custom Test Case Area */}
-        <div className="bg-gray-900 p-4 text-sm flex flex-col gap-2">
-          <h3 className="text-purple-400 font-semibold mb-1 flex justify-between">
-            <div>
-              Custom Test Case
-            <ArrowBigUpDash size={30} className="inline-block ml-2" />
-            </div>
-            
-              <button
-                onClick={() => setIsOutputVisible(true)}
-              className="bg-purple-900 text-gray-300 px-2 py-1 rounded-lg shadow-lg text-sm"
-              disabled={isOutputVisible}
-              >
-                Output
-              </button>
-            
-          </h3>
-          <textarea
-            className="bg-gray-800 text-white p-2 rounded resize-none min-h-[100px] custom-scrollbar"
-            placeholder="Enter input here..."
-            value={customInput}
-            onChange={(e) => setCustomInput(e.target.value)}
-          ></textarea>
-        </div>
-
-        {/* Output Drawer */}
-        <div
-          className={`fixed bottom-0 left-0 w-full bg-gray-900 shadow-lg transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-            isOutputVisible ? "translate-y-0" : "translate-y-full"
-          }`}
-          style={{ maxHeight: "45vh" }}
-        >
-          <div className="p-2 border-b border-gray-700 flex justify-between items-center bg-gray-800">
-            <h3 className="text-purple-400 text-sm font-semibold">Output</h3>
-            <button
-              onClick={() => setIsOutputVisible(false)}
-              className="text-gray-300 text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600"
-            >
-              Close
-            </button>
-          </div>
-          <div className="p-3 overflow-auto max-h-[calc(45vh-40px)] text-sm">
+        {/* Test case strip (always visible below editor on mobile) */}
+        <div className="bg-zinc-900 border-t border-zinc-800 shrink-0" style={{ height: "200px" }}>
+          {isSubmitResult ? (
             <OutputTab
-              output={output}
-              error={codeError}
               verdict={verdict}
               failedCase={failedCase}
-              time={time || averageTime}
-              loading={loading}
+              averageTime={averageTime}
               lastAction={lastAction}
+              loading={loading}
             />
-          </div>
+          ) : (
+            <TestCasePanel
+              testCases={testCases}
+              activeIdx={activeTestCaseIdx}
+              setActiveIdx={setActiveTestCaseIdx}
+              onTestCasesChange={setTestCases}
+              results={testCaseResults}
+              loading={loading && lastAction === "runAll"}
+              isOutputMode={isOutputMode}
+              setIsOutputMode={setIsOutputMode}
+            />
+          )}
         </div>
       </div>
     </div>

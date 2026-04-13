@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import ConfirmSignOutDialog from "../../components/ConfirmSignOutDialog";
+import LoadingScreen from "../../components/LoadingScreen";
 
 const DIFFICULTY_COLORS = {
   Easy:   { fill: "#4ade80", bg: "bg-green-500/10",  text: "text-green-400",  border: "border-green-500/30"  },
@@ -71,9 +72,7 @@ export default function DashboardPage() {
   const totalSolved = (difficultyStats?.Easy || 0) + (difficultyStats?.Medium || 0) + (difficultyStats?.Hard || 0);
 
   if (loading) return (
-    <div className="w-screen h-screen flex items-center justify-center bg-black">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-purple-500" />
-    </div>
+    <LoadingScreen />
   );
 
   return (

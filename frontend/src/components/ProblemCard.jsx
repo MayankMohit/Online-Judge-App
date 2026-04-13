@@ -38,7 +38,7 @@ const ProblemCard = ({ problem, index, dashboard=false }) => {
 
   // Show max 2 tags on mobile, more on desktop
   const visibleTagsDesktop = problem.tags?.slice(0, 3) || [];
-  const visibleTagsMobile = problem.tags?.slice(0, 2) || [];
+  const visibleTagsMobile = problem.tags?.slice(0, 1) || [];
   const extraDesktop = (problem.tags?.length || 0) - visibleTagsDesktop.length;
   const extraMobile = (problem.tags?.length || 0) - visibleTagsMobile.length;
 

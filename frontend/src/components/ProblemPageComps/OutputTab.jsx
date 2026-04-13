@@ -1,172 +1,99 @@
 import { useEffect, useState, useRef } from "react";
+import { CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
 
-const OutputTab = ({
-  output,
-  error,
-  verdict,
-  failedCase,
-  time,
-  loading,
-  lastAction,
-  onClose,
-}) => {
-  const scrollBoxClasses =
-    "bg-gray-800 p-1.5 rounded max-h-40 overflow-auto whitespace-pre-wrap text-gray-100 custom-scrollbar";
-
-  const verdictMessage = {
-    accepted: "Accepted, all test cases passed!",
-    compilation_error: "Compilation Error!",
-    wrong_answer: "Test Case Failed!",
-    time_limit_exceeded: "Time Limit Exceeded!",
-  };
-
+/**
+ * OutputTab — only shows SUBMIT results now.
+ * Run results are shown in TestCasePanel.
+ */
+const OutputTab = ({ verdict, failedCase, averageTime, lastAction, loading, onClose }) => {
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
-  const progressIntervalRef = useRef(null);
-  const finishAnimationRef = useRef(null);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     if (lastAction === "submit" && loading) {
       setProgress(0);
       setFadeOut(false);
-
-      let fastSpeed = 5;  
-      let slowSpeed = 2;
-      progressIntervalRef.current = setInterval(() => {
-        setProgress((p) => {
-          if (p < 80) return Math.min(p + fastSpeed, 80);
-          return Math.min(p + slowSpeed, 95);
-        });
+      intervalRef.current = setInterval(() => {
+        setProgress((p) => p < 80 ? Math.min(p + 5, 80) : Math.min(p + 2, 95));
       }, 100);
-
-      return () => {
-        clearInterval(progressIntervalRef.current);
-        if (finishAnimationRef.current) {
-          cancelAnimationFrame(finishAnimationRef.current);
-        }
-      };
+      return () => clearInterval(intervalRef.current);
     }
-
-    // Simplified finish animation
     if (!loading && lastAction === "submit") {
-      clearInterval(progressIntervalRef.current);
-      
-      // Immediately set to 100% with smooth transition
+      clearInterval(intervalRef.current);
       setProgress(100);
-      
-      // Start fade out after 1 second
-      const timer = setTimeout(() => setFadeOut(true), 1000);
-      
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setFadeOut(true), 1000);
+      return () => clearTimeout(t);
     }
   }, [loading, lastAction]);
 
+  const verdictConfig = {
+    accepted:            { label: "Accepted",           icon: <CheckCircle size={18} />, cls: "text-green-400" },
+    wrong_answer:        { label: "Wrong Answer",        icon: <XCircle size={18} />,     cls: "text-red-400" },
+    time_limit_exceeded: { label: "Time Limit Exceeded", icon: <Clock size={18} />,       cls: "text-yellow-400" },
+    compilation_error:   { label: "Compilation Error",   icon: <AlertTriangle size={18} />,cls: "text-orange-400" },
+    runtime_error:       { label: "Runtime Error",       icon: <XCircle size={18} />,     cls: "text-pink-400" },
+  };
+
+  const vc = verdictConfig[verdict];
+
+  const codeBox = (content, colorClass = "text-zinc-300") => (
+    <pre className={`bg-black/50 border border-zinc-800 rounded-lg p-2.5 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-28 custom-scrollbar ${colorClass}`}>
+      {content}
+    </pre>
+  );
+
+  const Label = ({ text }) => (
+    <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">{text}</p>
+  );
+
   return (
-    <div className="bg-gray-900 p-4 text-sm flex flex-col gap-2 h-full">
-      {/* Close Button */}
-      <div className="flex justify-between items-center sm:mb-2">
-        <h3 className="text-purple-400 font-semibold sm:block hidden">Output</h3>
+    <div className="bg-zinc-950 p-4 text-sm flex flex-col gap-3 h-full overflow-auto custom-scrollbar">
+      <div className="flex justify-between items-center shrink-0">
+        <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Submit Result</h3>
         {onClose && (
-          <button
-            className="text-gray-400 hover:text-white text-xs"
-            onClick={onClose}
-          >
-            ✕ Close
-          </button>
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-300 text-xs transition">✕</button>
         )}
       </div>
 
-      {/* Loader */}
-      {lastAction === "run" && loading && (
-        <div className="text-gray-400 italic">Running your code...</div>
-      )}
-      {lastAction === "submit" && (
-        <>
-          {loading && (
-            <div className="mb-2">
-              <div className="text-gray-400 italic mb-1">
-                Evaluating your solution against all test cases...
-              </div>
-              {/* Adaptive Progress Bar */}
-              <div className="relative sm:w-100 w-full h-2 bg-gray-700 rounded overflow-hidden">
-                <div
-                  className={`absolute left-0 top-0 h-full bg-green-500 transition-all duration-300 ease-out shimmer-bar ${
-                    fadeOut ? "opacity-0" : "opacity-100"
-                  }`}
-                  style={{
-                    width: `${progress}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Show Run Output */}
-      {lastAction === "run" && !loading && (
-        <div className={scrollBoxClasses}>
-          {error ? (
-            <span className="text-red-400">{error}</span>
-          ) : (
-            <pre>{output || "No Output"}</pre>
-          )}
+      {/* Progress bar while submitting */}
+      {lastAction === "submit" && loading && (
+        <div>
+          <p className="text-zinc-500 text-xs italic mb-2">Evaluating against all test cases...</p>
+          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full bg-purple-500 rounded-full transition-all duration-300 shimmer-bar ${fadeOut ? "opacity-0" : "opacity-100"}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       )}
 
-      {/* Show Submission Result */}
-      {lastAction === "submit" && !loading && (
-        <div className="space-y-3">
-          <p className="mb-1 text-xl">
-            <span
-              className={
-                verdict === "accepted"
-                  ? "text-green-400 font-semibold"
-                  : "text-red-400 font-semibold"
-              }
-            >
-              {verdictMessage[verdict] || "N/A"}
-            </span>
-          </p>
+      {/* Result */}
+      {lastAction === "submit" && !loading && vc && (
+        <div className="flex flex-col gap-3">
+          <div className={`flex items-center gap-2 font-bold text-lg ${vc.cls}`}>
+            {vc.icon}{vc.label}
+          </div>
 
-          {/* Compilation Error */}
           {verdict === "compilation_error" && (
-            <div className={scrollBoxClasses}>
-              <pre className="text-red-400">
-                {failedCase?.actualOutput || error || "Compilation failed."}
-              </pre>
-            </div>
+            <div><Label text="Error" />{codeBox(failedCase?.actualOutput || "Compilation failed.", "text-red-400")}</div>
           )}
-
-          {/* Wrong Answer Details */}
           {verdict === "wrong_answer" && (
-            <div className="space-y-1">
-              <div>
-                <p className="text-purple-300">Input:</p>
-                <div className={scrollBoxClasses}>
-                  <pre>{failedCase?.input || "Not Available"}</pre>
-                </div>
-              </div>
-              <div>
-                <p className="text-green-400">Expected Output:</p>
-                <div className={scrollBoxClasses}>
-                  <pre>{failedCase?.expectedOutput || "Not Available"}</pre>
-                </div>
-              </div>
-              <div>
-                <p className="text-red-400">Your Output:</p>
-                <div className={scrollBoxClasses}>
-                  <pre>{failedCase?.actualOutput || "No Output"}</pre>
-                </div>
-              </div>
+            <div className="flex flex-col gap-2">
+              <div><Label text="Input" />{codeBox(failedCase?.input || "N/A")}</div>
+              <div><Label text="Expected" />{codeBox(failedCase?.expectedOutput || "N/A", "text-green-400")}</div>
+              <div><Label text="Got" />{codeBox(failedCase?.actualOutput || "No output", "text-red-400")}</div>
             </div>
           )}
-
-          {/* Time Limit Exceeded */}
-          {verdict === "time_limit_exceeded" && error && (
-            <div className={scrollBoxClasses}>
-              <pre className="text-red-400">{error}</pre>
-            </div>
+          {verdict === "time_limit_exceeded" && (
+            <p className="text-xs text-zinc-500">Your solution exceeded the 3-second time limit.</p>
+          )}
+          {verdict === "runtime_error" && (
+            <div><Label text="Error" />{codeBox(failedCase?.actualOutput || "Runtime error occurred.", "text-pink-400")}</div>
+          )}
+          {verdict === "accepted" && (
+            <p className="text-xs text-zinc-500">All test cases passed ✓ &nbsp;Avg: {averageTime}ms</p>
           )}
         </div>
       )}

@@ -33,6 +33,7 @@ export default function UserProfile({ title, userData, submissionsList = [], onB
   const isAdmin = userData?.role === "admin";
 
   return (
+    
     <div className="min-h-screen w-full bg-black text-white">
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-black border-b border-zinc-800 px-6 py-3 flex items-center justify-between">

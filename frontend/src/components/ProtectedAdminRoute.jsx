@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 const ProtectedAdminRoute = () => {
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
 
-  if (isCheckingAuth) return <div>Loading...</div>;
+  if (isCheckingAuth) return <div><LoadingScreen /></div>;
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 

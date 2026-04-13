@@ -2,77 +2,33 @@ import { useRef } from "react";
 import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
 import OutputTab from "./OutputTab";
+import TestCasePanel from "./TestCasePanel";
 import { ArrowLeft } from "lucide-react";
 
 const DesktopProblemView = ({
-  activeTab,
-  setActiveTab,
-  currentProblem,
-  userSubmissions,
-  loading,
-  error,
-  navigate,
-  isSolved,
-  language,
-  setLanguage,
-  code,
-  customInput,
-  setCustomInput,
-  handleRun,
-  handleSubmit,
-  output,
-  codeError,
-  verdict,
-  failedCase,
-  averageTime,
-  time,
-  isOutputVisible,
-  setIsOutputVisible,
-  editorHeight,
-  testcaseHeight,
-  setEditorHeight,
-  setTestcaseHeight,
-  containerRef,
-  leftWidth,
-  setLeftWidth,
-  lastAction
+  activeTab, setActiveTab, currentProblem, userSubmissions,
+  loading, error, navigate, isSolved, language, setLanguage,
+  code, handleRun, handleSubmit, handleCodeChange,
+  verdict, failedCase, averageTime, lastAction,
+  testCases, setTestCases, activeTestCaseIdx, setActiveTestCaseIdx,
+  testCaseResults, isOutputMode, setIsOutputMode,
+  editorHeight, testcaseHeight, setEditorHeight, setTestcaseHeight,
+  containerRef, leftWidth, setLeftWidth,
 }) => {
   const isDraggingRef = useRef(false);
   const isDraggingHeight = useRef(false);
 
-  const handleMouseDown = (e) => {
-    e.preventDefault();
-    isDraggingRef.current = true;
-    document.body.style.cursor = "col-resize";
-  };
-
   const handleMouseMove = (e) => {
     if (isDraggingRef.current && containerRef.current) {
       const containerWidth = containerRef.current.offsetWidth;
-      const offsetX =
-        e.clientX - containerRef.current.getBoundingClientRect().left;
-
-      const minLeftPercent = 10;
-      const maxLeftPercent = 90;
-
-      const newLeftWidth = Math.min(
-        Math.max((offsetX / containerWidth) * 100, minLeftPercent),
-        maxLeftPercent
-      );
+      const offsetX = e.clientX - containerRef.current.getBoundingClientRect().left;
+      const newLeftWidth = Math.min(Math.max((offsetX / containerWidth) * 100, 15), 85);
       setLeftWidth(newLeftWidth);
     }
     if (isDraggingHeight.current && containerRef.current) {
       const containerHeight = containerRef.current.offsetHeight;
-      const offsetY =
-        e.clientY - containerRef.current.getBoundingClientRect().top;
-
-      const minHeightPx = 100;
-      const minEditorPercent = (minHeightPx / containerHeight) * 100;
-
-      const newEditorHeight = Math.min(
-        Math.max((offsetY / containerHeight) * 100, 20),
-        100 - minEditorPercent
-      );
+      const offsetY = e.clientY - containerRef.current.getBoundingClientRect().top;
+      const newEditorHeight = Math.min(Math.max((offsetY / containerHeight) * 100, 25), 85);
       setEditorHeight(newEditorHeight);
       setTestcaseHeight(100 - newEditorHeight);
     }
@@ -84,51 +40,38 @@ const DesktopProblemView = ({
     document.body.style.cursor = "default";
   };
 
+  const isSubmitResult = lastAction === "submit" && !loading && verdict;
+
   return (
     <div
-      className="hidden md:flex w-full h-full"
+      className="hidden md:flex w-full h-full bg-zinc-950"
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
       {/* LEFT PANEL */}
-      <div
-        className="h-full flex flex-col border-r border-gray-800 min-w-[25vw] custom-scrollbar"
-        style={{ width: `${leftWidth}%` }}
-      >
-        <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
-          <div className="flex gap-2">
+      <div className="h-full flex flex-col border-r border-zinc-800 min-w-[20vw] bg-zinc-950" style={{ width: `${leftWidth}%` }}>
+        <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition mr-1"
+          >
+            <ArrowLeft size={15} strokeWidth={2.5} />
+          </button>
+          {["description", "submissions"].map((tab) => (
             <button
-              onClick={() => navigate(-1)}
-              className="text-purple-400 hover:text-purple-300"
-            >
-              <ArrowLeft size={28} strokeWidth={2.5} />
-            </button>
-            <button
-              className={`text-sm px-2 py-2 rounded ${
-                activeTab === "description"
-                  ? "bg-purple-700 text-white"
-                  : "bg-gray-700 text-purple-300"
+              key={tab}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                activeTab === tab ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
               }`}
-              onClick={() => setActiveTab("description")}
+              onClick={() => setActiveTab(tab)}
             >
-              Description
+              {tab}
             </button>
-            <button
-              className={`text-sm px-2 py-2 rounded ${
-                activeTab === "submissions"
-                  ? "bg-purple-700 text-white"
-                  : "bg-gray-700 text-purple-300"
-              }`}
-              onClick={() => setActiveTab("submissions")}
-            >
-              Submissions
-            </button>
-          </div>
+          ))}
         </div>
         <ProblemDescriptionPanel
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
           problem={currentProblem}
           submissions={userSubmissions}
           loading={loading}
@@ -138,71 +81,58 @@ const DesktopProblemView = ({
         />
       </div>
 
-      {/* DRAG HANDLE */}
+      {/* VERTICAL DRAG HANDLE */}
       <div
-        onMouseDown={handleMouseDown}
-        className="w-1.5 cursor-col-resize bg-gray-700 hover:bg-purple-500 transition"
-      ></div>
+        onMouseDown={(e) => { e.preventDefault(); isDraggingRef.current = true; document.body.style.cursor = "col-resize"; }}
+        className="w-1 cursor-col-resize bg-zinc-800 hover:bg-purple-600 transition-colors shrink-0"
+      />
 
       {/* RIGHT PANEL */}
-      <div
-        className="flex flex-col bg-gray-950 min-w-[30vw]"
-        style={{ width: `${100 - leftWidth}%` }}
-      >
+      <div className="flex flex-col bg-zinc-950 min-w-[20vw]" style={{ width: `${100 - leftWidth}%` }}>
+        {/* Editor */}
         <div style={{ height: `${editorHeight}%` }}>
           <CodeEditorPanel
             language={language}
             setLanguage={setLanguage}
             code={code}
-            customInput={customInput}
-            setCustomInput={setCustomInput}
             isMobile={false}
             onRun={handleRun}
             onSubmit={handleSubmit}
             currentProblem={currentProblem}
+            handleCodeChange={handleCodeChange}
           />
         </div>
 
-        <div className="h-2 bg-gray-700"></div>
+        {/* HORIZONTAL DRAG HANDLE */}
+        <div
+          className="h-1 bg-zinc-800 hover:bg-purple-600 cursor-row-resize transition-colors shrink-0"
+          onMouseDown={(e) => { e.preventDefault(); isDraggingHeight.current = true; document.body.style.cursor = "row-resize"; }}
+        />
 
-        {isOutputVisible ? (
-          <div
-            className="flex-1 overflow-auto custom-scrollbar bg-gray-900"
-            style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
-          >
+        {/* BOTTOM PANEL — test cases OR submit result */}
+        <div className="flex-1 overflow-hidden" style={{ height: `${testcaseHeight}%`, minHeight: "160px" }}>
+          {isSubmitResult ? (
             <OutputTab
-              output={output}
-              error={codeError}
               verdict={verdict}
               failedCase={failedCase}
-              time={time || averageTime}
-              loading={loading}
+              averageTime={averageTime}
               lastAction={lastAction}
-              onClose={() => setIsOutputVisible(false)}
+              loading={loading}
+              onClose={() => setIsOutputMode(false)}
             />
-          </div>
-        ) : (
-          <div
-            className="bg-gray-900 p-4 text-sm flex flex-col gap-2 overflow-hidden custom-scrollbar"
-            style={{ height: `${testcaseHeight}%`, minHeight: "180px" }}
-          >
-            <h3 className="text-purple-400 font-semibold mb-1">
-              Custom Test Case
-            </h3>
-            <textarea
-              className="bg-gray-800 text-white p-2 rounded resize-none h-full custom-scrollbar"
-              placeholder="Enter input here..."
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-            ></textarea>
-            <button
-              className="mt-2 text-purple-300 text-xs underline"
-              onClick={() => setIsOutputVisible(true)}
-            >
-              Show Output Tab ↥
-            </button>
-          </div>
-        )}
+          ) : (
+            <TestCasePanel
+              testCases={testCases}
+              activeIdx={activeTestCaseIdx}
+              setActiveIdx={setActiveTestCaseIdx}
+              onTestCasesChange={setTestCases}
+              results={testCaseResults}
+              loading={loading && lastAction === "runAll"}
+              isOutputMode={isOutputMode}
+              setIsOutputMode={setIsOutputMode}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

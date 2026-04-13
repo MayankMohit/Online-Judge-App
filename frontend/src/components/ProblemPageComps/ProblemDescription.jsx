@@ -1,37 +1,40 @@
 import TestCase from "./TestCase";
 
-const ProblemDescription = ({
-  description,
-  inputFormat,
-  outputFormat,
-  constraints,
-  visibleTestCases,
-}) => (
+const Section = ({ title, children }) => (
+  <div className="mb-5">
+    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{title}</h3>
+    {children}
+  </div>
+);
+
+const ProblemDescription = ({ description, inputFormat, outputFormat, constraints, visibleTestCases }) => (
   <>
-    <div className="text-gray-300 whitespace-pre-wrap mb-6 sm:text-lg text-[16px]">
+    <div className="text-zinc-300 whitespace-pre-wrap mb-6 text-sm leading-relaxed">
       {description}
     </div>
-    <div className="sm:mb-6 mb-3">
-      <h3 className="sm:text-lg text-[16px] font-semibold sm:mb-2 mb-0">Input Format</h3>
-      <p className="text-gray-400 whitespace-pre-wrap">{inputFormat}</p>
-    </div>
-    <div className="sm:mb-6 mb-3">
-      <h3 className="sm:text-lg text-[16px] font-semibold sm:mb-2 mb-0">Output Format</h3>
-      <p className="text-gray-400 whitespace-pre-wrap">{outputFormat}</p>
-    </div>
-    <div className="sm:mb-6 mb-3">
-      <h3 className="sm:text-lg text-[16px] font-semibold sm:mb-2 mb-0">Constraints</h3>
-      <p className="text-gray-400 whitespace-pre-wrap">{constraints}</p>
-    </div>
-    <h2 className="sm:text-lg text-[16px] font-semibold mb-3">Sample Input Output</h2>
-    {visibleTestCases?.length ? (
-      visibleTestCases.map((tc, i) => (
-        <TestCase key={i} input={tc.input} output={tc.expectedOutput} />
-      ))
-    ) : (
-      <p className="text-gray-500 italic">No sample input/output.</p>
-    )}
+
+    <Section title="Input Format">
+      <p className="text-zinc-400 whitespace-pre-wrap text-sm leading-relaxed">{inputFormat}</p>
+    </Section>
+
+    <Section title="Output Format">
+      <p className="text-zinc-400 whitespace-pre-wrap text-sm leading-relaxed">{outputFormat}</p>
+    </Section>
+
+    <Section title="Constraints">
+      <p className="text-zinc-400 whitespace-pre-wrap text-sm font-mono leading-relaxed">{constraints}</p>
+    </Section>
+
+    <Section title="Examples">
+      {visibleTestCases?.length ? (
+        visibleTestCases.map((tc, i) => (
+          <TestCase key={i} input={tc.input} output={tc.expectedOutput} />
+        ))
+      ) : (
+        <p className="text-zinc-600 italic text-sm">No sample input/output.</p>
+      )}
+    </Section>
   </>
 );
 
-export default ProblemDescription; 
+export default ProblemDescription;

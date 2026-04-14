@@ -27,14 +27,32 @@ const CodeEditorPanel = ({
     return () => clearTimeout(tickTimeoutRef.current);
   }, [saveSuccess, dispatch]);
 
+  // Keyboard shortcuts — desktop only
+  useEffect(() => {
+    if (isMobile) return;
+    const handleKeyDown = (e) => {
+      if (isLoading) return;
+      // Ctrl + ' → Run
+      if (e.ctrlKey && e.key === "'") {
+        e.preventDefault();
+        onRun();
+      }
+      // Ctrl + Enter → Submit
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        onSubmit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobile, onRun, onSubmit, loading, lastAction]);
+
   const isLoading = loading && (lastAction === "run" || lastAction === "submit");
 
-  // Remount the mobile editor when language or problem changes so it
-  // picks up the correct defaultValue without ever receiving value= updates
   const mobileEditorKey = `mobile-${language}-${currentProblem?._id}`;
 
   const toolbar = (
-    <div className={`flex items-center px-3 py-2 bg-zinc-900 border-b border-zinc-800 gap-2 ${isMobile ? "justify-between" : ""}`}>
+    <div className={`flex items-center px-3 py-2 bg-zinc-900 border-b border-zinc-800 gap-2 overflow-visible ${isMobile ? "justify-between" : ""}`}>
       {isMobile && (
         <button
           onClick={onBackToDescription}
@@ -69,22 +87,45 @@ const CodeEditorPanel = ({
       </div>
 
       <div className="flex gap-2">
-        <button
-          className="flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
-          onClick={onRun}
-          disabled={isLoading}
-        >
-          <Play size={11} />
-          Run
-        </button>
-        <button
-          className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
-          onClick={onSubmit}
-          disabled={isLoading}
-        >
-          <Send size={11} />
-          Submit
-        </button>
+        {/* Run button — Ctrl+' on desktop */}
+        <div className="relative group">
+          <button
+            className="flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
+            onClick={onRun}
+            disabled={isLoading}
+          >
+            <Play size={11} />
+            Run
+          </button>
+          {/* Shortcut tooltip — desktop only */}
+          {!isMobile && (
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition items-center gap-1 bg-zinc-800 border border-zinc-700 rounded-md px-2 py-1 whitespace-nowrap shadow-lg z-50">
+              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">Ctrl</kbd>
+              <span className="text-zinc-500 text-[10px]">+</span>
+              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">'</kbd>
+            </div>
+          )}
+        </div>
+
+        {/* Submit button — Ctrl+Enter on desktop */}
+        <div className="relative group">
+          <button
+            className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
+            onClick={onSubmit}
+            disabled={isLoading}
+          >
+            <Send size={11} />
+            Submit
+          </button>
+          {/* Shortcut tooltip — desktop only */}
+          {!isMobile && (
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition items-center gap-1 bg-zinc-800 border border-zinc-700 rounded-md px-2 py-1 whitespace-nowrap shadow-lg z-50">
+              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">Ctrl</kbd>
+              <span className="text-zinc-500 text-[10px]">+</span>
+              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">Enter</kbd>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -107,9 +148,6 @@ const CodeEditorPanel = ({
       {toolbar}
 
       {isMobile ? (
-        // Uncontrolled on mobile — defaultValue is set once on mount/remount.
-        // onChange writes only to a ref + debounced save, never back to Redux
-        // mid-typing, so the cursor never jumps.
         <Editor
           key={mobileEditorKey}
           height="80vh"
@@ -121,7 +159,6 @@ const CodeEditorPanel = ({
           options={sharedOptions}
         />
       ) : (
-        // Controlled on desktop — works fine without a virtual keyboard
         <Editor
           height="100%"
           defaultLanguage={language}

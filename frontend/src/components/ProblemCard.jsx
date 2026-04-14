@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { Star, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -15,13 +16,31 @@ const ProblemCard = ({ problem, index }) => {
   const isSolved = isGuest ? false : user?.solvedProblems?.some(
     (entry) => entry.problemId === problem._id && entry.status === "accepted"
   );
-  const isFavorite = isGuest ? false : favoriteProblemIds.includes(problem._id);
+
+  const reduxIsFavorite = isGuest ? false : favoriteProblemIds.includes(problem._id);
+
+  // Optimistic local state — null means "follow Redux", true/false means "user just clicked"
+  const [optimisticFavorite, setOptimisticFavorite] = useState(null);
+  const isFavorite = optimisticFavorite !== null ? optimisticFavorite : reduxIsFavorite;
 
   const handleFavorite = (e) => {
     e.stopPropagation();
     if (isGuest) return;
-    if (isFavorite) dispatch(removeFavorite(problem._id));
-    else dispatch(addFavorite(problem._id));
+
+    const next = !isFavorite;
+    setOptimisticFavorite(next);
+
+    const action = next ? addFavorite(problem._id) : removeFavorite(problem._id);
+    dispatch(action)
+      .unwrap()
+      .then(() => {
+        // Redux is now in sync — clear optimistic override
+        setOptimisticFavorite(null);
+      })
+      .catch(() => {
+        // Revert on failure
+        setOptimisticFavorite(!next);
+      });
   };
 
   const difficultyConfig = {
@@ -36,13 +55,11 @@ const ProblemCard = ({ problem, index }) => {
   const extraMobile = (problem.tags?.length || 0) - visibleTagsMobile.length;
 
   return (
-    // Added w-full so the card never exceeds its grid cell
-    // Added overflow-hidden so nothing bleeds outside the rounded corners
     <div
       onClick={() => navigate(`/problems/${problem.problemNumber}`)}
       className={`w-[93vw] sm:w-full overflow-hidden bg-zinc-900 border border-zinc-800 border-l-4 ${difficultyConfig.border} p-3 rounded-lg shadow-md hover:bg-zinc-800 transition-all duration-200 cursor-pointer flex items-center justify-between gap-2`}
     >
-      {/* Left — min-w-0 ensures flex children can shrink and truncate correctly */}
+      {/* Left */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {isSolved ? (
           <CheckCircle size={16} className="text-green-400 shrink-0" />
@@ -54,14 +71,12 @@ const ProblemCard = ({ problem, index }) => {
           <h3 className="text-sm sm:text-base font-semibold text-white truncate">{problem.title}</h3>
           {problem.tags?.length > 0 && (
             <div className="flex gap-1 mt-1">
-              {/* Mobile: 1 tag */}
               <div className="flex gap-1 sm:hidden">
                 {visibleTagsMobile.map((tag) => (
                   <span key={tag} className="px-2 py-0.5 bg-zinc-700 text-zinc-300 text-xs rounded-full capitalize">{tag}</span>
                 ))}
                 {extraMobile > 0 && <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 text-xs rounded-full">+{extraMobile}</span>}
               </div>
-              {/* Desktop: up to 3 tags */}
               <div className="hidden sm:flex gap-1">
                 {visibleTagsDesktop.map((tag) => (
                   <span key={tag} className="px-2 py-0.5 bg-zinc-700 text-zinc-300 text-xs rounded-full capitalize">{tag}</span>
@@ -82,7 +97,9 @@ const ProblemCard = ({ problem, index }) => {
           <button onClick={handleFavorite} className="hover:scale-110 transition-transform">
             <Star
               size={18}
-              className={isFavorite ? "fill-yellow-400 text-yellow-400" : "text-zinc-500 hover:text-yellow-400"}
+              className={`transition-colors duration-150 ${
+                isFavorite ? "fill-yellow-400 text-yellow-400" : "text-zinc-500 hover:text-yellow-400"
+              }`}
             />
           </button>
         )}

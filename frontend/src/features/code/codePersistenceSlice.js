@@ -3,7 +3,6 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-// 🔹 Fetch saved code
 export const fetchSavedCode = createAsyncThunk(
   "codePersistence/fetchSavedCode",
   async ({ problemId, language }, thunkAPI) => {
@@ -21,7 +20,6 @@ export const fetchSavedCode = createAsyncThunk(
   }
 );
 
-// 🔹 Save code
 export const saveCodeToDB = createAsyncThunk(
   "codePersistence/saveCodeToDB",
   async ({ problemId, language, code }, thunkAPI) => {
@@ -31,7 +29,9 @@ export const saveCodeToDB = createAsyncThunk(
         { problemId, language, code },
         { withCredentials: true }
       );
-      return { problemId, language, code };
+      // Only return what's needed for save indicators — NOT code,
+      // so fulfilled doesn't trigger a codeMap write and re-render
+      return { problemId, language };
     } catch (err) {
       return thunkAPI.rejectWithValue({
         error: err.response?.data?.message || "Failed to save code",
@@ -43,7 +43,7 @@ export const saveCodeToDB = createAsyncThunk(
 const codePersistenceSlice = createSlice({
   name: "codePersistence",
   initialState: {
-    codeMap: {}, // { [problemId]: { [language]: code } }
+    codeMap: {},
     loading: false,
     saving: false,
     saveSuccess: false,
@@ -52,9 +52,7 @@ const codePersistenceSlice = createSlice({
   reducers: {
     updateCodeLocally: (state, action) => {
       const { problemId, language, code } = action.payload;
-      if (!state.codeMap[problemId]) {
-        state.codeMap[problemId] = {};
-      }
+      if (!state.codeMap[problemId]) state.codeMap[problemId] = {};
       state.codeMap[problemId][language] = code;
     },
     clearSaveSuccess: (state) => {
@@ -70,9 +68,7 @@ const codePersistenceSlice = createSlice({
       .addCase(fetchSavedCode.fulfilled, (state, action) => {
         const { problemId, language, code } = action.payload;
         state.loading = false;
-        if (!state.codeMap[problemId]) {
-          state.codeMap[problemId] = {};
-        }
+        if (!state.codeMap[problemId]) state.codeMap[problemId] = {};
         state.codeMap[problemId][language] = code;
       })
       .addCase(fetchSavedCode.rejected, (state, action) => {
@@ -84,12 +80,10 @@ const codePersistenceSlice = createSlice({
         state.saving = true;
         state.saveSuccess = false;
       })
-      .addCase(saveCodeToDB.fulfilled, (state, action) => {
-        const { problemId, language, code } = action.payload;
-        if (!state.codeMap[problemId]) {
-          state.codeMap[problemId] = {};
-        }
-        state.codeMap[problemId][language] = code;
+      .addCase(saveCodeToDB.fulfilled, (state) => {
+        // Don't touch codeMap here — updateCodeLocally already wrote it.
+        // Writing it again causes a Redux update → new `code` prop →
+        // Monaco re-renders and resets cursor mid-typing on mobile.
         state.saving = false;
         state.saveSuccess = true;
       })

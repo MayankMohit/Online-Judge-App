@@ -45,7 +45,11 @@ const ProblemDetailsPage = () => {
   const { items: userSubmissions, error } = useSelector((state) => state.problemSubmissions);
   const { loading: codeLoading, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
 
-  // Load submissions only if logged in
+  // ─── Mobile code ref ────────────────────────────────────────────────────────
+  // On mobile, the editor is uncontrolled. We track its latest value in a ref
+  // so we can read it for Run/Submit without ever feeding it back as a prop.
+  const mobileCodeRef = useRef("");
+
   useEffect(() => {
     if (!isGuest) {
       dispatch(fetchSubmissionsByProblem(number));
@@ -55,7 +59,6 @@ const ProblemDetailsPage = () => {
 
   const isSolved = isGuest ? false : userSubmissions.some((sub) => sub.verdict === "accepted");
 
-  // Load problem
   useEffect(() => {
     dispatch(fetchProblemByNumber(number));
     dispatch(clearCodeState());
@@ -64,7 +67,6 @@ const ProblemDetailsPage = () => {
     return () => dispatch(clearCurrentProblem());
   }, [dispatch, number]);
 
-  // Auto-fill test cases
   useEffect(() => {
     if (currentProblem) {
       setTestCases(buildInitialTestCases(currentProblem));
@@ -72,24 +74,29 @@ const ProblemDetailsPage = () => {
     }
   }, [currentProblem?._id]);
 
-  // Switch to output mode on results
   useEffect(() => {
     if (testCaseResults?.length > 0 || verdict || lastAction === "submit") {
       setIsOutputMode(true);
     }
   }, [testCaseResults, verdict, lastAction]);
 
-  // Load saved code only for logged-in users
   useEffect(() => {
     if (!isGuest && currentProblem?._id && language) {
       dispatch(fetchSavedCode({ problemId: currentProblem._id, language }));
     }
   }, [currentProblem?._id, language, isGuest]);
 
-  const code = isGuest
+  // When Redux loads fresh code (language switch / initial fetch), sync the
+  // mobile ref so Run/Submit always have the right starting value.
+  const reduxCode = isGuest
     ? languageBoilerplates[language]
     : (codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language]);
 
+  useEffect(() => {
+    mobileCodeRef.current = reduxCode;
+  }, [reduxCode]);
+
+  // ─── Desktop: controlled via Redux (works fine) ───────────────────────────
   const handleCodeChange = (newCode) => {
     if (isGuest) return;
     dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
@@ -99,17 +106,34 @@ const ProblemDetailsPage = () => {
     }, 2000);
   };
 
+  // ─── Mobile: update ref only, debounce save — never touches Redux mid-type ─
+  const handleMobileCodeChange = (newCode) => {
+    if (isGuest) return;
+    mobileCodeRef.current = newCode;
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      // Write to Redux + save to DB only after user pauses typing
+      dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
+      dispatch(saveCodeToDB({ problemId: currentProblem._id, language, code: newCode }));
+    }, 2000);
+  };
+
   const backendLanguageMap = { python: "py", javascript: "js", cpp: "cpp", c: "c" };
 
   const handleRun = () => {
     if (isGuest) return;
     setIsOutputMode(true);
-    dispatch(runAllTestCases({ code, language: backendLanguageMap[language] || language, testCases }));
+    // Use mobileCodeRef on mobile, Redux code on desktop
+    const isMobile = window.innerWidth < 768;
+    const codeToRun = isMobile ? mobileCodeRef.current : reduxCode;
+    dispatch(runAllTestCases({ code: codeToRun, language: backendLanguageMap[language] || language, testCases }));
   };
 
   const handleSubmit = () => {
     if (isGuest) return;
-    dispatch(submitCode({ problemId: currentProblem._id, code, language: backendLanguageMap[language] || language }))
+    const isMobile = window.innerWidth < 768;
+    const codeToSubmit = isMobile ? mobileCodeRef.current : reduxCode;
+    dispatch(submitCode({ problemId: currentProblem._id, code: codeToSubmit, language: backendLanguageMap[language] || language }))
       .then(() => dispatch(fetchSubmissionsByProblem(number)));
   };
 
@@ -125,7 +149,13 @@ const ProblemDetailsPage = () => {
     loading: codeLoading, error,
     navigate, isSolved,
     language, setLanguage,
-    code, handleRun, handleSubmit, handleCodeChange,
+    // Desktop gets controlled Redux code; mobile gets the initial value only
+    code: reduxCode,
+    handleRun, handleSubmit,
+    // Desktop handler (Redux-controlled)
+    handleCodeChange,
+    // Mobile handler (ref-only, no Redux mid-type)
+    handleMobileCodeChange,
     verdict, failedCase, averageTime, lastAction,
     testCases, setTestCases,
     activeTestCaseIdx, setActiveTestCaseIdx,

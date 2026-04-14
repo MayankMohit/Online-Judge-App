@@ -25,102 +25,74 @@ import UserManagement from "../pages/adminPages/UserManagement";
 import ProblemManagement from "../pages/adminPages/ProblemManagement";
 import AllSubmissionsOfUser from "../pages/submissionPages/AllSubmissionsOfUser";
 import AllSubmissionsOfProblem from "../pages/submissionPages/AllSubmissionsOfProblem";
+import LoadingScreen from "../components/LoadingScreen";
 
+// Redirect logged-in verified users away from auth pages
 const RedirectAuthenticatedUser = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
-  if (isAuthenticated && user && user.isVerified) {
-    return <Navigate to="/problems" replace />;
-  }
+  const { isAuthenticated, user, isCheckingAuth } = useAuthStore();
+  if (isCheckingAuth) return <LoadingScreen />;
+  if (isAuthenticated && user?.isVerified) return <Navigate to="/problems" replace />;
   return children;
+};
+
+// Landing page: logged-in users skip directly to /problems
+const LandingRoute = () => {
+  const { isAuthenticated, user, isCheckingAuth } = useAuthStore();
+  if (isCheckingAuth) return <LoadingScreen />;
+  if (isAuthenticated && user?.isVerified) return <Navigate to="/problems" replace />;
+  return <Landing />;
 };
 
 const AppRoutes = () => {
   const { checkAuth } = useAuthStore();
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  useEffect(() => { checkAuth(); }, []);
 
   return (
-    <div
-      className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#1a0533_0%,_#0a0a0a_60%,_#000000_100%)]
-      flex items-center justify-center relative overflow-hidden"
-    >
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#1a0533_0%,_#0a0a0a_60%,_#000000_100%)] flex items-center justify-center relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <div className="absolute w-96 h-96 bg-purple-900/40 rounded-full blur-3xl top-[-10%] left-[-10%] animate-pulse" />
+        <div className="absolute w-96 h-96 bg-violet-900/30 rounded-full blur-2xl bottom-[-10%] right-[-10%] animate-pulse delay-1500" />
+        <div className="absolute w-120 h-120 bg-purple-900/20 rounded-full blur-3xl top-[0%] right-[25%] animate-pulse delay-500" />
+        <div className="absolute w-120 h-120 bg-violet-900/20 rounded-full blur-2xl bottom-[-45%] left-[15%] animate-pulse delay-2000" />
+      </div>
       <BrowserRouter>
         <Toaster position="bottom-right" reverseOrder={false} />
         <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route
-            path="/signup"
-            element={
-              <RedirectAuthenticatedUser>
-                <SignUpPage />
-              </RedirectAuthenticatedUser>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <RedirectAuthenticatedUser>
-                <LoginPage />
-              </RedirectAuthenticatedUser>
-            }
-          />
-          <Route
-            path="/verify-email"
-            element={
-              <RedirectAuthenticatedUser>
-                <EmailVerificationPage />
-              </RedirectAuthenticatedUser>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <RedirectAuthenticatedUser>
-                <ForgotPasswordPage />
-              </RedirectAuthenticatedUser>
-            }
-          />
-          <Route
-            path="/reset-password/:token"
-            element={
-              <RedirectAuthenticatedUser>
-                <ResetPasswordPage />
-              </RedirectAuthenticatedUser>
-            }
-          />
+          {/* Landing — smart redirect for logged-in users */}
+          <Route path="/" element={<LandingRoute />} />
 
-          {/* Protected Routes */}
+          {/* Auth pages — redirect if already logged in */}
+          <Route path="/signup" element={<RedirectAuthenticatedUser><SignUpPage /></RedirectAuthenticatedUser>} />
+          <Route path="/login" element={<RedirectAuthenticatedUser><LoginPage /></RedirectAuthenticatedUser>} />
+          <Route path="/verify-email" element={<RedirectAuthenticatedUser><EmailVerificationPage /></RedirectAuthenticatedUser>} />
+          <Route path="/forgot-password" element={<RedirectAuthenticatedUser><ForgotPasswordPage /></RedirectAuthenticatedUser>} />
+          <Route path="/reset-password/:token" element={<RedirectAuthenticatedUser><ResetPasswordPage /></RedirectAuthenticatedUser>} />
+
+          {/* PUBLIC routes — accessible without login */}
+          <Route element={<MainLayout />}>
+            <Route path="/problems" element={<ProblemsPage />} />
+            <Route path="/contests" element={<ContestsPage />} />
+            <Route path="/leaderboards" element={<LeaderboardPage />} />
+          </Route>
+          {/* Problem detail is also public (editor is gated inside) */}
+          <Route path="/problems/:number" element={<ProblemDetailsPage />} />
+
+          {/* PROTECTED routes — require login */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/submissions" element={<AllSubmissions />} />
             <Route path="/submissions/:id" element={<SubmissionView />} />
             <Route path="/update-profile" element={<UpdateProfilePage />} />
-            <Route path="/problems/:number" element={<ProblemDetailsPage />} />
-            <Route element={<MainLayout />}>
-              <Route path="/problems" element={<ProblemsPage />} />
-              <Route path="/contests" element={<ContestsPage />} />
-              <Route path="/leaderboards" element={<LeaderboardPage />} />
-            </Route>
           </Route>
 
-          {/* Admin Protected Routes */}
+          {/* Admin routes */}
           <Route path="/admin" element={<ProtectedAdminRoute />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users/:userId" element={<UserManagement />} />
             <Route path="problem/new" element={<ProblemManagement />} />
-            <Route
-              path="problem/edit/:problemNumber"
-              element={<ProblemManagement />}
-            />
-            <Route
-              path="users/:userId/submissions"
-              element={<AllSubmissionsOfUser />}
-            />
-            <Route
-              path="problem/:problemId/submissions"
-              element={<AllSubmissionsOfProblem />}
-            />
+            <Route path="problem/edit/:problemNumber" element={<ProblemManagement />} />
+            <Route path="users/:userId/submissions" element={<AllSubmissionsOfUser />} />
+            <Route path="problem/:problemId/submissions" element={<AllSubmissionsOfProblem />} />
           </Route>
 
           <Route path="/unauthorized" element={<Unauthorized />} />

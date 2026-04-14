@@ -26,7 +26,7 @@ router.get("/favorites", verifyToken, getFavoriteProblems);
 
 router.get("/dashboard", verifyToken, getUserDashboard);
 
-router.get("/leaderboard", verifyToken, getLeaderboard);
+router.get("/leaderboard", getLeaderboard);
 
 router.put("/profile", verifyToken, updateUserProfile);
 

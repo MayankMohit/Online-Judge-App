@@ -20,7 +20,8 @@ export default function UserManagementPage() {
     problemsList,
     loading,
     error,
-  } = useAdminUserDashboard(userId); 
+    refetch,         
+  } = useAdminUserDashboard(userId);
 
   const {
     loading: toggleLoading,
@@ -59,7 +60,7 @@ export default function UserManagementPage() {
       setShowDialog(false);
       setOptimisticRole(null);
       resetState();
-      navigate(0); 
+      if (typeof refetch === "function") refetch();
     } else if (toggleError) {
       toast.error("Failed to toggle role.", { id: "toggleRole" });
       setShowDialog(false);

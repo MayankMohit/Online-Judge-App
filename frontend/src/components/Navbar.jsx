@@ -1,6 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/dark_long.png";
-import { Menu, X, User, ShieldCheck, LogOut } from "lucide-react";
+import { Menu, X, User, ShieldCheck, LogOut, LogIn } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import ProfileDropdown from "./ProfileDropdown";
 import { useAuthStore } from "../store/authStore";
@@ -10,15 +10,15 @@ import ConfirmSignOutDialog from "../components/ConfirmSignOutDialog";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-
-  const { logout, user } = useAuthStore();
+  const { logout, user, isAuthenticated } = useAuthStore();
   const toggleRef = useRef(null);
+  const navigate = useNavigate();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const navLinkStyle = ({ isActive }) =>
     `px-3 py-2 sm:border-b-2 transition ${
-      isActive ? "sm:border-purple-400 text-purple-300" : "border-transparent"
+      isActive ? "sm:border-purple-400 text-purple-300" : "border-transparent text-zinc-300 hover:text-white"
     }`;
 
   useEffect(() => {
@@ -41,31 +41,38 @@ const Navbar = () => {
         </NavLink>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ── MOBILE ── */}
       <div ref={toggleRef} className="sm:hidden">
-        <button
-          onClick={toggleMenu}
-          className="p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
-        >
+        <button onClick={toggleMenu} className="p-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
 
         {isOpen && (
           <div className="absolute top-16 right-2 w-64 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-grow">
 
-            {/* User info */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-800/50">
-              <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-500">
-                <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+            {/* User info OR guest prompt */}
+            {isAuthenticated && user ? (
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-800/50">
+                <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-500">
+                  <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
+                  <p className="text-xs text-zinc-400 truncate">{user?.email}</p>
+                  {user?.role === "admin" && <span className="text-xs text-purple-400 font-semibold">Admin</span>}
+                </div>
               </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
-                <p className="text-xs text-zinc-400 truncate">{user?.email}</p>
-                {user?.role === "admin" && (
-                  <span className="text-xs text-purple-400 font-semibold">Admin</span>
-                )}
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-800/50">
+                <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
+                  <User size={18} className="text-zinc-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-300 font-medium">Guest</p>
+                  <p className="text-xs text-zinc-500">Not signed in</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Nav links */}
             <div className="py-1 border-b border-zinc-800">
@@ -80,9 +87,7 @@ const Navbar = () => {
                   onClick={toggleMenu}
                   className={({ isActive }) =>
                     `flex items-center px-4 py-2.5 text-sm transition-colors ${
-                      isActive
-                        ? "text-purple-300 bg-purple-500/10"
-                        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                      isActive ? "text-purple-300 bg-purple-500/10" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
                     }`
                   }
                 >
@@ -91,62 +96,88 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* Profile links */}
+            {/* Profile / Login links */}
             <div className="py-1 border-b border-zinc-800">
-              <NavLink
-                to="/dashboard"
-                onClick={toggleMenu}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
-              >
-                <User size={15} className="text-purple-400" />
-                My Profile
-              </NavLink>
-
-              {user?.role === "admin" && (
+              {isAuthenticated && user ? (
+                <>
+                  <NavLink
+                    to="/dashboard"
+                    onClick={toggleMenu}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  >
+                    <User size={15} className="text-purple-400" />
+                    My Profile
+                  </NavLink>
+                  {user?.role === "admin" && (
+                    <NavLink
+                      to="/admin"
+                      onClick={toggleMenu}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    >
+                      <ShieldCheck size={15} className="text-purple-400" />
+                      Admin Panel
+                    </NavLink>
+                  )}
+                </>
+              ) : (
                 <NavLink
-                  to="/admin"
+                  to="/login"
                   onClick={toggleMenu}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-purple-300 hover:bg-zinc-800 hover:text-white"
                 >
-                  <ShieldCheck size={15} className="text-purple-400" />
-                  Admin Panel
+                  <LogIn size={15} className="text-purple-400" />
+                  Sign in
                 </NavLink>
               )}
             </div>
 
-            {/* Logout */}
+            {/* Logout or Sign Up */}
             <div className="py-1">
-              <button
-                onClick={() => {
-                  toggleMenu();
-                  setShowSignOutDialog(true);
-                }}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800 hover:text-red-300"
-              >
-                <LogOut size={15} />
-                Sign out
-              </button>
+              {isAuthenticated && user ? (
+                <button
+                  onClick={() => { toggleMenu(); setShowSignOutDialog(true); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800 hover:text-red-300"
+                >
+                  <LogOut size={15} />
+                  Sign out
+                </button>
+              ) : (
+                <NavLink
+                  to="/signup"
+                  onClick={toggleMenu}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                >
+                  Create account
+                </NavLink>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Desktop */}
+      {/* ── DESKTOP ── */}
       <div className="hidden sm:flex items-center gap-6">
         <NavLink to="/problems" className={navLinkStyle}>Problems</NavLink>
         <NavLink to="/contests" className={navLinkStyle}>Contests</NavLink>
         <NavLink to="/leaderboards" className={navLinkStyle}>Leaderboards</NavLink>
-        <ProfileDropdown />
+
+        {isAuthenticated && user ? (
+          <ProfileDropdown />
+        ) : (
+          <Link
+            to="/login"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-sm font-medium transition"
+          >
+            <LogIn size={14} />
+            Login
+          </Link>
+        )}
       </div>
 
-      {/* Confirm Dialog */}
       <ConfirmSignOutDialog
         open={showSignOutDialog}
         onClose={() => setShowSignOutDialog(false)}
-        onConfirm={() => {
-          logout();
-          setShowSignOutDialog(false);
-        }}
+        onConfirm={() => { logout(); setShowSignOutDialog(false); }}
       />
     </nav>
   );

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchAdminUserDashboard,
@@ -8,29 +8,19 @@ import {
 export const useAdminUserDashboard = (userId) => {
   const dispatch = useDispatch();
 
-  const {
-    userData,
-    submissionsList,
-    problemsList,
-    loading,
-    error,
-  } = useSelector((state) => state.adminUserDashboard);
+  const { userData, submissionsList, problemsList, loading, error } =
+    useSelector((state) => state.adminUserDashboard);
+
+  const refetch = useCallback(() => {
+    if (userId) dispatch(fetchAdminUserDashboard(userId));
+  }, [dispatch, userId]);
 
   useEffect(() => {
-    if (userId) {
-      dispatch(fetchAdminUserDashboard(userId));
-    }
-
+    refetch();
     return () => {
       dispatch(clearAdminUserDashboard());
     };
-  }, [dispatch, userId]);
+  }, [refetch]);
 
-  return {
-    userData,
-    submissionsList,
-    problemsList,
-    loading,
-    error,
-  };
+  return { userData, submissionsList, problemsList, loading, error, refetch };
 };

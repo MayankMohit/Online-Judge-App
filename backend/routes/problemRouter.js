@@ -18,26 +18,21 @@ import { verifyToken } from "../middlewares/verifyToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
 import { isProblemCreator } from "../middlewares/isProblemCreator.js";
 
+// Public — no login required
 router.get("/", getAllProblems);
+router.get("/search", searchProblems);
+router.get("/tags", getUniqueTags);
+router.get("/number/:number", getProblemByNumber);
 
-router.get("/number/:number", verifyToken, getProblemByNumber);
-
+// Auth required
 router.post("/", verifyToken, isAdmin, createProblem);
-
 router.put("/:id", verifyToken, isAdmin, isProblemCreator, updateProblem);
-
-router.delete("/:id", verifyToken, isAdmin, isProblemCreator, deleteProblem); 
-
+router.delete("/:id", verifyToken, isAdmin, isProblemCreator, deleteProblem);
 router.post("/:id/favorite", verifyToken, addFavorite);
-
 router.delete("/:id/favorite", verifyToken, removeFavorite);
 
-router.get("/search", searchProblems);
-
-router.get("/tags", getUniqueTags);
-
+// Admin only
 router.get("/admin/:adminId", verifyToken, isAdmin, getProblemsByAdmin);
-
 router.get("/:problemNumber", verifyToken, isAdmin, getProblemByAdmin);
 
 export default router;

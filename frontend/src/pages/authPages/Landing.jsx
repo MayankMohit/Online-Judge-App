@@ -3,15 +3,8 @@ import Logo from "../../assets/images/dark_long.png";
 import Grid from "../../assets/images/grid.png";
 import FloatingIcon from "../../components/FloatingIcon";
 import {
-  JavaIcon,
-  PythonIcon,
-  CppIcon,
-  CsharpIcon,
-  JsIcon,
-  GoIcon,
-  SwiftIcon,
-  TsIcon,
-  PhpIcon,
+  JavaIcon, PythonIcon, CppIcon, CsharpIcon,
+  JsIcon, GoIcon, SwiftIcon, TsIcon, PhpIcon,
 } from "../../utils/Icons";
 
 const Landing = () => {
@@ -20,88 +13,41 @@ const Landing = () => {
       <div
         className="absolute inset-0 z-0 bg-cover opacity-15 pointer-events-none -top-10 -left-10 -right-10"
         style={{ backgroundImage: `url(${Grid})` }}
-      ></div>
-      <FloatingIcon
-        url={JavaIcon}
-        top="45%"
-        left="63%"
-        rotation={5}
-        delay={0}
       />
-      <FloatingIcon
-        url={PythonIcon}
-        top="15%"
-        left="5%"
-        rotation={-10}
-        delay={0.3}
-      />
-      <FloatingIcon
-        url={CppIcon}
-        top="10%"
-        left="75%"
-        rotation={-5}
-        delay={0.5}
-      />
-      <FloatingIcon
-        url={JsIcon}
-        top="70%"
-        left="15%"
-        rotation={8}
-        delay={0.1}
-      />
-      <FloatingIcon
-        url={CsharpIcon}
-        top="23%"
-        left="30%"
-        rotation={-5}
-        delay={0.4}
-        size={10}
-      />
-      <FloatingIcon
-        url={GoIcon}
-        top="70%"
-        left="86%"
-        rotation={10}
-        delay={0.2}
-        size={10}
-      />
-      <FloatingIcon
-        url={SwiftIcon}
-        top="60%"
-        left="5%"
-        rotation={-8}
-        delay={0.6}
-        size={10}
-      />
-      <FloatingIcon
-        url={TsIcon}
-        top="10%"
-        left="60%"
-        rotation={5}
-        delay={0.7}
-        size={10}
-      />
-      <FloatingIcon
-        url={PhpIcon}
-        top="85%"
-        left="70%"
-        rotation={-10}
-        delay={0.8}
-        size={10}
-      />
-      <div className="relative z-30 flex flex-col items-center h-full justify-center">
+      <FloatingIcon url={JavaIcon}   top="45%" left="63%" rotation={5}   delay={0}   />
+      <FloatingIcon url={PythonIcon} top="15%" left="5%"  rotation={-10} delay={0.3} />
+      <FloatingIcon url={CppIcon}    top="10%" left="75%" rotation={-5}  delay={0.5} />
+      <FloatingIcon url={JsIcon}     top="70%" left="15%" rotation={8}   delay={0.1} />
+      <FloatingIcon url={CsharpIcon} top="23%" left="30%" rotation={-5}  delay={0.4} size={10} />
+      <FloatingIcon url={GoIcon}     top="70%" left="86%" rotation={10}  delay={0.2} size={10} />
+      <FloatingIcon url={SwiftIcon}  top="60%" left="5%"  rotation={-8}  delay={0.6} size={10} />
+      <FloatingIcon url={TsIcon}     top="10%" left="60%" rotation={5}   delay={0.7} size={10} />
+      <FloatingIcon url={PhpIcon}    top="85%" left="70%" rotation={-10} delay={0.8} size={10} />
+
+      <div className="relative z-30 flex flex-col items-center h-full justify-center gap-1">
         <img src={Logo} alt="Logo" className="pointer-events-none sm:h-[60%]" />
-        <Link to="/signup">
+
+        <Link to="/problems">
           <button className="px-15 py-2 text-2xl bg-purple-400 text-black rounded-4xl hover:bg-purple-300 transition">
             Get Started
           </button>
         </Link>
-        <p className="mt-4 text-zinc-400">
-          Already have an account?
-          <Link to="/login" className="ml-1 underline hover:text-gray-300">
-            Sign In
+
+        <div className="mt-4 flex items-center gap-3">
+          <Link
+            to="/login"
+            className="px-5 py-1.5 text-sm rounded-full border border-zinc-600 text-zinc-300 hover:border-purple-400 hover:text-white transition"
+          >
+            Log In
           </Link>
-        </p>
+          <span className="text-zinc-600 text-sm">or</span>
+          <Link
+            to="/signup"
+            className="px-5 py-1.5 text-sm rounded-full border border-zinc-600 text-zinc-300 hover:border-purple-400 hover:text-white transition"
+          >
+            Sign Up
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -8,37 +8,82 @@ const FloatingIcon = ({ url, top, left, rotation, delay, size = 20 }) => {
   useEffect(() => {
     const el = iconRef.current;
 
-    // Set initial position
+    // Unique seed per icon for varied motion
+    const floatRange   = 6 + Math.random() * 8;   // px to drift up/down
+    const swayRange    = 4 + Math.random() * 6;    // px to drift left/right
+    const floatDur     = 3.5 + Math.random() * 2;  // seconds per float cycle
+    const swayDur      = 4.5 + Math.random() * 3;  // seconds per sway cycle
+    const tiltAmount   = 4 + Math.random() * 5;    // subtle tilt degrees
+    const tiltDur      = 4 + Math.random() * 3;
+    const scaleAmount  = 0.03 + Math.random() * 0.03; // subtle breathe
+
+    // Start off-screen at bottom
     gsap.set(el, {
-      y: `${10000 / size}%`,
-      rotation: getRandomRotation(),
+      y: '120vh',
+      x: 0,
+      rotation: rotation * 3,
+      opacity: 0,
+      scale: 0.6,
     });
 
-    // Step 1: Float in with spring-like motion
+    // Fly in: arc up from bottom with spring
     gsap.to(el, {
-      y: "0%",
-      rotation: rotation,
+      y: 0,
+      x: 0,
+      rotation,
+      opacity: 1,
+      scale: 1,
       delay,
-      duration: 2.5,
-      ease: "elastic.out(1, 0.75)", // spring-like
-      onComplete: () => {
-        // Step 2: Rotate back and forth forever
-        gsap.to(el, {
-          rotation: -rotation,
-          duration: 5,
-          repeat: -1,
-          yoyo: true,
-          ease: "power1.inOut",
-          repeatDelay: 1,
-        });
-      }
+      duration: 2.2,
+      ease: 'expo.out',
+      onComplete: startIdleMotion,
     });
-  }, [rotation, delay, size]);
 
-  const getRandomRotation = () => {
-    const angles = [-300, -200, -100, 100, 200, 300];
-    return angles[Math.floor(Math.random() * angles.length)];
-  };
+    function startIdleMotion() {
+      // Continuous vertical float
+      gsap.to(el, {
+        y: `-${floatRange}px`,
+        duration: floatDur,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      });
+
+      // Independent horizontal sway — offset phase so it's not synced with float
+      gsap.to(el, {
+        x: `${swayRange}px`,
+        duration: swayDur,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        delay: swayDur * 0.4,
+      });
+
+      // Subtle slow tilt that's independent of float/sway
+      gsap.to(el, {
+        rotation: rotation + tiltAmount,
+        duration: tiltDur,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        delay: tiltDur * 0.2,
+      });
+
+      // Very subtle scale "breathe"
+      gsap.to(el, {
+        scale: 1 + scaleAmount,
+        duration: floatDur * 1.3,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        delay: floatDur * 0.6,
+      });
+    }
+
+    return () => {
+      gsap.killTweensOf(el);
+    };
+  }, [rotation, delay, size]);
 
   const sizeClass = {
     10: "h-[10%] w-[10%]",
@@ -51,7 +96,7 @@ const FloatingIcon = ({ url, top, left, rotation, delay, size = 20 }) => {
       className={clsx("z-10 absolute pointer-events-none", sizeClass)}
       style={{ top, left }}
     >
-      <img src={url} alt="Floating Icon" className="w-full h-full object-contain" />
+      <img src={url} alt="Floating Icon" className="w-full h-full object-contain drop-shadow-lg" />
     </div>
   );
 };

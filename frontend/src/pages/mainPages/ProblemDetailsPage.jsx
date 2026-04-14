@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 
 import { fetchProblemByNumber, clearCurrentProblem } from "../../features/problems/problemsSlice";
 import { fetchSubmissionsByProblem, clearProblemSubmissions } from "../../features/submissions/problemSubmissionsSlice";
@@ -12,20 +13,16 @@ import MobileProblemView from "../../components/ProblemPageComps/MobileProblemVi
 import DesktopProblemView from "../../components/ProblemPageComps/DesktopProblemView";
 import LoadingScreen from "../../components/LoadingScreen";
 
-// Build initial test cases from problem's visible (non-hidden) test cases
 const buildInitialTestCases = (problem) => {
   const visible = problem?.testCases?.filter((tc) => !tc.isHidden) || [];
-  if (visible.length === 0) {
-    return [{ id: Date.now(), label: "Case 1", input: "" }];
-  }
-  return visible.map((tc, i) => ({
-    id: tc._id || i,
-    label: `Case ${i + 1}`,
-    input: tc.input || "",
-  }));
+  if (visible.length === 0) return [{ id: Date.now(), label: "Case 1", input: "" }];
+  return visible.map((tc, i) => ({ id: tc._id || i, label: `Case ${i + 1}`, input: tc.input || "" }));
 };
 
 const ProblemDetailsPage = () => {
+  const { isAuthenticated, user } = useAuthStore();
+  const isGuest = !isAuthenticated || !user;
+
   const [leftWidth, setLeftWidth] = useState(38);
   const containerRef = useRef(null);
   const [editorHeight, setEditorHeight] = useState(65);
@@ -35,9 +32,7 @@ const ProblemDetailsPage = () => {
 
   const [activeTab, setActiveTab] = useState("description");
   const [language, setLanguage] = useState("cpp");
-  const [isOutputMode, setIsOutputMode] = useState(false); // false=testcase, true=output
-
-  // Test cases state — array of { id, label, input }
+  const [isOutputMode, setIsOutputMode] = useState(false);
   const [testCases, setTestCases] = useState([{ id: 1, label: "Case 1", input: "" }]);
   const [activeTestCaseIdx, setActiveTestCaseIdx] = useState(0);
 
@@ -47,18 +42,20 @@ const ProblemDetailsPage = () => {
   const navigate = useNavigate();
 
   const { currentProblem, problemLoading, problemError } = useSelector((state) => state.problems);
-  const { items: userSubmissions, loading: submissionsLoading, error } = useSelector((state) => state.problemSubmissions);
+  const { items: userSubmissions, error } = useSelector((state) => state.problemSubmissions);
   const { loading: codeLoading, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
 
-  // Load submissions
+  // Load submissions only if logged in
   useEffect(() => {
-    dispatch(fetchSubmissionsByProblem(number));
+    if (!isGuest) {
+      dispatch(fetchSubmissionsByProblem(number));
+    }
     return () => dispatch(clearProblemSubmissions());
-  }, [dispatch, number]);
+  }, [dispatch, number, isGuest]);
 
-  const isSolved = userSubmissions.some((sub) => sub.verdict === "accepted");
+  const isSolved = isGuest ? false : userSubmissions.some((sub) => sub.verdict === "accepted");
 
-  // Load problem & reset state
+  // Load problem
   useEffect(() => {
     dispatch(fetchProblemByNumber(number));
     dispatch(clearCodeState());
@@ -67,31 +64,34 @@ const ProblemDetailsPage = () => {
     return () => dispatch(clearCurrentProblem());
   }, [dispatch, number]);
 
-  // Auto-fill test cases from problem's visible test cases once loaded
+  // Auto-fill test cases
   useEffect(() => {
     if (currentProblem) {
-      const initial = buildInitialTestCases(currentProblem);
-      setTestCases(initial);
+      setTestCases(buildInitialTestCases(currentProblem));
       setActiveTestCaseIdx(0);
     }
   }, [currentProblem?._id]);
 
-  // Switch to output mode when results come in
+  // Switch to output mode on results
   useEffect(() => {
     if (testCaseResults?.length > 0 || verdict || lastAction === "submit") {
       setIsOutputMode(true);
     }
   }, [testCaseResults, verdict, lastAction]);
 
-  const code = codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language];
-
+  // Load saved code only for logged-in users
   useEffect(() => {
-    if (currentProblem?._id && language) {
+    if (!isGuest && currentProblem?._id && language) {
       dispatch(fetchSavedCode({ problemId: currentProblem._id, language }));
     }
-  }, [currentProblem?._id, language]);
+  }, [currentProblem?._id, language, isGuest]);
+
+  const code = isGuest
+    ? languageBoilerplates[language]
+    : (codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language]);
 
   const handleCodeChange = (newCode) => {
+    if (isGuest) return;
     dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(() => {
@@ -102,34 +102,21 @@ const ProblemDetailsPage = () => {
   const backendLanguageMap = { python: "py", javascript: "js", cpp: "cpp", c: "c" };
 
   const handleRun = () => {
+    if (isGuest) return;
     setIsOutputMode(true);
-    dispatch(runAllTestCases({
-      code,
-      language: backendLanguageMap[language] || language,
-      testCases,
-    }));
+    dispatch(runAllTestCases({ code, language: backendLanguageMap[language] || language, testCases }));
   };
 
   const handleSubmit = () => {
-    dispatch(submitCode({
-      problemId: currentProblem._id,
-      code,
-      language: backendLanguageMap[language] || language,
-    })).then(() => {
-      dispatch(fetchSubmissionsByProblem(number));
-    });
+    if (isGuest) return;
+    dispatch(submitCode({ problemId: currentProblem._id, code, language: backendLanguageMap[language] || language }))
+      .then(() => dispatch(fetchSubmissionsByProblem(number)));
   };
 
-  if (problemLoading) return (
-    <LoadingScreen />
-  );
-
+  if (problemLoading) return <LoadingScreen />;
   if (problemError) return (
-    <div className="w-screen h-screen flex items-center justify-center bg-zinc-950 text-red-400">
-      {problemError}
-    </div>
+    <div className="w-screen h-screen flex items-center justify-center bg-zinc-950 text-red-400">{problemError}</div>
   );
-
   if (!currentProblem) return null;
 
   const sharedProps = {
@@ -138,16 +125,11 @@ const ProblemDetailsPage = () => {
     loading: codeLoading, error,
     navigate, isSolved,
     language, setLanguage,
-    code,
-    handleRun, handleSubmit,
-    handleCodeChange,
-    verdict, failedCase, averageTime,
-    lastAction,
-    // Test case panel props
+    code, handleRun, handleSubmit, handleCodeChange,
+    verdict, failedCase, averageTime, lastAction,
     testCases, setTestCases,
     activeTestCaseIdx, setActiveTestCaseIdx,
-    testCaseResults,
-    isOutputMode, setIsOutputMode,
+    testCaseResults, isOutputMode, setIsOutputMode,
   };
 
   return (

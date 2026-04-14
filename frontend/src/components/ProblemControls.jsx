@@ -44,7 +44,6 @@ const ProblemControls = ({ direction, setDirection }) => {
     dispatch(setFilters({ sort: `${field}_${dir}` }));
   };
 
-  // Count active filters
   const activeFilterCount = [
     filters.difficulty,
     filters.tag,
@@ -57,9 +56,11 @@ const ProblemControls = ({ direction, setDirection }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 mb-6 mx-auto items-center">
-      {/* Search bar — always visible */}
-      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 focus-within:border-purple-500 transition-colors w-[80vw] sm:w-[30vw] ">
+    // Full width within the parent max-w-3xl wrapper — no internal mx-auto needed
+    <div className="flex flex-col sm:flex-row gap-3 mb-6 w-full">
+
+      {/* Search bar — grows to fill available space */}
+      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 focus-within:border-purple-500 transition-colors w-full sm:flex-1">
         <Search size={18} className="text-zinc-400 shrink-0" />
         <input
           type="text"
@@ -76,7 +77,7 @@ const ProblemControls = ({ direction, setDirection }) => {
       </div>
 
       {/* Filter & Sort row */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2 shrink-0">
         {/* Filter */}
         <div className="relative z-20" ref={filterRef}>
           <button

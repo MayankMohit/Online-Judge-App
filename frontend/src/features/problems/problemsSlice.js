@@ -42,7 +42,8 @@ export const fetchProblems = createAsyncThunk(
       const response = await axios.get(
         `${BASE_URL}/api/problems/search?${params.toString()}`
       );
-      return response.data.problems;
+      // Return page alongside problems so the reducer knows whether to replace or append
+      return { problems: response.data.problems, page };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch problems"
@@ -117,17 +118,11 @@ const problemsSlice = createSlice({
       })
       .addCase(fetchProblems.fulfilled, (state, action) => {
         state.loading = false;
-        const newItems = action.payload;
+        const { problems: newItems, page } = action.payload;
 
-        const isDuplicate =
-          state.items.length > 0 &&
-          newItems.length > 0 &&
-          state.items[state.items.length - 1].problemNumber ===
-            newItems[newItems.length - 1].problemNumber;
-
-        if (!isDuplicate && newItems.length > 0) {
-          state.items = [...state.items, ...newItems];
-        }
+        // Page 1 always means a fresh query (new search/filter) — replace entirely.
+        // Page > 1 means infinite scroll — append.
+        state.items = page === 1 ? newItems : [...state.items, ...newItems];
         state.hasMore = newItems.length === 20;
       })
       .addCase(fetchProblems.rejected, (state, action) => {

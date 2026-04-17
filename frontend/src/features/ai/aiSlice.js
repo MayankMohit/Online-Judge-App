@@ -3,7 +3,6 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-// Fetch a specific tier hint
 export const fetchHint = createAsyncThunk(
   "ai/fetchHint",
   async ({ problemId, tier }, { rejectWithValue }) => {
@@ -12,7 +11,7 @@ export const fetchHint = createAsyncThunk(
         `${BASE_URL}/api/ai/hint`,
         { problemId, tier },
         { withCredentials: true }
-        );
+      );
       return { tier, hint: response.data.hint, unlockedUpTo: response.data.unlockedUpTo };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch hint");
@@ -20,7 +19,6 @@ export const fetchHint = createAsyncThunk(
   }
 );
 
-// Fetch which tiers are already unlocked (on page load)
 export const fetchUnlockedTiers = createAsyncThunk(
   "ai/fetchUnlockedTiers",
   async ({ problemId }, { rejectWithValue }) => {
@@ -29,7 +27,7 @@ export const fetchUnlockedTiers = createAsyncThunk(
         `${BASE_URL}/api/ai/hint/unlocked/${problemId}`,
         { withCredentials: true }
       );
-      return response.data.unlockedUpTo;
+      return { unlockedUpTo: response.data.unlockedUpTo, hints: response.data.hints || {} };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch unlocked tiers");
     }
@@ -39,13 +37,10 @@ export const fetchUnlockedTiers = createAsyncThunk(
 const aiSlice = createSlice({
   name: "ai",
   initialState: {
-    // hints[problemId][tier] = hint text
     hints: {},
-    // unlockedUpTo[problemId] = 0 | 1 | 2 | 3
     unlockedUpTo: {},
     loading: false,
     error: null,
-    // which tier is currently being fetched
     fetchingTier: null,
   },
   reducers: {
@@ -82,7 +77,15 @@ const aiSlice = createSlice({
     builder
       .addCase(fetchUnlockedTiers.fulfilled, (state, action) => {
         const problemId = action.meta.arg.problemId;
-        state.unlockedUpTo[problemId] = action.payload;
+        const { unlockedUpTo, hints } = action.payload;
+        state.unlockedUpTo[problemId] = unlockedUpTo;
+        // Hydrate previously saved hints so they render immediately on revisit
+        if (hints && Object.keys(hints).length > 0) {
+          if (!state.hints[problemId]) state.hints[problemId] = {};
+          Object.entries(hints).forEach(([tier, hint]) => {
+            state.hints[problemId][tier] = hint;
+          });
+        }
       });
   },
 });

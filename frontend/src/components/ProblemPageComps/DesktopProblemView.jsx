@@ -62,7 +62,7 @@ const DesktopProblemView = ({
           >
             <ArrowLeft size={15} strokeWidth={2.5} />
           </button>
-          {["description", ...(isGuest ? [] : ["hints", "submissions"])].map((tab) => (
+          {["description","hints", ...(isGuest ? [] : ["submissions"])].map((tab) => (
             <button
               key={tab}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${

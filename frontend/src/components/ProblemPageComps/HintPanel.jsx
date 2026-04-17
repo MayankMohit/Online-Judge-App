@@ -201,29 +201,6 @@ const HintPanel = ({ problem, isGuest }) => {
         </div>
       )}
 
-      {/* Confirm banner for tier 2/3 */}
-      {confirming && (
-        <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg mb-1">
-          <p className="text-zinc-300 text-xs leading-snug">
-            Unlocking Tier {confirming} will reveal more of the solution. Continue?
-          </p>
-          <div className="flex gap-2 shrink-0">
-            <button
-              onClick={() => setConfirming(null)}
-              className="text-[11px] px-2.5 py-1 rounded-md bg-zinc-700 text-zinc-400 hover:bg-zinc-600 transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => handleUnlock(confirming)}
-              className="text-[11px] px-2.5 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
-            >
-              Unlock
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Hint Cards */}
       <div className="flex flex-col gap-2.5">
         {TIERS.map(({ tier, ...rest }) => {
@@ -246,6 +223,29 @@ const HintPanel = ({ problem, isGuest }) => {
           );
         })}
       </div>
+
+      {/* Confirm banner for tier 2/3 */}
+      {confirming && (
+        <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg mb-1">
+          <p className="text-zinc-300 text-xs leading-snug">
+            Unlocking Tier {confirming} will reveal more of the solution. Continue?
+          </p>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => setConfirming(null)}
+              className="text-[11px] px-2.5 py-1 rounded-md bg-zinc-700 text-zinc-400 hover:bg-zinc-600 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleUnlock(confirming)}
+              className="text-[11px] px-2.5 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
+            >
+              Unlock
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* All unlocked message */}
       {maxUnlocked === 3 && (

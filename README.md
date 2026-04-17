@@ -24,7 +24,7 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 
 🐳 Docker-Based Microservices with production-ready deployment
 
-🔒 Live Deployment with HTTPS via NGINX & Let's Encrypt
+🔒 Live Deployment with HTTPS via Railway (automatic TLS)
 
 ## Tech Stack
 
@@ -33,7 +33,7 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 * ⚙️ **Compiler**: Node.js microservice
 * 🗄️ **Database**: MongoDB Atlas
 * 🔐 **Auth**: JWT + Resend (Email verification)
-* 🚀 **DevOps**: Docker, Docker Compose, NGINX, Certbot, AWS EC2
+* 🚀 **DevOps**: Docker, Docker Compose, Railway
 
 
 ## Live Demo
@@ -56,22 +56,22 @@ Online-Judge-App/
 ├── docker-compose.yml    # Service orchestration
 └── README.md
 
-````
+```
 
 ## Setup Instructions
 
 ### Prerequisites
 
-- AWS EC2 instance or local machine with Docker and Docker Compose  
+- Railway account (for cloud deployment) or local machine with Docker and Docker Compose
 - MongoDB Atlas cluster  
-- (Optional) Domain name and NGINX for HTTPS  
+- (Optional) Custom domain for Railway deployment
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/MayankMohit/Online-Judge-App.git
 cd Online-Judge-App
-````
+```
 
 ### 2. Configure Environment Variables
 
@@ -92,7 +92,7 @@ COMPILER_URL=http://localhost:5001
 
 ```env
 VITE_API_URL=http://localhost:5000
-# For production, use your own domain:
+# For production, use your Railway domain or custom domain:
 # VITE_API_URL=https://your-domain.com
 ```
 
@@ -102,18 +102,21 @@ VITE_API_URL=http://localhost:5000
 PORT=5001
 ```
 
-### 3. Build and Start Services
+### 3. Build and Start Services (Local)
 
 ```bash
 docker-compose up --build -d
 ```
 
-### 4. Enable HTTPS (Production)
+### 4. Deploy to Railway
 
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
+Railway automatically handles HTTPS and TLS for all deployments.
+
+1. Push your code to GitHub
+2. Create a new Railway project and connect your repository
+3. Add each service (backend, frontend, compiler-service) as a separate Railway service
+4. Set environment variables for each service via the Railway dashboard
+5. (Optional) Add a custom domain under **Settings → Domains** — Railway provisions HTTPS automatically
 
 ## Development Setup
 
@@ -162,7 +165,7 @@ To make a user an admin, update their role via dashboard or in the database:
 - **AI Code Review**: Automated feedback on readability, modularity, naming, and scoring out of 10.
 - **Explain in Layman Terms**: AI-generated problem explanations with analogies, diagrams, and multilingual support.
 - **Smart Test Case Generation**: GPT-assisted test case suggestions for problem setters.
-- **Plagiarism Detection**: AI-based similarity check between users’ submissions.
+- **Plagiarism Detection**: AI-based similarity check between users' submissions.
 
 ### 🏆 Competitive Features
 - **Contests**: Host and manage timed contests with live leaderboards and real-time feedback.

@@ -8,7 +8,6 @@ export const fetchLeaderboard = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
         const res = await axios.get(`${BASE_URL}/api/users/leaderboard`);
-        console.log(res.data.users);
       return res.data.users;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch leaderboard");

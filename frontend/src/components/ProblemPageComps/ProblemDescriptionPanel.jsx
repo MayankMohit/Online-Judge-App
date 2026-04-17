@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import ProblemHeader from "./ProblemHeader";
 import ProblemDescription from "./ProblemDescription";
+import HintPanel from "./HintPanel";
 
 const verdictLabel = (v) =>
   ({ accepted: "Accepted", wrong_answer: "Wrong Answer", time_limit_exceeded: "TLE", compilation_error: "CE", runtime_error: "RE" }[v] || v);
 
 const verdictColor = (v) => v === "accepted" ? "text-green-400" : "text-red-400";
 
-const ProblemDescriptionPanel = ({ activeTab, problem, submissions, loading, error, navigate, isSolved }) => {
+const ProblemDescriptionPanel = ({ activeTab, setActiveTab, problem, submissions, loading, error, navigate, isSolved, isGuest }) => {
   const { problemNumber, title, difficulty, tags, statement, inputFormat, outputFormat, constraints, testCases } = problem;
   const nav = useNavigate();
   const visibleTestCases = testCases?.filter((tc) => !tc.isHidden)?.slice(0, 2);
@@ -32,6 +33,10 @@ const ProblemDescriptionPanel = ({ activeTab, problem, submissions, loading, err
             visibleTestCases={visibleTestCases}
           />
         </>
+      )}
+
+      {activeTab === "hints" && (
+        <HintPanel problem={problem} isGuest={isGuest} />
       )}
 
       {activeTab === "submissions" && (

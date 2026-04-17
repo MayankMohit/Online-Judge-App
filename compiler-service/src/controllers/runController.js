@@ -54,7 +54,6 @@ export const runRoute = async (req, res) => {
     return res.status(200).json(result);
     
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       error: error.error || error.message || "Unknown error",

@@ -62,7 +62,7 @@ const DesktopProblemView = ({
           >
             <ArrowLeft size={15} strokeWidth={2.5} />
           </button>
-          {["description", ...(isGuest ? [] : ["submissions"])].map((tab) => (
+          {["description", ...(isGuest ? [] : ["hints", "submissions"])].map((tab) => (
             <button
               key={tab}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
@@ -76,6 +76,7 @@ const DesktopProblemView = ({
         </div>
         <ProblemDescriptionPanel
           activeTab={activeTab}
+          setActiveTab={setActiveTab}
           problem={currentProblem}
           submissions={userSubmissions}
           loading={loading}

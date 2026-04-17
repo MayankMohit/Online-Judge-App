@@ -18,6 +18,7 @@ import userRoute from "./routes/userRouter.js";
 import submissionRoute from "./routes/submissionRouter.js";
 import runRoute from "./routes/runRouter.js";
 import codeRoute from "./routes/codeRouter.js";
+import aiRoute from "./routes/aiRouter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +45,7 @@ const startServer = async () => {
     app.use("/api/submissions", submissionRoute);   
     app.use("/api/run", runRoute);
     app.use("/api/code", codeRoute);
+    app.use("/api/ai", aiRoute);
 
     // Start listening
     app.listen(PORT, '0.0.0.0', () => {

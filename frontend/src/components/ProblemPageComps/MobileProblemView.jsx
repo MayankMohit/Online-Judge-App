@@ -70,6 +70,7 @@ const MobileProblemView = ({
         </div>
         <ProblemDescriptionPanel
           activeTab={activeTab}
+          setActiveTab={setActiveTab}
           problem={currentProblem}
           submissions={userSubmissions}
           loading={loading}

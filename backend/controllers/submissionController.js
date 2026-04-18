@@ -121,6 +121,7 @@ export const createSubmission = async (req, res) => {
 
     return res.status(201).json({
       success: true,
+      submissionId: submission._id,
       message: "Submission created successfully",
       verdict,
       averageTime,

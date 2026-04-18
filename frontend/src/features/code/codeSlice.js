@@ -60,6 +60,7 @@ const initialState = {
   verdict: "",
   failedCase: null,
   averageTime: null,
+  submissionId: null,
   // Multi test case results: array of { output, error, time }
   testCaseResults: [],
 };
@@ -120,6 +121,7 @@ const codeSlice = createSlice({
 
       // SUBMIT
       .addCase(submitCode.pending, (state) => {
+        state.submissionId = null;
         state.loading = true;
         state.lastAction = "submit";
         state.verdict = "";
@@ -130,6 +132,7 @@ const codeSlice = createSlice({
       })
       .addCase(submitCode.fulfilled, (state, action) => {
         const { verdict, averageTime, failedCase, error } = action.payload;
+        state.submissionId = action.payload.submissionId;
         state.loading = false;
         state.verdict = verdict || "";
         state.failedCase = failedCase || null;
@@ -137,6 +140,7 @@ const codeSlice = createSlice({
         state.error = error || null;
       })
       .addCase(submitCode.rejected, (state, action) => {
+        state.submissionId = null;
         state.loading = false;
         state.verdict = "";
         state.failedCase = null;

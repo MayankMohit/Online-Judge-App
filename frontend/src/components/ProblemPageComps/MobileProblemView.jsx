@@ -9,7 +9,7 @@ import { useAuthStore } from "../../store/authStore";
 const MobileProblemView = ({
   activeTab, setActiveTab, currentProblem, userSubmissions,
   loading, error, navigate, isSolved, language, setLanguage,
-  code, handleRun, handleSubmit, handleCodeChange,
+  code, handleRun, handleSubmit, submissionId, handleCodeChange,
   verdict, failedCase, averageTime, lastAction,
   testCases, setTestCases, activeTestCaseIdx, setActiveTestCaseIdx,
   testCaseResults, isOutputMode, setIsOutputMode,

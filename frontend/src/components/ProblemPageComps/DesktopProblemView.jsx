@@ -10,7 +10,7 @@ import { useAuthStore } from "../../store/authStore";
 const DesktopProblemView = ({
   activeTab, setActiveTab, currentProblem, userSubmissions,
   loading, error, navigate, isSolved, language, setLanguage,
-  code, handleRun, handleSubmit, handleCodeChange,
+  code, handleRun, handleSubmit, submissionId, handleCodeChange,
   verdict, failedCase, averageTime, lastAction,
   testCases, setTestCases, activeTestCaseIdx, setActiveTestCaseIdx,
   testCaseResults, isOutputMode, setIsOutputMode,
@@ -148,13 +148,14 @@ const DesktopProblemView = ({
 
         {/* BOTTOM PANEL */}
         <div className="flex-1 overflow-hidden" style={{ height: `${testcaseHeight}%`, minHeight: "160px" }}>
-          {isSubmitResult ? (
+          {isSubmitResult && isOutputMode ? (
             <OutputTab
               verdict={verdict}
               failedCase={failedCase}
               averageTime={averageTime}
               lastAction={lastAction}
               loading={loading}
+              submissionId={submissionId}
               onClose={() => setIsOutputMode(false)}
             />
           ) : (

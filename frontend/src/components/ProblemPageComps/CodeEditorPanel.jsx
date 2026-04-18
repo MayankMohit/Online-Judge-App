@@ -90,41 +90,27 @@ const CodeEditorPanel = ({
         {/* Run button — Ctrl+' on desktop */}
         <div className="relative group">
           <button
-            className="flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
+            className="flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
             onClick={onRun}
             disabled={isLoading}
           >
             <Play size={11} />
             Run
           </button>
-          {/* Shortcut tooltip — desktop only */}
-          {!isMobile && (
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition items-center gap-1 bg-zinc-800 border border-zinc-700 rounded-md px-2 py-1 whitespace-nowrap shadow-lg z-50">
-              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">Ctrl</kbd>
-              <span className="text-zinc-500 text-[10px]">+</span>
-              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">'</kbd>
-            </div>
-          )}
         </div>
 
         {/* Submit button — Ctrl+Enter on desktop */}
         <div className="relative group">
           <button
-            className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40"
+            className={`flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 ${isLoading && lastAction === "submit" ? "px-8" : "px-3"} py-1.5 text-white rounded-lg text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none`}
             onClick={onSubmit}
             disabled={isLoading}
           >
-            <Send size={11} />
-            Submit
+            {isLoading && lastAction === "submit" ? " " : <Send size={11} />}
+            {isLoading && lastAction === "submit" ?
+             <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : "Submit"}
           </button>
-          {/* Shortcut tooltip — desktop only */}
-          {!isMobile && (
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition items-center gap-1 bg-zinc-800 border border-zinc-700 rounded-md px-2 py-1 whitespace-nowrap shadow-lg z-50">
-              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">Ctrl</kbd>
-              <span className="text-zinc-500 text-[10px]">+</span>
-              <kbd className="text-[10px] text-zinc-300 font-mono bg-zinc-700 px-1 py-0.5 rounded">Enter</kbd>
-            </div>
-          )}
         </div>
       </div>
     </div>

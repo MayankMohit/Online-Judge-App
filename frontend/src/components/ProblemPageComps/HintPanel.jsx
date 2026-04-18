@@ -128,7 +128,7 @@ const HintPanel = ({ problem, isGuest }) => {
   const dispatch = useDispatch();
   const problemId = problem?._id;
 
-  const { hints, unlockedUpTo, loading, error, fetchingTier } = useSelector((state) => state.ai);
+  const { hints, unlockedUpTo, hintLoading, hintError, fetchingTier } = useSelector((state) => state.ai);
 
   const problemHints = hints[problemId] || {};
   const maxUnlocked = unlockedUpTo[problemId] ?? 0;
@@ -194,10 +194,10 @@ const HintPanel = ({ problem, isGuest }) => {
       </p>
 
       {/* Error banner */}
-      {error && (
+      {hintError && (
         <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg mb-1">
           <AlertCircle size={13} className="text-red-400 shrink-0" />
-          <p className="text-red-400 text-xs">{error}</p>
+          <p className="text-red-400 text-xs">{hintError}</p>
         </div>
       )}
 
@@ -206,7 +206,7 @@ const HintPanel = ({ problem, isGuest }) => {
         {TIERS.map(({ tier, ...rest }) => {
           const isUnlocked = maxUnlocked >= tier;
           const isLocked = tier > maxUnlocked + 1;
-          const isFetching = loading && fetchingTier === tier;
+          const isFetching = hintLoading && fetchingTier === tier;
 
           return (
             <HintCard

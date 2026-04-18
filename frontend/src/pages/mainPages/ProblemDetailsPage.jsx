@@ -43,7 +43,7 @@ const ProblemDetailsPage = () => {
 
   const { currentProblem, problemLoading, problemError } = useSelector((state) => state.problems);
   const { items: userSubmissions, error } = useSelector((state) => state.problemSubmissions);
-  const { loading: codeLoading, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
+  const { loading: codeLoading, submissionId, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
 
   // ─── Mobile code ref ────────────────────────────────────────────────────────
   // On mobile, the editor is uncontrolled. We track its latest value in a ref
@@ -149,6 +149,7 @@ const ProblemDetailsPage = () => {
     loading: codeLoading, error,
     navigate, isSolved,
     language, setLanguage,
+    submissionId,
     // Desktop gets controlled Redux code; mobile gets the initial value only
     code: reduxCode,
     handleRun, handleSubmit,

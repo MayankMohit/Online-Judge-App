@@ -103,6 +103,7 @@ const MobileProblemView = ({
             {isSubmitResult ? (
               <OutputTab
                 verdict={verdict}
+                submissionId={submissionId}
                 failedCase={failedCase}
                 averageTime={averageTime}
                 lastAction={lastAction}

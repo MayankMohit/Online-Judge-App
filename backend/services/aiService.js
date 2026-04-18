@@ -91,6 +91,43 @@ Code:
 ${submission.code}
 `;
 
+// ─── Explanation Prompt ───────────────────────────────────────────────────────
+ 
+const EXPLANATION_PROMPT = (problem, language) => `
+You are a friendly coding teacher explaining a competitive programming problem to a beginner.
+Explain the problem in ${language} language in simple, everyday terms.
+ 
+Return a JSON object with EXACTLY this structure — no markdown, no backticks, raw JSON only:
+ 
+{
+  "analogy": "A real-world analogy that makes the problem instantly clear (2-3 sentences)",
+  "breakdown": [
+    "Step 1: plain English explanation of what the problem is asking",
+    "Step 2: what the input looks like and what we need to do with it",
+    "Step 3: what the output should be and why"
+  ],
+  "keyInsight": "The single most important 'aha moment' to understand this problem (1-2 sentences)",
+  "example": "Walk through the sample input/output in plain language, no code"
+}
+ 
+Rules:
+- Write everything in ${language} language — including all field values
+- Use simple vocabulary, avoid jargon
+- The analogy must be relatable (food, sports, everyday life)
+- breakdown should have exactly 3 steps
+- Keep keyInsight punchy and memorable
+- No code, no pseudocode anywhere in the response
+ 
+Problem Title: ${problem.title}
+Difficulty: ${problem.difficulty}
+Problem Statement: ${problem.statement}
+${problem.inputFormat ? `Input Format: ${problem.inputFormat}` : ""}
+${problem.outputFormat ? `Output Format: ${problem.outputFormat}` : ""}
+${problem.constraints ? `Constraints: ${problem.constraints}` : ""}
+${problem.sampleInput ? `Sample Input: ${problem.sampleInput}` : ""}
+${problem.sampleOutput ? `Sample Output: ${problem.sampleOutput}` : ""}
+`;
+
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 export const generateHint = async (problem, tier) => {
@@ -114,5 +151,16 @@ export const generateFeedback = async (submission, problem) => {
     return JSON.parse(cleaned);
   } catch {
     throw new Error("Gemini returned invalid JSON for feedback");
+  }
+};
+
+export const generateExplanation = async (problem, language) => {
+  const result = await model.generateContent(EXPLANATION_PROMPT(problem, language));
+  const raw = result.response.text().trim();
+  const cleaned = raw.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    throw new Error("Gemini returned invalid JSON for explanation");
   }
 };

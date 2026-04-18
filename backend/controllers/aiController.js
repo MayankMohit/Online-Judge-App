@@ -1,7 +1,15 @@
 import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { HintProgress } from "../models/hintProgressModel.js";
-import { generateHint, generateFeedback } from "../services/aiService.js";
+import { ProblemExplanation } from "../models/problemExplanationModel.js";
+import { generateHint, generateFeedback, generateExplanation } from "../services/aiService.js";
+ 
+const SUPPORTED_LANGUAGES = [
+  "english", "hindi", "spanish", "french", "german",
+  "japanese", "chinese", "portuguese", "arabic", "bengali",
+];
+ 
+// ─── Hints ────────────────────────────────────────────────────────────────────
 
 export const getHint = async (req, res) => {
   try {
@@ -88,6 +96,8 @@ export const getUnlockedTiers = async (req, res) => {
   }
 };
 
+// ─── Feedback ─────────────────────────────────────────────────────────────────
+
 export const getCodeFeedback = async (req, res) => {
   try {
     const { submissionId } = req.body;
@@ -120,5 +130,55 @@ export const getCodeFeedback = async (req, res) => {
   } catch (err) {
     console.error("Feedback generation failed:", err);
     return res.status(500).json({ success: false, message: "Failed to generate feedback", error: err.message });
+  }
+};
+
+// ─── Explanation ──────────────────────────────────────────────────────────────
+ 
+export const getExplanation = async (req, res) => {
+  try {
+    const { problemId, language = "english" } = req.body;
+ 
+    if (!problemId) return res.status(400).json({ success: false, message: "problemId is required" });
+ 
+    const lang = language.toLowerCase().trim();
+    if (!SUPPORTED_LANGUAGES.includes(lang)) {
+      return res.status(400).json({ success: false, message: `Unsupported language. Choose from: ${SUPPORTED_LANGUAGES.join(", ")}` });
+    }
+ 
+    // Check DB for existing explanation in this language
+    let explanationDoc = await ProblemExplanation.findOne({ problem: problemId });
+ 
+    if (explanationDoc?.explanations?.get(lang)) {
+      const cached = explanationDoc.explanations.get(lang);
+      return res.status(200).json({
+        success: true,
+        explanation: JSON.parse(cached),
+        language: lang,
+        fromCache: true,
+      });
+    }
+ 
+    // Fetch problem
+    const problem = await Problem.findById(problemId).select(
+      "title statement difficulty tags constraints inputFormat outputFormat sampleInput sampleOutput"
+    );
+    if (!problem) return res.status(404).json({ success: false, message: "Problem not found" });
+ 
+    // Generate via Gemini
+    const explanation = await generateExplanation(problem, lang);
+ 
+    // Persist — upsert the doc, set the new language key
+    if (!explanationDoc) {
+      explanationDoc = new ProblemExplanation({ problem: problemId });
+    }
+    explanationDoc.explanations.set(lang, JSON.stringify(explanation));
+    explanationDoc.updatedAt = Date.now();
+    await explanationDoc.save();
+ 
+    return res.status(200).json({ success: true, explanation, language: lang, fromCache: false });
+  } catch (err) {
+    console.error("Explanation generation failed:", err);
+    return res.status(500).json({ success: false, message: "Failed to generate explanation", error: err.message });
   }
 };

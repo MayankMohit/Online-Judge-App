@@ -55,6 +55,28 @@ export const fetchCodeFeedback = createAsyncThunk(
   }
 );
 
+// ─── Explanation ──────────────────────────────────────────────────────────────
+ 
+export const fetchExplanation = createAsyncThunk(
+  "ai/fetchExplanation",
+  async ({ problemId, language }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/api/ai/explain`,
+        { problemId, language },
+        { withCredentials: true }
+      );
+      return {
+        problemId,
+        language,
+        explanation: response.data.explanation,
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch explanation");
+    }
+  }
+);
+
 // ─── Slice ────────────────────────────────────────────────────────────────────
 
 const aiSlice = createSlice({
@@ -68,9 +90,15 @@ const aiSlice = createSlice({
     fetchingTier: null,
 
     // Feedback
+    currentFeedback: null,
     feedbackLoading: false,
     feedbackError: null,
-    currentFeedback: null,
+ 
+    // Explanations: { [problemId]: { [language]: explanationObject } }
+    explanations: {},
+    explanationLoading: false,
+    explanationError: null,
+    fetchingLanguage: null,
   },
   reducers: {
     clearHintsForProblem(state, action) {
@@ -85,7 +113,10 @@ const aiSlice = createSlice({
     clearFeedback(state) {
       state.currentFeedback = null;
       state.feedbackError = null;
-    }
+    },
+    clearExplanationError(state) {
+      state.explanationError = null;
+    },
   },
   extraReducers: (builder) => {
     // Hints
@@ -137,8 +168,34 @@ const aiSlice = createSlice({
         state.feedbackLoading = false;
         state.feedbackError = action.payload;
       });
+    
+    // Explanations
+    builder
+      .addCase(fetchExplanation.pending, (state, action) => {
+        state.explanationLoading = true;
+        state.explanationError = null;
+        state.fetchingLanguage = action.meta.arg.language;
+      })
+      .addCase(fetchExplanation.fulfilled, (state, action) => {
+        state.explanationLoading = false;
+        state.fetchingLanguage = null;
+        const { problemId, language, explanation } = action.payload;
+        if (!state.explanations[problemId]) state.explanations[problemId] = {};
+        state.explanations[problemId][language] = explanation;
+      })
+      .addCase(fetchExplanation.rejected, (state, action) => {
+        state.explanationLoading = false;
+        state.fetchingLanguage = null;
+        state.explanationError = action.payload;
+      });
   },
 });
 
-export const { clearHintsForProblem, clearFeedbackError } = aiSlice.actions;
+export const {
+  clearHintsForProblem,
+  clearFeedback,
+  clearFeedbackError,
+  clearExplanationError,
+} = aiSlice.actions;
+ 
 export default aiSlice.reducer;

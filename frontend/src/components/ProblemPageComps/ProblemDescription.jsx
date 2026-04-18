@@ -1,4 +1,5 @@
 import TestCase from "./TestCase";
+import ExplainPanel from "./ExplainPanel";
 
 const Section = ({ title, children }) => (
   <div className="mb-5">
@@ -7,7 +8,7 @@ const Section = ({ title, children }) => (
   </div>
 );
 
-const ProblemDescription = ({ description, inputFormat, outputFormat, constraints, visibleTestCases }) => (
+const ProblemDescription = ({ description, inputFormat, outputFormat, constraints, visibleTestCases, problem, isGuest }) => (
   <>
     <div className="text-zinc-300 whitespace-pre-wrap mb-6 text-sm leading-relaxed">
       {description}
@@ -34,6 +35,9 @@ const ProblemDescription = ({ description, inputFormat, outputFormat, constraint
         <p className="text-zinc-600 italic text-sm">No sample input/output.</p>
       )}
     </Section>
+
+    {/* AI Explanation — sits below examples inside description tab */}
+    <ExplainPanel problem={problem} isGuest={isGuest} />
   </>
 );
 

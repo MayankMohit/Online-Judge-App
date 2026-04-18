@@ -4,7 +4,7 @@ import ProblemDescription from "./ProblemDescription";
 import HintPanel from "./HintPanel";
 
 const verdictLabel = (v) =>
-  ({ accepted: "Accepted", wrong_answer: "Wrong Answer", time_limit_exceeded: "TLE", compilation_error: "CE", runtime_error: "RE" }[v] || v);
+  ({ accepted: "Accepted", wrong_answer: "Wrong Answer", time_limit_exceeded: "TLE", compilation_error: "Compilation Error", runtime_error: "Runtime Error" }[v] || v);
 
 const verdictColor = (v) => v === "accepted" ? "text-green-400" : "text-red-400";
 
@@ -31,6 +31,8 @@ const ProblemDescriptionPanel = ({ activeTab, setActiveTab, problem, submissions
             outputFormat={outputFormat}
             constraints={constraints}
             visibleTestCases={visibleTestCases}
+            problem={problem}
+            isGuest={isGuest}
           />
         </>
       )}

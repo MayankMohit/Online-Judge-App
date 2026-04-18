@@ -1,3 +1,4 @@
+
 # Code Junkie – Full-Stack Online Judge😍🧑‍💻
 
 Code Junkie is a full-stack MERN-based online judge platform with real-time code execution, admin dashboard, and user management. It supports Dockerized microservices and HTTPS deployment with custom domain support.
@@ -6,15 +7,13 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 
 📩 User Authentication with email verification (via Resend)
 
-💻 Run & Submit Code in multiple languages via compiler microservice
+💻 Run & Submit Code in multiple languages in a sandboxed environment
 
 🛠️ Admin Dashboard for managing problems, users, and submissions
 
 📝 Add/Edit/Delete Problems with test cases and tags
 
-📊 User Performance Charts and submission history
-
-🛡️ Role-Based Access Control (admin/user)
+🛡️ Role-Based Access Control (admin/user/guest)
 
 💾 Code Persistence: Auto-saves user code per problem even after refresh
 
@@ -26,6 +25,10 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 
 🔒 Live Deployment with HTTPS via Railway (automatic TLS)
 
+🤖 AI-Powered Developer Assistance: Google Gemini API for tiered hints, code feedback, and concise analysis (complexity, strengths, improvements).
+
+---
+
 ## Tech Stack
 
 * 💻 **Frontend**: React + Vite + TailwindCSS
@@ -33,38 +36,45 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 * ⚙️ **Compiler**: Node.js microservice
 * 🗄️ **Database**: MongoDB Atlas
 * 🔐 **Auth**: JWT + Resend (Email verification)
+* 🤖 **AI Integration**: Google Gemini API
 * 🚀 **DevOps**: Docker, Docker Compose, Railway
 
 
+---
+
 ## Live Demo
 
-> ✅ Visit [https://cj.bymayank.com](https://cj.bymayank.com) to try the hosted version.
+>🌐  Visit [https://cj.bymayank.com](https://cj.bymayank.com) to try the hosted version.
 
-> 📽️ View [Demo Video Here](https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21?sid=9871d966-f303-4c7c-9583-901d9da7862c) 
+> 📽️ View Demo Video Here: [https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21](https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21) *(Note: This demo reflects an earlier version — the app has been significantly updated since.)*
 
 > To self-host this app, follow the setup instructions below and configure your own domain or use `localhost`.
+
+---
 
 
 ## Project Structure
 
 ```
-
 Online-Judge-App/
 ├── backend/              # Express API
 ├── frontend/             # React client
 ├── compiler-service/     # Code execution microservice
 ├── docker-compose.yml    # Service orchestration
 └── README.md
-
 ```
+
+---
 
 ## Setup Instructions
 
 ### Prerequisites
 
-- Railway account (for cloud deployment) or local machine with Docker and Docker Compose
-- MongoDB Atlas cluster  
-- (Optional) Custom domain for Railway deployment
+* Railway account (for cloud deployment) or local machine with Docker and Docker Compose
+* MongoDB Atlas cluster
+* (Optional) Custom domain for Railway deployment
+
+---
 
 ### 1. Clone the Repository
 
@@ -72,6 +82,8 @@ Online-Judge-App/
 git clone https://github.com/MayankMohit/Online-Judge-App.git
 cd Online-Judge-App
 ```
+
+---
 
 ### 2. Configure Environment Variables
 
@@ -86,6 +98,7 @@ JWT_KEY=your_jwt_secret
 RESEND_API_KEY=your_resend_key
 CLIENT_URL=http://localhost:5173
 COMPILER_URL=http://localhost:5001
+GEMINI_API_KEY=your_api_key
 ```
 
 #### frontend/.env
@@ -102,11 +115,15 @@ VITE_API_URL=http://localhost:5000
 PORT=5001
 ```
 
+---
+
 ### 3. Build and Start Services (Local)
 
 ```bash
 docker-compose up --build -d
 ```
+
+---
 
 ### 4. Deploy to Railway
 
@@ -117,6 +134,8 @@ Railway automatically handles HTTPS and TLS for all deployments.
 3. Add each service (backend, frontend, compiler-service) as a separate Railway service
 4. Set environment variables for each service via the Railway dashboard
 5. (Optional) Add a custom domain under **Settings → Domains** — Railway provisions HTTPS automatically
+
+---
 
 ## Development Setup
 
@@ -144,6 +163,8 @@ npm install
 npm run dev
 ```
 
+---
+
 ## Admin Access
 
 To make a user an admin, update their role via dashboard or in the database:
@@ -155,24 +176,25 @@ To make a user an admin, update their role via dashboard or in the database:
 }
 ```
 
+---
 
 ## Roadmap
 
 ### 🤖 AI Integration
-- **Tiered AI Hints**: Contextual hints (basic → advanced) using problem embeddings and solution similarity.
-- **Code Feedback**: LLM-generated feedback after submission — complexity, patterns, anti-patterns, and trade-offs.
-- **Bug Detection Assistant**: "Why is my code wrong?" feature with code analysis and test case comparison.
-- **AI Code Review**: Automated feedback on readability, modularity, naming, and scoring out of 10.
-- **Explain in Layman Terms**: AI-generated problem explanations with analogies, diagrams, and multilingual support.
-- **Smart Test Case Generation**: GPT-assisted test case suggestions for problem setters.
-- **Plagiarism Detection**: AI-based similarity check between users' submissions.
+
+* **Explain in Layman Terms**: AI-generated problem explanations with analogies, diagrams, and multilingual support.
+* **Smart Test Case Generation**: GPT-assisted test case suggestions for problem setters.
 
 ### 🏆 Competitive Features
-- **Contests**: Host and manage timed contests with live leaderboards and real-time feedback.
+
+* **Contests**: Host and manage timed contests with live leaderboards and real-time feedback.
 
 ### 📈 Future Enhancements
-- **Performance Visualization**: Execution trade-off diagrams (radar charts, trees).
-- **Submission Insights**: Comparative analysis of multiple approaches for a single problem.
+
+* **Performance Visualization**: Execution trade-off diagrams (radar charts, trees).
+* **Submission Insights**: Comparative analysis of multiple approaches for a single problem.
+
+---
 
 ## Contributing
 
@@ -181,10 +203,16 @@ To make a user an admin, update their role via dashboard or in the database:
 3. Commit and push
 4. Open a pull request
 
+---
+
 ## License
 
 [MIT](./LICENSE)
 
+---
+
 ## Maintainer
 
 Made by [Mayank Mohit](https://github.com/MayankMohit)
+
+---

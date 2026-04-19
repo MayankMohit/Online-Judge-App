@@ -197,7 +197,7 @@ const HintPanel = ({ problem, isGuest }) => {
       {hintError && (
         <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg mb-1">
           <AlertCircle size={13} className="text-red-400 shrink-0" />
-          <p className="text-red-400 text-xs">{hintError}</p>
+          <p className="text-red-400 text-xs">The AI model is currently experiencing high demand—please try again in a few seconds.</p>
         </div>
       )}
 

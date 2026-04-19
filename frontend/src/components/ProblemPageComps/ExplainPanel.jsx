@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchExplanation } from "../../features/ai/aiSlice";
 import {
-  Sparkles, Loader2, ChevronDown,
+  Sparkles, Loader2, ChevronDown, ChevronUp,
   Globe, Lightbulb, BookOpen, Zap, AlertTriangle,
 } from "lucide-react";
 
@@ -53,10 +53,24 @@ const ExplainPanel = ({ problem, isGuest }) => {
 
   const msgIntervalRef = useRef(null);
   const patienceRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const currentExplanation = explanations[problemId]?.[selectedLang] || null;
   const isCurrentlyFetching = explanationLoading && fetchingLanguage === selectedLang;
   const selectedLangConfig = LANGUAGES.find((l) => l.code === selectedLang);
+
+  // Close dropdown on outside click — without blocking scroll
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setLangMenuOpen(false);
+      }
+    };
+    // Use capture:false so scroll events are unaffected
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [langMenuOpen]);
 
   const startLoadingMessages = () => {
     setMsgIndex(0);
@@ -88,7 +102,6 @@ const ExplainPanel = ({ problem, isGuest }) => {
   const handleLangChange = (code) => {
     setSelectedLang(code);
     setLangMenuOpen(false);
-    // auto-open if already generated for this language
     setIsOpen(!!explanations[problemId]?.[code]);
   };
 
@@ -102,38 +115,42 @@ const ExplainPanel = ({ problem, isGuest }) => {
 
       {/* Controls */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Language dropdown */}
-        <div className="relative">
+
+        {/* Language selector — opens UPWARD */}
+        <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setLangMenuOpen((o) => !o)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-300 text-xs transition"
           >
             <Globe size={11} className="text-zinc-500" />
             <span>{selectedLangConfig?.flag} {selectedLangConfig?.label}</span>
-            <ChevronDown size={11} className="text-zinc-500" />
+            {langMenuOpen
+              ? <ChevronUp size={11} className="text-zinc-500" />
+              : <ChevronDown size={11} className="text-zinc-500" />
+            }
           </button>
 
           {langMenuOpen && (
-            <>
-              {/* Backdrop to close */}
-              <div className="fixed inset-0 z-20" onClick={() => setLangMenuOpen(false)} />
-              <div className="absolute top-full mt-1 left-0 z-30 w-44 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl overflow-hidden">
-                {LANGUAGES.map(({ code, label, flag }) => (
-                  <button
-                    key={code}
-                    onClick={() => handleLangChange(code)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition
-                      ${selectedLang === code ? "bg-purple-600/20 text-purple-300" : "text-zinc-300 hover:bg-zinc-800"}`}
-                  >
-                    <span>{flag}</span>
-                    <span>{label}</span>
-                    {explanations[problemId]?.[code] && (
-                      <span className="ml-auto text-[10px] text-purple-400">✓</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
+            // bottom-full = opens above the button, no scroll blocking
+            <div className="absolute bottom-full mb-1 left-0 z-30 w-44 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl overflow-hidden">
+              {LANGUAGES.map(({ code, label, flag }) => (
+                <button
+                  key={code}
+                  // onMouseDown + preventDefault so the parent scroll container
+                  // doesn't lose focus, then handle selection in onClick
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleLangChange(code)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition
+                    ${selectedLang === code ? "bg-purple-600/20 text-purple-300" : "text-zinc-300 hover:bg-zinc-800"}`}
+                >
+                  <span>{flag}</span>
+                  <span>{label}</span>
+                  {explanations[problemId]?.[code] && (
+                    <span className="ml-auto text-[10px] text-purple-400">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -185,7 +202,7 @@ const ExplainPanel = ({ problem, isGuest }) => {
       {explanationError && !currentExplanation && !isCurrentlyFetching && (
         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg mt-3">
           <p className="text-xs text-red-400 flex items-center gap-1.5">
-            <AlertTriangle size={11} /> {explanationError}
+            <AlertTriangle size={11} /> The AI model is currently experiencing high demand—please try again in a few seconds.
           </p>
           <button onClick={handleGenerate} className="text-[11px] text-red-400 hover:text-red-300 underline shrink-0 transition">
             Retry

@@ -338,7 +338,7 @@ const OutputTab = ({ verdict, failedCase, averageTime, lastAction, loading, onCl
               {feedbackError && !currentFeedback && !feedbackLoading && (
                 <div className="flex items-center justify-between gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <p className="text-xs text-red-400 flex items-center gap-1.5">
-                    <AlertTriangle size={11} /> {feedbackError}
+                    <AlertTriangle size={11} /> The AI model is currently experiencing high demand—please try again in a few seconds.
                   </p>
                   <button
                     onClick={handleGetFeedback}

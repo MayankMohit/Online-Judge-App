@@ -108,7 +108,7 @@ export default function AutocompleteButton({
       {/* Error */}
       {error && (
         <p className="text-[11px] text-red-400 flex items-center gap-1">
-          ⚠ {error}
+          ⚠ The AI model is currently experiencing high demand—please try again in a few seconds.
         </p>
       )}
     </div>

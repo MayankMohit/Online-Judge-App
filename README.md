@@ -25,7 +25,11 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 
 🔒 Live Deployment with HTTPS via Railway (automatic TLS)
 
-🤖 AI-Powered Developer Assistance: Google Gemini API for tiered hints, code feedback, simple explanations, and concise analysis (complexity, strengths, improvements).
+🤖 AI Features:
+- Tiered Hints: Context-aware hints (basic → advanced) based on the current problem and your code
+- Code Feedback & Review: Post-submission analysis covering approach, complexity, patterns, and improvements
+- Explain in Simple Terms: Breaks down problems and solutions into easy-to-understand explanations
+- Problem & Test Case Autocomplete (Admin): Assists problem setters by generating problem statements, constrains, examples and test cases
 
 ---
 
@@ -179,10 +183,6 @@ To make a user an admin, update their role via dashboard or in the database:
 ---
 
 ## Roadmap
-
-### 🤖 AI Integration
-
-* **Smart Test Case Generation**: GPT-assisted test case suggestions for problem setters.
 
 ### 🏆 Competitive Features
 

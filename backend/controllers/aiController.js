@@ -2,12 +2,22 @@ import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { HintProgress } from "../models/hintProgressModel.js";
 import { ProblemExplanation } from "../models/problemExplanationModel.js";
-import { generateHint, generateFeedback, generateExplanation } from "../services/aiService.js";
+import {
+  generateHint,
+  generateFeedback,
+  generateExplanation,
+  generateAutocomplete,
+} from "../services/aiService.js";
  
 const SUPPORTED_LANGUAGES = [
   "english", "hindi", "spanish", "french", "german",
   "japanese", "chinese", "portuguese", "arabic", "bengali",
 ];
+
+// ─── Per-user rate limit store for autocomplete (1 req / 10s) ────────────────
+// key: userId, value: timestamp of last request
+const autocompleteRateLimit = new Map();
+const AUTOCOMPLETE_COOLDOWN_MS = 10_000;
  
 // ─── Hints ────────────────────────────────────────────────────────────────────
 
@@ -180,5 +190,40 @@ export const getExplanation = async (req, res) => {
   } catch (err) {
     console.error("Explanation generation failed:", err);
     return res.status(500).json({ success: false, message: "Failed to generate explanation", error: err.message });
+  }
+};
+
+// ─── Autocomplete ─────────────────────────────────────────────────────────────
+ 
+export const getAutocomplete = async (req, res) => {
+  try {
+    const { title, statement } = req.body;
+    const userId = req.userId;
+ 
+    if (!title?.trim())
+      return res.status(400).json({ success: false, message: "Title is required for autocomplete" });
+ 
+    // Per-user rate limit: 1 request per 10 seconds
+    const lastRequest = autocompleteRateLimit.get(userId);
+    const now = Date.now();
+ 
+    if (lastRequest && now - lastRequest < AUTOCOMPLETE_COOLDOWN_MS) {
+      const retryAfter = Math.ceil((AUTOCOMPLETE_COOLDOWN_MS - (now - lastRequest)) / 1000);
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${retryAfter} second${retryAfter !== 1 ? "s" : ""} before generating again`,
+        retryAfter,
+      });
+    }
+ 
+    autocompleteRateLimit.set(userId, now);
+ 
+    const result = await generateAutocomplete(title.trim(), statement?.trim() || "");
+ 
+    // Attach UUIDs aren't needed — frontend will add them
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    console.error("Autocomplete generation failed:", err);
+    return res.status(500).json({ success: false, message: "Failed to generate problem", error: err.message });
   }
 };

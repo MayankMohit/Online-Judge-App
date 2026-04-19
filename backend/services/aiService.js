@@ -128,6 +128,59 @@ ${problem.sampleInput ? `Sample Input: ${problem.sampleInput}` : ""}
 ${problem.sampleOutput ? `Sample Output: ${problem.sampleOutput}` : ""}
 `;
 
+// ─── Autocomplete Prompt ──────────────────────────────────────────────────────
+ 
+const AUTOCOMPLETE_PROMPT = (title, statement) => `
+You are an expert competitive programming problem setter. Given a problem title and partial or full statement, generate a complete, well-formed competitive programming problem.
+ 
+Return a JSON object with EXACTLY this structure — no markdown, no backticks, raw JSON only:
+ 
+{
+  "statement": "Complete, clear problem statement (improve/expand the given one if needed)",
+  "difficulty": "Easy" | "Medium" | "Hard",
+  "tags": ["tag1", "tag2"],
+  "inputFormat": "Description of input format",
+  "outputFormat": "Description of output format",
+  "constraints": "All constraints e.g. 1 <= n <= 10^5",
+  "sampleInput": "One representative sample input",
+  "sampleOutput": "Correct output for the sample input",
+  "testCases": [
+    { "input": "...", "expectedOutput": "...", "isHidden": true },
+    ...
+  ]
+}
+ 
+STRICT RULES — violating any of these is unacceptable:
+ 
+1. TEST CASES: Generate at least 10 test cases. Include:
+   - Basic/small cases (2-3)
+   - Medium complexity cases (3-4)
+   - Edge cases: empty input, single element, max constraints, all same values, negative numbers if applicable (3-4)
+   - First 2 test cases must have isHidden: false (sample cases), rest must have isHidden: true
+ 
+2. INPUT/OUTPUT FORMAT: All input and output values must be raw strings or integers — NO quotes around values in the actual input/output fields. Write them exactly as they would appear in stdin/stdout.
+   CORRECT:   { "input": "5\\n1 2 3 4 5", "expectedOutput": "15" }
+   INCORRECT: { "input": "\\"5 1 2 3 4 5\\"", "expectedOutput": "\\"15\\"" }
+ 
+3. STDOUT ONLY: The problem must ask users to PRINT to stdout. NEVER say "return", "return an array", "return true/false", "return the answer". Always say "print", "output", "write to stdout".
+ 
+4. NO EMPTY OUTPUTS: No test case can have an empty expectedOutput. If the answer could be empty (e.g. no elements found), instruct users to print a dot (.) or empty brackets ([]) instead. Make this explicit in the outputFormat.
+ 
+5. TAGS: Use standard competitive programming tags only: Array, String, HashMap, Two Pointers, Sliding Window, Binary Search, Sorting, Stack, Queue, Linked List, Tree, Graph, BFS, DFS, Dynamic Programming, Greedy, Math, Recursion, Backtracking, Bit Manipulation, Heap, Prefix Sum.
+ 
+6. DIFFICULTY: Infer from complexity — Easy for O(n) brute force problems, Medium for O(n log n) or moderate DP, Hard for complex DP/Graph problems.
+ 
+Problem Title: ${title}
+Problem Statement (partial or full): ${statement}
+`;
+ 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+ 
+const parseJSON = (raw) => {
+  const cleaned = raw.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+  return JSON.parse(cleaned);
+};
+
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 export const generateHint = async (problem, tier) => {
@@ -162,5 +215,14 @@ export const generateExplanation = async (problem, language) => {
     return JSON.parse(cleaned);
   } catch {
     throw new Error("Gemini returned invalid JSON for explanation");
+  }
+};
+
+export const generateAutocomplete = async (title, statement) => {
+  const result = await model.generateContent(AUTOCOMPLETE_PROMPT(title, statement));
+  try {
+    return parseJSON(result.response.text().trim());
+  } catch {
+    throw new Error("Gemini returned invalid JSON for autocomplete");
   }
 };

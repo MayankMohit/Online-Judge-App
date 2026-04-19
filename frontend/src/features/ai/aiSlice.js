@@ -77,14 +77,28 @@ export const fetchExplanation = createAsyncThunk(
   }
 );
 
+// ─── Autocomplete ─────────────────────────────────────────────────────────────
+ 
+export const fetchAutocomplete = createAsyncThunk(
+  "ai/fetchAutocomplete",
+  async ({ title, statement }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${BASE_URL}/api/ai/autocomplete`, { title, statement }, { withCredentials: true });
+      return response.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to autocomplete problem");
+    }
+  }
+);
+
 // ─── Slice ────────────────────────────────────────────────────────────────────
 
 const aiSlice = createSlice({
   name: "ai",
   initialState: {
     // Hints
-    hints: {},           // hints[problemId][tier] = hint text
-    unlockedUpTo: {},    // unlockedUpTo[problemId] = 0 | 1 | 2 | 3
+    hints: {},           
+    unlockedUpTo: {},   
     hintLoading: false,
     hintError: null,
     fetchingTier: null,
@@ -99,6 +113,10 @@ const aiSlice = createSlice({
     explanationLoading: false,
     explanationError: null,
     fetchingLanguage: null,
+
+    // Autocomplete
+    autocompleteLoading: false,
+    autocompleteError: null,
   },
   reducers: {
     clearHintsForProblem(state, action) {
@@ -116,6 +134,9 @@ const aiSlice = createSlice({
     },
     clearExplanationError(state) {
       state.explanationError = null;
+    },
+    clearAutocompleteError(state) {
+      state.autocompleteError = null;
     },
   },
   extraReducers: (builder) => {
@@ -188,6 +209,20 @@ const aiSlice = createSlice({
         state.fetchingLanguage = null;
         state.explanationError = action.payload;
       });
+    
+    // Autocomplete
+    builder
+      .addCase(fetchAutocomplete.pending, (state) => {
+        state.autocompleteLoading = true;
+        state.autocompleteError = null;
+      })
+      .addCase(fetchAutocomplete.fulfilled, (state) => {
+        state.autocompleteLoading = false;
+      })
+      .addCase(fetchAutocomplete.rejected, (state, action) => {
+        state.autocompleteLoading = false;
+        state.autocompleteError = action.payload;
+      });
   },
 });
 
@@ -196,6 +231,7 @@ export const {
   clearFeedback,
   clearFeedbackError,
   clearExplanationError,
+  clearAutocompleteError,
 } = aiSlice.actions;
  
 export default aiSlice.reducer;

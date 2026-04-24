@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { addFavorite, removeFavorite } from "../features/favorites/favoritesSlice";
 
-const ProblemCard = ({ problem, index }) => {
+const ProblemCard = ({ problem, index, dashboard=false }) => {
   const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -57,7 +57,7 @@ const ProblemCard = ({ problem, index }) => {
   return (
     <div
       onClick={() => navigate(`/problems/${problem.problemNumber}`)}
-      className={`w-[93vw] sm:w-full overflow-hidden bg-zinc-900 border border-zinc-800 border-l-4 ${difficultyConfig.border} p-3 rounded-lg shadow-md hover:bg-zinc-800 transition-all duration-200 cursor-pointer flex items-center justify-between gap-2`}
+      className={`${dashboard ? "w-full" : "w-[93vw] sm:w-full"} overflow-hidden bg-zinc-900 border border-zinc-800 border-l-4 ${difficultyConfig.border} p-3 rounded-lg shadow-md hover:bg-zinc-800 transition-all duration-200 cursor-pointer flex items-center justify-between gap-2`}
     >
       {/* Left */}
       <div className="flex items-center gap-3 min-w-0 flex-1">

@@ -23,7 +23,7 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 
 🐳 Docker-Based Microservices with production-ready deployment
 
-🔒 Live Deployment with HTTPS via Railway (automatic TLS)
+🔒 Live Deployment with HTTPS via Let's Encrypt + custom domain
 
 🤖 AI Features:
 - Tiered Hints: Context-aware hints (basic → advanced) based on the current problem and your code
@@ -35,22 +35,22 @@ Code Junkie is a full-stack MERN-based online judge platform with real-time code
 
 ## Tech Stack
 
-* 💻 **Frontend**: React + Vite + TailwindCSS
-* 🛠️ **Backend**: Node.js + Express
-* ⚙️ **Compiler**: Node.js microservice
-* 🗄️ **Database**: MongoDB Atlas
-* 🔐 **Auth**: JWT + Resend (Email verification)
-* 🤖 **AI Integration**: Google Gemini API
-* 🚀 **DevOps**: Docker, Docker Compose, Railway
+*  **Frontend**: React + Vite + TailwindCSS
+*  **Backend**: Node.js + Express
+*  **Compiler**: Node.js microservice
+*  **Database**: MongoDB Atlas
+*  **Auth**: JWT + Resend (Email verification)
+*  **AI Integration**: Google Gemini API
+*  **DevOps**: Docker, Docker Compose, Nginx, Oracle Cloud, GitHub Actions, Let's Encrypt
 
 
 ---
 
 ## Live Demo
 
->🌐  Visit [https://cj.bymayank.com](https://cj.bymayank.com) to try the hosted version.
+> Visit [https://cj.bymayank.com](https://cj.bymayank.com) to try the hosted version.
 
-> 📽️ View Demo Video Here: [https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21](https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21) *(Note: This demo reflects an earlier version — the app has been significantly updated since.)*
+> View Demo Video Here: [https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21](https://www.loom.com/share/e6c830953e2b41bab19eb78bbc9ddc21) *(Note: This demo reflects an earlier version — the app has been significantly updated since.)*
 
 > To self-host this app, follow the setup instructions below and configure your own domain or use `localhost`.
 
@@ -74,9 +74,11 @@ Online-Judge-App/
 
 ### Prerequisites
 
-* Railway account (for cloud deployment) or local machine with Docker and Docker Compose
+* Docker and Docker Compose installed
 * MongoDB Atlas cluster
-* (Optional) Custom domain for Railway deployment
+* Oracle Cloud account (Always Free tier) or any Linux VM
+* A domain name (optional, required for HTTPS)
+* GitHub account (for CI/CD)
 
 ---
 
@@ -129,16 +131,104 @@ docker-compose up --build -d
 
 ---
 
-### 4. Deploy to Railway
-
-Railway automatically handles HTTPS and TLS for all deployments.
-
-1. Push your code to GitHub
-2. Create a new Railway project and connect your repository
-3. Add each service (backend, frontend, compiler-service) as a separate Railway service
-4. Set environment variables for each service via the Railway dashboard
-5. (Optional) Add a custom domain under **Settings → Domains** — Railway provisions HTTPS automatically
-
+### 4. Deploy to Oracle Cloud (Always Free)
+ 
+This project is deployed on **Oracle Cloud Always Free** tier — no credit card charges, no expiry.
+ 
+#### VM Setup
+ 
+1. Create an Oracle Cloud account at [oracle.com/cloud/free](https://oracle.com/cloud/free)
+2. Create a **VM.Standard.E2.1.Micro** instance (Always Free) with Ubuntu 22.04
+3. Open ports **80, 443, 5000** in the Oracle Security List (Networking → VCN → Security Lists)
+4. SSH into your VM:
+```bash
+ssh -i your-key.key ubuntu@YOUR_VM_IP
+```
+ 
+5. Install Docker and Docker Compose:
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install docker.io -y
+sudo usermod -aG docker ubuntu
+newgrp docker
+```
+ 
+6. Add swap to prevent OOM issues on 1GB RAM:
+```bash
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+ 
+#### Deploy the App
+ 
+```bash
+git clone https://github.com/MayankMohit/Online-Judge-App.git ~/app
+cd ~/app
+# Create your .env files manually (see step 2)
+docker-compose up --build -d
+```
+ 
+#### HTTPS with Let's Encrypt
+ 
+1. Point your domain's A record to your VM's public IP
+2. Install Certbot and generate a certificate:
+```bash
+sudo apt install certbot -y
+sudo certbot certonly --manual --preferred-challenges dns -d your-domain.com
+```
+ 
+3. Update `frontend/nginx.conf` to enable SSL (see the nginx.conf in this repo)
+4. Rebuild the frontend container:
+```bash
+docker-compose up --build -d
+```
+ 
+#### Auto-Restart on Reboot
+ 
+```bash
+sudo nano /etc/systemd/system/docker-compose-app.service
+```
+ 
+```ini
+[Unit]
+Description=Docker Compose App
+Requires=docker.service
+After=docker.service
+ 
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/app
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+User=ubuntu
+ 
+[Install]
+WantedBy=multi-user.target
+```
+ 
+```bash
+sudo systemctl enable docker-compose-app.service
+sudo systemctl start docker-compose-app.service
+```
+ 
+---
+ 
+### 5. CI/CD with GitHub Actions
+ 
+Every push to `main` automatically deploys to the VM.
+ 
+Add these secrets to your GitHub repo (**Settings → Secrets → Actions**):
+ 
+| Secret | Value |
+|--------|-------|
+| `VM_HOST` | Your VM's public IP |
+| `VM_SSH_KEY` | Contents of your SSH private key |
+ 
+The workflow (`.github/workflows/deploy.yml`) will SSH into the VM, pull latest code, and rebuild containers automatically.
+ 
 ---
 
 ## Development Setup
@@ -184,11 +274,11 @@ To make a user an admin, update their role via dashboard or in the database:
 
 ## Roadmap
 
-### 🏆 Competitive Features
+###  Competitive Features
 
 * **Contests**: Host and manage timed contests with live leaderboards and real-time feedback.
 
-### 📈 Future Enhancements
+###  Future Enhancements
 
 * **Performance Visualization**: Execution trade-off diagrams (radar charts, trees).
 * **Submission Insights**: Comparative analysis of multiple approaches for a single problem.

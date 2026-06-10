@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "react-hot-toast";
+import { Trophy } from "lucide-react";
 
 import { useAllTags } from "../../hooks/otherHooks/useAllTags";
 import { useAdminProblem } from "../../hooks/adminHooks/useAdminProblem";
@@ -45,6 +46,12 @@ export default function ProblemManagement() {
   const dispatch = useDispatch();
   const { problemNumber } = useParams();
   const isEditing = !!problemNumber;
+
+  // Contest context: creating a hidden problem attached to a contest
+  const [searchParams] = useSearchParams();
+  const contestId = searchParams.get("contestId");
+  const returnTo = searchParams.get("returnTo");
+  const [contestPoints, setContestPoints] = useState(100);
 
   const { tags: existingTags = [] } = useAllTags();
   const { problem: fetchedProblem, loading } = useAdminProblem(problemNumber);
@@ -192,6 +199,27 @@ export default function ProblemManagement() {
         onBack={() => navigate(-1)}
       />
       <div className="sm:w-[70vw] w-[95%] mx-auto sm:my-6 my-2">
+        {contestId && !isEditing && (
+          <div className="flex items-center justify-between gap-3 bg-purple-500/10 border border-purple-500/30 rounded-2xl px-4 py-3 mb-3">
+            <div className="flex items-center gap-2 text-sm text-purple-300">
+              <Trophy size={15} className="shrink-0" />
+              <span>
+                Creating a <strong>hidden contest problem</strong> — it stays out of
+                the public list until the contest ends.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <input
+                type="number"
+                min={1}
+                value={contestPoints}
+                onChange={(e) => setContestPoints(e.target.value)}
+                className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-purple-500"
+              />
+              <span className="text-xs text-zinc-400">pts</span>
+            </div>
+          </div>
+        )}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl sm:p-6 p-3 shadow-lg sm:space-y-4 space-y-2">
 
           <TitleStatementFields
@@ -270,6 +298,9 @@ export default function ProblemManagement() {
         problem={problem}
         originalProblem={fetchedProblem}
         handleReset={handleReset}
+        contestId={contestId}
+        contestPoints={contestPoints}
+        returnTo={returnTo}
       />
     </div>
   );

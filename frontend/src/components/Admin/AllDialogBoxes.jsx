@@ -22,6 +22,9 @@ const AllDialogBoxes = ({
   setFormErrors,
   problem,
   originalProblem,
+  contestId,
+  contestPoints,
+  returnTo,
 }) => {
   const { createProblem, updateProblem, deleteProblem } = useProblemMutations();
   const navigate = useNavigate();
@@ -54,11 +57,17 @@ const AllDialogBoxes = ({
             isHidden: !!isHidden,
           })
         ),
+        ...(contestId && {
+          contestId,
+          points: Math.max(1, Number(contestPoints) || 100),
+        }),
       };
       await createProblem(sanitizedProblem).unwrap();
-      toast.success("Problem added successfully");
+      toast.success(
+        contestId ? "Contest problem added" : "Problem added successfully"
+      );
       setShowAddDialog(false);
-      navigate("/admin");
+      navigate(returnTo || "/admin");
     } catch (err) {
       console.error("Add failed:", err);
       toast.error("Failed to add problem");

@@ -16,6 +16,10 @@ import adminProblemSubmissionsReducer from "../features/submissions/allSubmissio
 import problemMutationReducer from "../features/problems/problemMutationSlice";
 import adminProblemReducer from "../features/problems/adminProblemSlice"
 import aiReducer from "../features/ai/aiSlice";
+import contestsReducer from "../features/contests/contestsSlice";
+import standingsReducer from "../features/contests/standingsSlice";
+import contestAdminReducer from "../features/contests/contestAdminSlice";
+import contestHistoryReducer from "../features/contests/contestHistorySlice";
 
 export const store = configureStore({
   reducer: {
@@ -36,5 +40,9 @@ export const store = configureStore({
     problemMutation: problemMutationReducer,
     adminProblem: adminProblemReducer,
     ai: aiReducer,
+    contests: contestsReducer,
+    standings: standingsReducer,
+    contestAdmin: contestAdminReducer,
+    contestHistory: contestHistoryReducer,
   },
 })

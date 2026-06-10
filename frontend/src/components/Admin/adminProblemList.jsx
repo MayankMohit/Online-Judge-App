@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Pencil, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminProblems } from "../../hooks/adminHooks/adminProblemsHooks";
+import { AdminListSkeleton } from "../Skeletons";
 
 export default function AdminProblemList({ adminId }) {
   const navigate = useNavigate();
@@ -48,9 +49,7 @@ export default function AdminProblemList({ adminId }) {
         />
       </div>
 
-      {loading && problems.length === 0 && (
-        <p className="text-zinc-500 text-sm">Loading problems...</p>
-      )}
+      {loading && problems.length === 0 && <AdminListSkeleton rows={6} />}
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
       {/* Problem list */}

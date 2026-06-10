@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAdminProblemSearch } from "../../hooks/adminHooks/useAdminProblemSearch";
+import { AdminListSkeleton } from "../Skeletons";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminProblemSearch() {
@@ -31,9 +32,7 @@ export default function AdminProblemSearch() {
       </div>
 
       <div className="flex flex-col gap-1.5 max-h-[20vh] overflow-y-auto custom-scrollbar">
-        {loading && problems.length === 0 && (
-          <p className="text-zinc-500 text-sm">Searching...</p>
-        )}
+        {loading && problems.length === 0 && <AdminListSkeleton rows={2} />}
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
         {search && problems.map((problem) => (

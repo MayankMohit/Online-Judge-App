@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminUsers } from "../../hooks/adminHooks/adminUsersHooks";
+import { AdminListSkeleton } from "../Skeletons";
 
 export default function AdminUserList() {
   const navigate = useNavigate();
@@ -57,9 +58,7 @@ export default function AdminUserList() {
         </select>
       </div>
 
-      {loading && users.length === 0 && (
-        <p className="text-zinc-500 text-sm">Loading users...</p>
-      )}
+      {loading && users.length === 0 && <AdminListSkeleton rows={4} />}
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
       {/* Users list */}

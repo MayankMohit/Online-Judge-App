@@ -19,6 +19,8 @@ import submissionRoute from "./routes/submissionRouter.js";
 import runRoute from "./routes/runRouter.js";
 import codeRoute from "./routes/codeRouter.js";
 import aiRoute from "./routes/aiRouter.js";
+import contestRoute from "./routes/contestRouter.js";
+import { startRenumberJob } from "./jobs/renumberJob.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -46,6 +48,10 @@ const startServer = async () => {
     app.use("/api/run", runRoute);
     app.use("/api/code", codeRoute);
     app.use("/api/ai", aiRoute);
+    app.use("/api/contests", contestRoute);
+
+    // Background jobs
+    startRenumberJob();
 
     // Start listening
     app.listen(PORT, '0.0.0.0', () => {

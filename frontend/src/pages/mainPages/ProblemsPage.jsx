@@ -6,7 +6,7 @@ import ProblemControls from "../../components/ProblemControls";
 import { fetchProblems, incrementPage } from "../../features/problems/problemsSlice";
 import { SearchX } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
-import LoadingScreen from "../../components/LoadingScreen";
+import { ProblemCardSkeleton } from "../../components/Skeletons";
 
 const ProblemsPage = () => {
   const observer = useRef();
@@ -90,6 +90,12 @@ const ProblemsPage = () => {
               </div>
             );
           })}
+
+          {/* Initial load: full skeleton list; scroll load: a few at the bottom */}
+          {loading &&
+            [...Array(items.length === 0 ? 8 : 3)].map((_, i) => (
+              <ProblemCardSkeleton key={`skeleton-${i}`} />
+            ))}
 
         </div>
       </div>

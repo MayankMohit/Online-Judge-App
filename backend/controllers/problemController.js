@@ -1,10 +1,16 @@
 import { Problem } from "../models/problemModel.js";
 import { User } from "../models/userModel.js";
+import { Contest } from "../models/contestModel.js";
+import { ContestParticipation } from "../models/contestParticipationModel.js";
 import { getNextProblemNumber } from "../utils/getNextProblemNumber.js";
+import {
+  getContestStatus,
+  maybeReleaseContestProblems,
+} from "../utils/contestHelpers.js";
 
 export const getAllProblems = async (req, res) => {
   try {
-    const problems = await Problem.find()
+    const problems = await Problem.find({ isPublic: { $ne: false } })
       .select("-testCases")
       .sort({ problemNumber: 1 });
     res.status(200).json({ success: true, problems });
@@ -24,13 +30,73 @@ export const getProblemByNumber = async (req, res) => {
         .json({ success: false, message: "Problem not found" });
     }
 
+    let contestMeta = null;
+
+    // Unreleased contest problem — gate access
+    if (problem.contest && problem.isPublic === false) {
+      const contest = await Contest.findById(problem.contest).populate(
+        "problems.problem",
+        "problemNumber title"
+      );
+      if (contest) {
+        const status = getContestStatus(contest);
+
+        if (status === "ended") {
+          await maybeReleaseContestProblems(contest);
+        } else {
+          const user = req.userId
+            ? await User.findById(req.userId).select("role")
+            : null;
+          const isAdminUser = user?.role === "admin";
+
+          if (!isAdminUser) {
+            const isRegistered =
+              status === "running" &&
+              req.userId &&
+              (await ContestParticipation.exists({
+                contest: contest._id,
+                user: req.userId,
+              }));
+
+            if (!isRegistered) {
+              return res.status(403).json({
+                success: false,
+                message: "This problem is part of a contest",
+                contestId: contest._id,
+                contestStatus: status,
+              });
+            }
+          }
+        }
+
+        const entry = contest.problems.find(
+          (p) => p.problem._id.toString() === problem._id.toString()
+        );
+        contestMeta = {
+          id: contest._id,
+          title: contest.title,
+          startTime: contest.startTime,
+          endTime: contest.endTime,
+          status: getContestStatus(contest),
+          points: entry?.points ?? null,
+          // full problem set so the banner can offer A/B/C switching
+          problems: contest.problems.map((p) => ({
+            problemNumber: p.problem.problemNumber,
+            title: p.problem.title,
+            points: p.points,
+          })),
+          serverTime: Date.now(),
+        };
+      }
+    }
+
     const visibleTestCases = problem.testCases.filter((tc) => !tc.isHidden);
     const problemToSend = {
       ...problem.toObject(),
       testCases: visibleTestCases,
     };
 
-    res.status(200).json({ success: true, problem: problemToSend });
+    res.status(200).json({ success: true, problem: problemToSend, contestMeta });
   } catch (err) {
     res
       .status(500)
@@ -50,6 +116,8 @@ export const createProblem = async (req, res) => {
     sampleInput,
     sampleOutput,
     testCases,
+    contestId,
+    points,
   } = req.body;
 
   try {
@@ -59,6 +127,22 @@ export const createProblem = async (req, res) => {
         success: false,
         message: "Problem with this title already exists",
       });
+    }
+
+    let contest = null;
+    if (contestId) {
+      contest = await Contest.findById(contestId);
+      if (!contest) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Contest not found" });
+      }
+      if (getContestStatus(contest) === "ended") {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot add problems to an ended contest",
+        });
+      }
     }
 
     const problemNumber = await getNextProblemNumber();
@@ -76,9 +160,20 @@ export const createProblem = async (req, res) => {
       sampleOutput,
       testCases,
       createdBy: req.userId,
+      contest: contest ? contest._id : null,
+      isPublic: !contest,
     });
 
     await problem.save();
+
+    if (contest) {
+      contest.problems.push({
+        problem: problem._id,
+        points: Number(points) > 0 ? Number(points) : 100,
+      });
+      await contest.save();
+    }
+
     res.status(201).json({ success: true, problem });
   } catch (err) {
     res.status(500).json({
@@ -119,6 +214,13 @@ export const deleteProblem = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Problem not found" });
+    }
+
+    if (deleted.contest) {
+      await Contest.updateOne(
+        { _id: deleted.contest },
+        { $pull: { problems: { problem: deleted._id } } }
+      );
     }
 
     res
@@ -167,7 +269,7 @@ export const searchProblems = async (req, res) => {
   try {
     const { tag, difficulty, query, sort, page = 1, limit = 20 } = req.query;
 
-    const filter = {};
+    const filter = { isPublic: { $ne: false } };
 
     // ✅ Optimized $or query
     if (query) {
@@ -230,7 +332,7 @@ export const searchProblems = async (req, res) => {
 
 export const getUniqueTags = async (req, res) => {
   try {
-    const tags = await Problem.distinct("tags");
+    const tags = await Problem.distinct("tags", { isPublic: { $ne: false } });
     res.status(200).json({ success: true, tags });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch tags" });

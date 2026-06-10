@@ -2,11 +2,13 @@ import axios from "axios";
 import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { User } from "../models/userModel.js";
+import { Contest } from "../models/contestModel.js";
+import { ContestParticipation } from "../models/contestParticipationModel.js";
 
 const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
 
 export const createSubmission = async (req, res) => {
-  const { problemId, code, language } = req.body;
+  const { problemId, code, language, contestId } = req.body;
 
   if (!problemId || !code || !language) {
     return res.status(400).json({ success: false, message: "Missing fields" });
@@ -18,6 +20,48 @@ export const createSubmission = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Problem not found" });
+    }
+
+    // Contest validation — before judging, using arrival time
+    let contestProblemPoints = null;
+    if (contestId) {
+      const receivedAt = new Date();
+      const contest = await Contest.findById(contestId);
+      if (!contest) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Contest not found" });
+      }
+      if (receivedAt < contest.startTime) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Contest has not started yet" });
+      }
+      if (receivedAt > contest.endTime) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Contest has ended" });
+      }
+      const entry = contest.problems.find(
+        (p) => p.problem.toString() === problemId
+      );
+      if (!entry) {
+        return res.status(400).json({
+          success: false,
+          message: "Problem is not part of this contest",
+        });
+      }
+      const isParticipant = await ContestParticipation.exists({
+        contest: contest._id,
+        user: req.userId,
+      });
+      if (!isParticipant) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not registered for this contest",
+        });
+      }
+      contestProblemPoints = entry.points;
     }
 
     const testCases = problem.testCases || [];
@@ -95,6 +139,7 @@ export const createSubmission = async (req, res) => {
       language,
       verdict,
       averageTime,
+      contest: contestId || null,
     });
 
     await submission.save();
@@ -119,6 +164,45 @@ export const createSubmission = async (req, res) => {
 
     await user.save();
 
+    // Contest scoring — incremental update on the participation doc
+    let contestUpdate = null;
+    if (contestId) {
+      const participation = await ContestParticipation.findOne({
+        contest: contestId,
+        user: req.userId,
+      });
+
+      if (participation) {
+        let stats = participation.problemStats.find(
+          (s) => s.problem.toString() === problemId
+        );
+        if (!stats) {
+          participation.problemStats.push({ problem: problemId });
+          stats = participation.problemStats[participation.problemStats.length - 1];
+        }
+
+        if (!stats.solved) {
+          if (verdict === "accepted") {
+            stats.solved = true;
+            stats.solvedAt = submission.submittedAt;
+            stats.pointsEarned = contestProblemPoints;
+            participation.score += contestProblemPoints;
+            participation.lastAcceptedAt = submission.submittedAt;
+          } else {
+            stats.attempts += 1;
+            participation.totalAttempts += 1;
+          }
+          await participation.save();
+        }
+
+        contestUpdate = {
+          score: participation.score,
+          solved: stats.solved,
+          pointsEarned: stats.pointsEarned,
+        };
+      }
+    }
+
     return res.status(201).json({
       success: true,
       submissionId: submission._id,
@@ -126,6 +210,7 @@ export const createSubmission = async (req, res) => {
       verdict,
       averageTime,
       failedCase: verdict !== "accepted" ? failedCase : null,
+      contestUpdate,
     });
   } catch (error) {
     return res.status(500).json({
@@ -252,10 +337,10 @@ export const getUserSubmissionsForProblem = async (req, res) => {
         .json({ success: false, message: "Problem not found." });
     }
 
-    const submissions = await Submission.find({
-      user: userId,
-      problem: problem._id,
-    }).sort({ submittedAt: -1 });
+    const filter = { user: userId, problem: problem._id };
+    if (req.query.contestId) filter.contest = req.query.contestId;
+
+    const submissions = await Submission.find(filter).sort({ submittedAt: -1 });
 
     res.status(200).json({ success: true, submissions });
   } catch (error) {

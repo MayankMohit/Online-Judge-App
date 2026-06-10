@@ -28,10 +28,17 @@ const submissionSchema = mongoose.Schema({
     type: String,
     default: "0ms",
   },
+  contest: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Contest",
+    default: null,
+  },
   submittedAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+submissionSchema.index({ contest: 1, user: 1, submittedAt: -1 });
 
 export const Submission = mongoose.model("Submission", submissionSchema);

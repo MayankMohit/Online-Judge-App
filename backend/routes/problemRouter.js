@@ -15,6 +15,7 @@ import {
   getProblemByAdmin
 } from "../controllers/problemController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
+import { optionalAuth } from "../middlewares/optionalAuth.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
 import { isProblemCreator } from "../middlewares/isProblemCreator.js";
 
@@ -22,7 +23,7 @@ import { isProblemCreator } from "../middlewares/isProblemCreator.js";
 router.get("/", getAllProblems);
 router.get("/search", searchProblems);
 router.get("/tags", getUniqueTags);
-router.get("/number/:number", getProblemByNumber);
+router.get("/number/:number", optionalAuth, getProblemByNumber);
 
 // Auth required
 router.post("/", verifyToken, isAdmin, createProblem);

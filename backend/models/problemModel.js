@@ -41,6 +41,17 @@ const problemSchema = mongoose.Schema({
         ref: "User",
     },
 
+    contest: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Contest",
+        default: null,
+    },
+
+    isPublic: {
+        type: Boolean,
+        default: true,
+    },
+
     createdAt: {
         type: Date,
         default: Date.now,
@@ -48,6 +59,7 @@ const problemSchema = mongoose.Schema({
 });
 
 problemSchema.index({ tags: 1, difficulty: 1, problemNumber: 1 });
+problemSchema.index({ isPublic: 1, problemNumber: 1 });
 // problemSchema.index({ title: 1 });
 
 export const Problem = mongoose.model('Problem', problemSchema);

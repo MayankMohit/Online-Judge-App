@@ -15,7 +15,7 @@ const DesktopProblemView = ({
   testCases, setTestCases, activeTestCaseIdx, setActiveTestCaseIdx,
   testCaseResults, isOutputMode, setIsOutputMode,
   editorHeight, testcaseHeight, setEditorHeight, setTestcaseHeight,
-  containerRef, leftWidth, setLeftWidth,
+  containerRef, leftWidth, setLeftWidth, hideHints,
 }) => {
   const isDraggingRef = useRef(false);
   const isDraggingHeight = useRef(false);
@@ -62,7 +62,7 @@ const DesktopProblemView = ({
           >
             <ArrowLeft size={15} strokeWidth={2.5} />
           </button>
-          {["description","hints", ...(isGuest ? [] : ["submissions"])].map((tab) => (
+          {["description", ...(hideHints ? [] : ["hints"]), ...(isGuest ? [] : ["submissions"])].map((tab) => (
             <button
               key={tab}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${

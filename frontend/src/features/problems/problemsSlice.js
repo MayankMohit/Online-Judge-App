@@ -17,6 +17,9 @@ const initialState = {
   currentProblem: null,
   problemLoading: false,
   problemError: null,
+  problemErrorInfo: null, // extra context (e.g. contest 403)
+  contestMeta: null, // set when the problem is an active contest problem
+  contestTimeOffset: 0,
   tags: [],
   tagsLoading: false,
   tagsError: null,
@@ -57,13 +60,20 @@ export const fetchProblemByNumber = createAsyncThunk(
   async (problemNumber, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${BASE_URL}/api/problems/number/${problemNumber}`
+        `${BASE_URL}/api/problems/number/${problemNumber}`,
+        { withCredentials: true }
       );
-      return response.data.problem;
+      return {
+        problem: response.data.problem,
+        contestMeta: response.data.contestMeta || null,
+      };
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch problem"
-      );
+      return rejectWithValue({
+        message: error.response?.data?.message || "Failed to fetch problem",
+        status: error.response?.status || null,
+        contestId: error.response?.data?.contestId || null,
+        contestStatus: error.response?.data?.contestStatus || null,
+      });
     }
   }
 );
@@ -107,7 +117,10 @@ const problemsSlice = createSlice({
     clearCurrentProblem(state) {
       state.currentProblem = null;
       state.problemError = null;
+      state.problemErrorInfo = null;
       state.problemLoading = false;
+      state.contestMeta = null;
+      state.contestTimeOffset = 0;
     },
   },
   extraReducers: (builder) => {
@@ -134,14 +147,22 @@ const problemsSlice = createSlice({
       .addCase(fetchProblemByNumber.pending, (state) => {
         state.problemLoading = true;
         state.problemError = null;
+        state.problemErrorInfo = null;
       })
       .addCase(fetchProblemByNumber.fulfilled, (state, action) => {
         state.problemLoading = false;
-        state.currentProblem = action.payload;
+        state.currentProblem = action.payload.problem;
+        state.contestMeta = action.payload.contestMeta;
+        if (action.payload.contestMeta?.serverTime) {
+          state.contestTimeOffset =
+            action.payload.contestMeta.serverTime - Date.now();
+        }
       })
       .addCase(fetchProblemByNumber.rejected, (state, action) => {
         state.problemLoading = false;
-        state.problemError = action.payload;
+        state.problemError =
+          action.payload?.message || action.payload || "Failed to fetch problem";
+        state.problemErrorInfo = action.payload || null;
       });
 
     builder

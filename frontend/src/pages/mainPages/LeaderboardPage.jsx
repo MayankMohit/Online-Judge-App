@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
 import { Crown, Medal, Trophy } from "lucide-react";
-import LoadingScreen from "../../components/LoadingScreen";
+import { LeaderboardSkeleton } from "../../components/Skeletons";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -40,7 +40,7 @@ const LeaderboardPage = () => {
         </div>
 
         {loading ? (
-          <LoadingScreen />
+          <LeaderboardSkeleton />
         ) : error ? (
           <div className="text-center text-red-400 py-10">{error}</div>
         ) : users.length === 0 ? (

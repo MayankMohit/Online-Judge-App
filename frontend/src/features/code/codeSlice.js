@@ -39,9 +39,9 @@ export const runAllTestCases = createAsyncThunk(
 // Submit code
 export const submitCode = createAsyncThunk(
   "code/submit",
-  async ({ problemId, code, language }, thunkAPI) => {
+  async ({ problemId, code, language, contestId }, thunkAPI) => {
     try {
-      const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language });
+      const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language, contestId });
       return res.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || { error: "Submit failed" });
@@ -61,6 +61,7 @@ const initialState = {
   failedCase: null,
   averageTime: null,
   submissionId: null,
+  contestUpdate: null,
   // Multi test case results: array of { output, error, time }
   testCaseResults: [],
 };
@@ -131,13 +132,14 @@ const codeSlice = createSlice({
         state.testCaseResults = [];
       })
       .addCase(submitCode.fulfilled, (state, action) => {
-        const { verdict, averageTime, failedCase, error } = action.payload;
+        const { verdict, averageTime, failedCase, error, contestUpdate } = action.payload;
         state.submissionId = action.payload.submissionId;
         state.loading = false;
         state.verdict = verdict || "";
         state.failedCase = failedCase || null;
         state.averageTime = averageTime || null;
         state.error = error || null;
+        state.contestUpdate = contestUpdate || null;
       })
       .addCase(submitCode.rejected, (state, action) => {
         state.submissionId = null;

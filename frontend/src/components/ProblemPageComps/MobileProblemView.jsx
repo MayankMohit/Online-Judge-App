@@ -13,7 +13,7 @@ const MobileProblemView = ({
   verdict, failedCase, averageTime, lastAction,
   testCases, setTestCases, activeTestCaseIdx, setActiveTestCaseIdx,
   testCaseResults, isOutputMode, setIsOutputMode,
-  mobileScrollRef,
+  mobileScrollRef, hideHints,
 }) => {
   const { isAuthenticated, user } = useAuthStore();
   const isGuest = !isAuthenticated || !user;
@@ -34,7 +34,7 @@ const MobileProblemView = ({
             >
               <ArrowLeft size={15} strokeWidth={2.5} />
             </button>
-            {["description","hints", ...(isGuest ? [] : ["submissions"])].map((tab) => (
+            {["description", ...(hideHints ? [] : ["hints"]), ...(isGuest ? [] : ["submissions"])].map((tab) => (
               <button
                 key={tab}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${

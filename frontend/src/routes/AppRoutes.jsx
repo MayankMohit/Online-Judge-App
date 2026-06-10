@@ -15,6 +15,8 @@ import DashboardPage from "../pages/mainPages/DashboardPage";
 import MainLayout from "../layouts/MainLayout";
 import ProblemsPage from "../pages/mainPages/ProblemsPage";
 import ContestsPage from "../pages/mainPages/ContestsPage";
+import ContestDetailsPage from "../pages/mainPages/ContestDetailsPage";
+import ContestManagement from "../pages/adminPages/ContestManagement";
 import LeaderboardPage from "../pages/mainPages/LeaderboardPage";
 import ProblemDetailsPage from "../pages/mainPages/ProblemDetailsPage";
 import AllSubmissions from "../pages/submissionPages/AllSubmissions";
@@ -72,6 +74,7 @@ const AppRoutes = () => {
           <Route element={<MainLayout />}>
             <Route path="/problems" element={<ProblemsPage />} />
             <Route path="/contests" element={<ContestsPage />} />
+            <Route path="/contests/:contestId" element={<ContestDetailsPage />} />
             <Route path="/leaderboards" element={<LeaderboardPage />} />
           </Route>
           {/* Problem detail is also public (editor is gated inside) */}
@@ -79,6 +82,7 @@ const AppRoutes = () => {
 
           {/* PROTECTED routes — require login */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/contests/:contestId/problems/:number" element={<ProblemDetailsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/submissions" element={<AllSubmissions />} />
             <Route path="/submissions/:id" element={<SubmissionView />} />
@@ -91,6 +95,8 @@ const AppRoutes = () => {
             <Route path="users/:userId" element={<UserManagement />} />
             <Route path="problem/new" element={<ProblemManagement />} />
             <Route path="problem/edit/:problemNumber" element={<ProblemManagement />} />
+            <Route path="contests/new" element={<ContestManagement />} />
+            <Route path="contests/edit/:contestId" element={<ContestManagement />} />
             <Route path="users/:userId/submissions" element={<AllSubmissionsOfUser />} />
             <Route path="problem/:problemId/submissions" element={<AllSubmissionsOfProblem />} />
           </Route>

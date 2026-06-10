@@ -4,14 +4,15 @@ import { useAuthStore } from "../../store/authStore";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchDashboardData } from "../../features/dashboard/dashboardSlice";
 import { fetchFavoriteProblems } from "../../features/favorites/favoritesSlice";
+import { fetchMyContestHistory } from "../../features/contests/contestHistorySlice";
 import ProblemCard from "../../components/ProblemCard";
 import {
   Edit3Icon, LogOutIcon, UserRound, Mail,
-  CheckCircle, FileCode, ArrowLeft, Star, Clock,
+  CheckCircle, FileCode, ArrowLeft, Star, Clock, Trophy,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import ConfirmSignOutDialog from "../../components/ConfirmSignOutDialog";
-import LoadingScreen from "../../components/LoadingScreen";
+import { ProfileSkeleton } from "../../components/Skeletons";
 
 const DIFFICULTY_COLORS = {
   Easy:   { fill: "#4ade80", bg: "bg-green-500/10",  text: "text-green-400",  border: "border-green-500/30"  },
@@ -49,10 +50,12 @@ export default function DashboardPage() {
   const { name, email, totalProblemsSolved, submissions, difficultyStats, loading, error } =
     useSelector((state) => state.dashboard);
   const favoriteProblems = useSelector((state) => state.favorites.favoriteProblems);
+  const { history: contestHistory } = useSelector((state) => state.contestHistory);
 
   useEffect(() => {
     dispatch(fetchDashboardData());
     dispatch(fetchFavoriteProblems());
+    dispatch(fetchMyContestHistory());
   }, [dispatch]);
 
   const recentSubmissions = [...submissions]
@@ -72,7 +75,20 @@ export default function DashboardPage() {
   const totalSolved = (difficultyStats?.Easy || 0) + (difficultyStats?.Medium || 0) + (difficultyStats?.Hard || 0);
 
   if (loading) return (
-    <LoadingScreen />
+    <div className="w-full min-h-screen bg-black text-white select-none">
+      <div className="sticky top-0 z-10 bg-black border-b border-zinc-800 px-6 py-3 flex items-center justify-between">
+        <button
+          onClick={() => navigate("/problems")}
+          className="flex items-center gap-2 text-zinc-400 hover:text-white transition text-sm"
+        >
+          <ArrowLeft size={16} />
+          <span>Problems</span>
+        </button>
+        <h1 className="text-base font-semibold text-white">Profile</h1>
+        <span className="w-12" />
+      </div>
+      <ProfileSkeleton />
+    </div>
   );
 
   return (
@@ -210,6 +226,54 @@ export default function DashboardPage() {
                       </td>
                       <td className="py-2.5 text-zinc-500 text-xs hidden sm:table-cell">
                         {formatDate(sub.submittedAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Contest History */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy size={15} className="text-purple-400" />
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Contest History</h2>
+          </div>
+
+          {contestHistory.length === 0 ? (
+            <p className="text-zinc-500 text-sm text-center py-4">No contests participated yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-zinc-800">
+                    <th className="pb-2 text-xs text-zinc-500 font-medium">Contest</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium">Rank</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium">Score</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium hidden sm:table-cell">Solved</th>
+                    <th className="pb-2 text-xs text-zinc-500 font-medium hidden sm:table-cell">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contestHistory.map((entry) => (
+                    <tr
+                      key={entry.contestId}
+                      onClick={() => navigate(`/contests/${entry.contestId}`)}
+                      className="border-b border-zinc-800/50 hover:bg-zinc-800/50 transition cursor-pointer"
+                    >
+                      <td className="py-2.5 text-zinc-300 truncate max-w-[160px]">{entry.title}</td>
+                      <td className="py-2.5 font-medium text-purple-400">
+                        #{entry.rank}
+                        <span className="text-zinc-600 text-xs"> / {entry.totalParticipants}</span>
+                      </td>
+                      <td className="py-2.5 text-white font-semibold">{entry.score}</td>
+                      <td className="py-2.5 text-zinc-400 text-xs hidden sm:table-cell">
+                        {entry.problemsSolved} / {entry.problemCount}
+                      </td>
+                      <td className="py-2.5 text-zinc-500 text-xs hidden sm:table-cell">
+                        {formatDate(entry.startTime)}
                       </td>
                     </tr>
                   ))}

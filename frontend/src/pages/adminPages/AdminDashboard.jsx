@@ -2,7 +2,7 @@ import AdminProblemList from "../../components/Admin/adminProblemList";
 import AdminUserList from "../../components/Admin/adminUserList";
 import AdminProblemSearch from "../../components/Admin/adminProblemSearch";
 import { useAuthStore } from "../../store/authStore";
-import { ArrowLeft, ShieldCheck, Plus } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Plus, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
@@ -27,13 +27,22 @@ export default function AdminDashboard() {
           <h1 className="text-base font-semibold text-white">Admin Dashboard</h1>
         </div>
 
-        <button
-          onClick={() => navigate("/admin/problem/new")}
-          className="flex items-center gap-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition"
-        >
-          <Plus size={14} />
-          <span className="hidden sm:block">Add Problem</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/admin/contests/new")}
+            className="flex items-center gap-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white px-3 py-1.5 rounded-lg transition"
+          >
+            <Trophy size={14} className="text-purple-400" />
+            <span className="hidden sm:block">Add Contest</span>
+          </button>
+          <button
+            onClick={() => navigate("/admin/problem/new")}
+            className="flex items-center gap-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition"
+          >
+            <Plus size={14} />
+            <span className="hidden sm:block">Add Problem</span>
+          </button>
+        </div>
       </div>
 
       {/* Main content */}

@@ -2,6 +2,8 @@ import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { HintProgress } from "../models/hintProgressModel.js";
 import { ProblemExplanation } from "../models/problemExplanationModel.js";
+import { Contest } from "../models/contestModel.js";
+import { getContestStatus } from "../utils/contestHelpers.js";
 import {
   generateHint,
   generateFeedback,
@@ -21,6 +23,14 @@ const AUTOCOMPLETE_COOLDOWN_MS = 10_000;
  
 // ─── Hints ────────────────────────────────────────────────────────────────────
 
+// Hints are off-limits while a problem's contest is still upcoming/running.
+const isActiveContestProblem = async (problemId) => {
+  const problem = await Problem.findById(problemId).select("contest");
+  if (!problem?.contest) return false;
+  const contest = await Contest.findById(problem.contest).select("startTime endTime");
+  return contest ? getContestStatus(contest) !== "ended" : false;
+};
+
 export const getHint = async (req, res) => {
   try {
     const { problemId, tier } = req.body;
@@ -28,6 +38,13 @@ export const getHint = async (req, res) => {
 
     if (!problemId || !tier) {
       return res.status(400).json({ success: false, message: "problemId and tier are required" });
+    }
+
+    if (await isActiveContestProblem(problemId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Hints are disabled for contest problems until the contest ends",
+      });
     }
 
     const tierNum = parseInt(tier, 10);
@@ -88,6 +105,10 @@ export const getUnlockedTiers = async (req, res) => {
   try {
     const { problemId } = req.params;
     const userId = req.userId;
+
+    if (await isActiveContestProblem(problemId)) {
+      return res.status(200).json({ success: true, unlockedUpTo: 0, hints: {} });
+    }
 
     const progress = await HintProgress.findOne({ user: userId, problem: problemId });
 

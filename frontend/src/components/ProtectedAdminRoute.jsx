@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import LoadingScreen from "./LoadingScreen";
 
 const ProtectedAdminRoute = () => {
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();

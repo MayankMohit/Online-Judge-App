@@ -7,6 +7,7 @@ import {
   getContestStatus,
   maybeReleaseContestProblems,
 } from "../utils/contestHelpers.js";
+import { escapeRegex } from "../utils/escapeRegex.js";
 
 export const getAllProblems = async (req, res) => {
   try {
@@ -282,7 +283,7 @@ export const searchProblems = async (req, res) => {
           orConditions.push({ problemNumber: num });
         } else {
           // Use anchored regex for faster match (starts with) instead of full text search
-          orConditions.push({ title: { $regex: `^${token}`, $options: "i" } });
+          orConditions.push({ title: { $regex: `^${escapeRegex(token)}`, $options: "i" } });
         }
       }
 

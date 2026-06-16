@@ -10,11 +10,13 @@ import {
   clearCurrentContest,
 } from "../../features/contests/contestsSlice";
 import { fetchStandings, clearStandings } from "../../features/contests/standingsSlice";
+import { fetchMyMock, clearMock } from "../../features/contests/contestMockSlice";
 import { useAuthStore } from "../../store/authStore";
 import { formatDate } from "../../utils/date";
 import ContestTimer from "../../components/ContestComps/ContestTimer";
 import ContestProblemRow from "../../components/ContestComps/ContestProblemRow";
 import StandingsTable from "../../components/ContestComps/StandingsTable";
+import MockContestCard from "../../components/ContestComps/MockContestCard";
 import {
   ContestDetailSkeleton,
   StandingsSkeleton,
@@ -38,6 +40,9 @@ const ContestDetailsPage = () => {
     error,
   } = useSelector((state) => state.contests);
   const standings = useSelector((state) => state.standings);
+  const { mock, serverTimeOffset: mockOffset } = useSelector(
+    (state) => state.contestMock
+  );
 
   const [activeTab, setActiveTab] = useState("problems");
   const [page, setPage] = useState(1);
@@ -48,8 +53,16 @@ const ContestDetailsPage = () => {
     return () => {
       dispatch(clearCurrentContest());
       dispatch(clearStandings());
+      dispatch(clearMock());
     };
   }, [dispatch, contestId]);
+
+  // Load the user's mock run once we know the contest has ended
+  useEffect(() => {
+    if (contest?.status === "ended" && isAuthenticated && user?.isVerified) {
+      dispatch(fetchMyMock(contestId));
+    }
+  }, [dispatch, contestId, contest?.status, isAuthenticated, user?.isVerified]);
 
   // Fetch standings when tab opens or page changes
   useEffect(() => {
@@ -140,6 +153,14 @@ const ContestDetailsPage = () => {
       .map((s) => (typeof s.problem === "object" ? s.problem._id : s.problem))
   );
   const problemsLocked = status === "upcoming" || (status === "running" && !isRegistered);
+
+  // Mock run state (only meaningful once the contest has ended)
+  const nowMs = Date.now() + (mockOffset || 0);
+  const mockActive =
+    status === "ended" &&
+    mock &&
+    nowMs >= new Date(mock.startTime).getTime() &&
+    nowMs <= new Date(mock.endTime).getTime();
 
   return (
     <div className="min-h-screen w-screen bg-black text-white px-4 py-10 mt-8">
@@ -242,6 +263,11 @@ const ContestDetailsPage = () => {
           )}
         </div>
 
+        {/* Mock contest — only after the contest has ended, for logged-in users */}
+        {status === "ended" && isAuthenticated && user?.isVerified && (
+          <MockContestCard contestId={contestId} contest={contest} />
+        )}
+
         {/* Tabs */}
         <div className="flex gap-2 mb-5">
           {["problems", "standings"].map((tab) => (
@@ -284,7 +310,8 @@ const ContestDetailsPage = () => {
                   entry={entry}
                   index={i}
                   locked={problemsLocked}
-                  solved={solvedSet.has(entry.problem?._id)}
+                  solved={mockActive ? false : solvedSet.has(entry.problem?._id)}
+                  mockActive={mockActive}
                 />
               ))
             )}

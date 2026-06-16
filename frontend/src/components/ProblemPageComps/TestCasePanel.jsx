@@ -148,8 +148,8 @@ const TestCasePanel = ({
           /* OUTPUT MODE */
           <div className="flex flex-col gap-3">
             {loading ? (
-              <div className="flex items-center gap-2 text-zinc-500 text-xs italic">
-                <div className="w-3 h-3 rounded-full border border-t-purple-500 animate-spin" />
+              <div className="flex items-center justify-center gap-3 py-8 text-zinc-300 text-sm font-medium">
+                <div className="w-5 h-5 rounded-full border-2 border-zinc-700 border-t-purple-500 animate-spin" />
                 Running...
               </div>
             ) : !activeResult ||

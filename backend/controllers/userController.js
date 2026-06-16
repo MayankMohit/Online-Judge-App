@@ -1,6 +1,7 @@
 import { User } from "../models/userModel.js";
 import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
+import { escapeRegex } from "../utils/escapeRegex.js";
 import bcrypt from "bcrypt";
 
 export const getCurrentUser = async (req, res) => {
@@ -40,7 +41,7 @@ export const getFilteredUsers = async (req, res) => {
     if (role) filter.role = role;
 
     if (search) {
-      const regex = new RegExp(search, "i");
+      const regex = new RegExp(escapeRegex(search), "i");
       filter.$or = [{ name: { $regex: regex } }, { email: { $regex: regex } }];
     }
 

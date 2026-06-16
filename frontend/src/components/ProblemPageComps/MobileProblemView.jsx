@@ -1,7 +1,8 @@
+import { lazy, Suspense } from "react";
 import { ArrowLeft, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
-import CodeEditorPanel from "./CodeEditorPanel";
+const CodeEditorPanel = lazy(() => import("./CodeEditorPanel"));
 import OutputTab from "./OutputTab";
 import TestCasePanel from "./TestCasePanel";
 import { useAuthStore } from "../../store/authStore";
@@ -17,7 +18,7 @@ const MobileProblemView = ({
 }) => {
   const { isAuthenticated, user } = useAuthStore();
   const isGuest = !isAuthenticated || !user;
-  const isSubmitResult = lastAction === "submit" && !loading && verdict;
+  const isSubmitResult = lastAction === "submit" && (loading || verdict);
 
   return (
     <div
@@ -84,20 +85,22 @@ const MobileProblemView = ({
       {/* CODE PANEL — only rendered for logged-in users */}
       {!isGuest && (
         <div className="min-w-full h-full flex flex-col bg-zinc-950 relative">
-          <CodeEditorPanel
-            language={language}
-            setLanguage={setLanguage}
-            code={code}
-            handleCodeChange={handleCodeChange}
-            onBackToDescription={() => {
-              setIsOutputMode(false);
-              mobileScrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
-            }}
-            isMobile={true}
-            onRun={() => handleRun()}
-            onSubmit={() => handleSubmit()}
-            currentProblem={currentProblem}
-          />
+          <Suspense fallback={<div className="flex-1 min-h-0 bg-zinc-950" />}>
+            <CodeEditorPanel
+              language={language}
+              setLanguage={setLanguage}
+              code={code}
+              handleCodeChange={handleCodeChange}
+              onBackToDescription={() => {
+                setIsOutputMode(false);
+                mobileScrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+              }}
+              isMobile={true}
+              onRun={() => handleRun()}
+              onSubmit={() => handleSubmit()}
+              currentProblem={currentProblem}
+            />
+          </Suspense>
 
           <div className="bg-zinc-900 border-t border-zinc-800 shrink-0" style={{ height: "200px" }}>
             {isSubmitResult ? (

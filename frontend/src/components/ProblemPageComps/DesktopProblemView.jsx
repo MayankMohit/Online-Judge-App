@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useRef, lazy, Suspense } from "react";
 import ProblemDescriptionPanel from "./ProblemDescriptionPanel";
-import CodeEditorPanel from "./CodeEditorPanel";
+const CodeEditorPanel = lazy(() => import("./CodeEditorPanel"));
 import OutputTab from "./OutputTab";
 import TestCasePanel from "./TestCasePanel";
 import { ArrowLeft, Lock } from "lucide-react";
@@ -44,7 +44,7 @@ const DesktopProblemView = ({
     document.body.style.cursor = "default";
   };
 
-  const isSubmitResult = lastAction === "submit" && !loading && verdict;
+  const isSubmitResult = lastAction === "submit" && (loading || verdict);
 
   return (
     <div
@@ -126,18 +126,20 @@ const DesktopProblemView = ({
         )}
 
         {/* Editor — underneath overlay for guests */}
-        <div style={{ height: `${editorHeight}%` }}>
-          <CodeEditorPanel
-            language={language}
-            setLanguage={setLanguage}
-            code={code}
-            isMobile={false}
-            onRun={handleRun}
-            onSubmit={handleSubmit}
-            currentProblem={currentProblem}
-            handleCodeChange={handleCodeChange}
-            disabled={isGuest}
-          />
+        <div className="min-h-0 overflow-hidden" style={{ height: `${editorHeight}%` }}>
+          <Suspense fallback={<div className="h-full w-full bg-zinc-950" />}>
+            <CodeEditorPanel
+              language={language}
+              setLanguage={setLanguage}
+              code={code}
+              isMobile={false}
+              onRun={handleRun}
+              onSubmit={handleSubmit}
+              currentProblem={currentProblem}
+              handleCodeChange={handleCodeChange}
+              disabled={isGuest}
+            />
+          </Suspense>
         </div>
 
         {/* HORIZONTAL DRAG HANDLE */}

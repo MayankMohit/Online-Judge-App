@@ -4,11 +4,13 @@ import { Submission } from "../models/submissionModel.js";
 import { User } from "../models/userModel.js";
 import { Contest } from "../models/contestModel.js";
 import { ContestParticipation } from "../models/contestParticipationModel.js";
+import { MockParticipation } from "../models/mockParticipationModel.js";
+import { getContestStatus } from "../utils/contestHelpers.js";
 
 const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
 
 export const createSubmission = async (req, res) => {
-  const { problemId, code, language, contestId } = req.body;
+  const { problemId, code, language, contestId, mock } = req.body;
 
   if (!problemId || !code || !language) {
     return res.status(400).json({ success: false, message: "Missing fields" });
@@ -24,6 +26,7 @@ export const createSubmission = async (req, res) => {
 
     // Contest validation — before judging, using arrival time
     let contestProblemPoints = null;
+    let mockParticipation = null;
     if (contestId) {
       const receivedAt = new Date();
       const contest = await Contest.findById(contestId);
@@ -32,16 +35,7 @@ export const createSubmission = async (req, res) => {
           .status(404)
           .json({ success: false, message: "Contest not found" });
       }
-      if (receivedAt < contest.startTime) {
-        return res
-          .status(403)
-          .json({ success: false, message: "Contest has not started yet" });
-      }
-      if (receivedAt > contest.endTime) {
-        return res
-          .status(403)
-          .json({ success: false, message: "Contest has ended" });
-      }
+
       const entry = contest.problems.find(
         (p) => p.problem.toString() === problemId
       );
@@ -51,16 +45,58 @@ export const createSubmission = async (req, res) => {
           message: "Problem is not part of this contest",
         });
       }
-      const isParticipant = await ContestParticipation.exists({
-        contest: contest._id,
-        user: req.userId,
-      });
-      if (!isParticipant) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not registered for this contest",
+
+      if (mock) {
+        // Mock (virtual) run — validate against the user's personal window
+        if (getContestStatus(contest) !== "ended") {
+          return res.status(403).json({
+            success: false,
+            message: "Mock contests are available only after the contest ends",
+          });
+        }
+        mockParticipation = await MockParticipation.findOne({
+          contest: contest._id,
+          user: req.userId,
         });
+        if (!mockParticipation) {
+          return res.status(403).json({
+            success: false,
+            message: "Start a mock contest first",
+          });
+        }
+        if (
+          receivedAt < mockParticipation.startTime ||
+          receivedAt > mockParticipation.endTime
+        ) {
+          return res.status(403).json({
+            success: false,
+            message: "Your mock window has closed",
+          });
+        }
+      } else {
+        // Live contest — validate against the contest's global window
+        if (receivedAt < contest.startTime) {
+          return res
+            .status(403)
+            .json({ success: false, message: "Contest has not started yet" });
+        }
+        if (receivedAt > contest.endTime) {
+          return res
+            .status(403)
+            .json({ success: false, message: "Contest has ended" });
+        }
+        const isParticipant = await ContestParticipation.exists({
+          contest: contest._id,
+          user: req.userId,
+        });
+        if (!isParticipant) {
+          return res.status(403).json({
+            success: false,
+            message: "You are not registered for this contest",
+          });
+        }
       }
+
       contestProblemPoints = entry.points;
     }
 
@@ -140,6 +176,7 @@ export const createSubmission = async (req, res) => {
       verdict,
       averageTime,
       contest: contestId || null,
+      mock: !!mock,
     });
 
     await submission.save();
@@ -164,13 +201,17 @@ export const createSubmission = async (req, res) => {
 
     await user.save();
 
-    // Contest scoring — incremental update on the participation doc
+    // Contest scoring — incremental update on the participation doc.
+    // Mock runs score into MockParticipation; live runs into ContestParticipation.
+    // Both share the same problemStats/score shape, so the update logic is identical.
     let contestUpdate = null;
     if (contestId) {
-      const participation = await ContestParticipation.findOne({
-        contest: contestId,
-        user: req.userId,
-      });
+      const participation = mock
+        ? mockParticipation
+        : await ContestParticipation.findOne({
+            contest: contestId,
+            user: req.userId,
+          });
 
       if (participation) {
         let stats = participation.problemStats.find(
@@ -181,6 +222,9 @@ export const createSubmission = async (req, res) => {
           stats = participation.problemStats[participation.problemStats.length - 1];
         }
 
+        // awarded = points were earned on THIS submission (first solve only),
+        // so the client knows when to show the "+X points" toast.
+        let awarded = false;
         if (!stats.solved) {
           if (verdict === "accepted") {
             stats.solved = true;
@@ -188,6 +232,7 @@ export const createSubmission = async (req, res) => {
             stats.pointsEarned = contestProblemPoints;
             participation.score += contestProblemPoints;
             participation.lastAcceptedAt = submission.submittedAt;
+            awarded = true;
           } else {
             stats.attempts += 1;
             participation.totalAttempts += 1;
@@ -199,6 +244,7 @@ export const createSubmission = async (req, res) => {
           score: participation.score,
           solved: stats.solved,
           pointsEarned: stats.pointsEarned,
+          awarded,
         };
       }
     }

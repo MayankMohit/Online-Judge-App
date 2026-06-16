@@ -1,5 +1,6 @@
 import { Contest } from "../models/contestModel.js";
 import { ContestParticipation } from "../models/contestParticipationModel.js";
+import { MockParticipation } from "../models/mockParticipationModel.js";
 import { Problem } from "../models/problemModel.js";
 import { User } from "../models/userModel.js";
 import {
@@ -429,6 +430,102 @@ export const getMyParticipation = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch participation" });
+  }
+};
+
+// ─── Mock (virtual) contest ──────────────────────────────────────────────────
+// A personal, timed re-run of an ended contest. Same duration as the original,
+// personal score only (no global standings). One mock per (contest, user).
+
+export const startMock = async (req, res) => {
+  try {
+    const contest = await Contest.findById(req.params.id);
+    if (!contest) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Contest not found" });
+    }
+
+    if (getContestStatus(contest) !== "ended") {
+      return res.status(400).json({
+        success: false,
+        message: "Mock contests are available only after the contest has ended",
+      });
+    }
+
+    // Idempotent: if a mock already exists, return it unchanged.
+    let mock = await MockParticipation.findOne({
+      contest: contest._id,
+      user: req.userId,
+    });
+
+    if (!mock) {
+      const duration =
+        new Date(contest.endTime).getTime() -
+        new Date(contest.startTime).getTime();
+      const start = new Date();
+      const end = new Date(start.getTime() + duration);
+      mock = await MockParticipation.create({
+        contest: contest._id,
+        user: req.userId,
+        startTime: start,
+        endTime: end,
+      });
+    }
+
+    res.status(201).json({ success: true, mock, serverTime: Date.now() });
+  } catch (err) {
+    console.error("Failed to start mock:", err);
+    res.status(500).json({ success: false, message: "Failed to start mock" });
+  }
+};
+
+export const getMyMock = async (req, res) => {
+  try {
+    const contest = await Contest.findById(req.params.id).populate(
+      "problems.problem",
+      "problemNumber title difficulty"
+    );
+    if (!contest) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Contest not found" });
+    }
+
+    const mock = await MockParticipation.findOne({
+      contest: contest._id,
+      user: req.userId,
+    });
+
+    res.status(200).json({
+      success: true,
+      mock,
+      contest: {
+        _id: contest._id,
+        title: contest.title,
+        problems: contest.problems.map((p) => ({
+          problem: p.problem,
+          points: p.points,
+        })),
+      },
+      serverTime: Date.now(),
+    });
+  } catch (err) {
+    console.error("Failed to fetch mock:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch mock" });
+  }
+};
+
+export const resetMock = async (req, res) => {
+  try {
+    await MockParticipation.deleteOne({
+      contest: req.params.id,
+      user: req.userId,
+    });
+    res.status(200).json({ success: true, message: "Mock reset" });
+  } catch (err) {
+    console.error("Failed to reset mock:", err);
+    res.status(500).json({ success: false, message: "Failed to reset mock" });
   }
 };
 

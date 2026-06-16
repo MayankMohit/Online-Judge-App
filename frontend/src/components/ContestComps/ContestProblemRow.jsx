@@ -7,9 +7,10 @@ const difficultyColor = {
   Hard: "text-red-400",
 };
 
-const ContestProblemRow = ({ contestId, entry, index, locked, solved }) => {
+const ContestProblemRow = ({ contestId, entry, index, locked, solved, mockActive }) => {
   const problem = entry.problem;
   const label = String.fromCharCode(65 + index);
+  const suffix = mockActive ? "?mock=1" : "";
 
   const inner = (
     <div
@@ -55,7 +56,7 @@ const ContestProblemRow = ({ contestId, entry, index, locked, solved }) => {
   if (locked || !problem?.problemNumber) return inner;
 
   return (
-    <Link to={`/contests/${contestId}/problems/${problem.problemNumber}`}>{inner}</Link>
+    <Link to={`/contests/${contestId}/problems/${problem.problemNumber}${suffix}`}>{inner}</Link>
   );
 };
 

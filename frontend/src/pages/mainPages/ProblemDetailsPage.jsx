@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Lock } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
@@ -8,7 +8,8 @@ import { useAuthStore } from "../../store/authStore";
 import { fetchProblemByNumber, clearCurrentProblem } from "../../features/problems/problemsSlice";
 import { fetchSubmissionsByProblem, clearProblemSubmissions } from "../../features/submissions/problemSubmissionsSlice";
 import { runAllTestCases, submitCode, clearCodeState } from "../../features/code/codeSlice";
-import { fetchSavedCode, saveCodeToDB, updateCodeLocally } from "../../features/code/codePersistenceSlice";
+import { fetchSavedCode, saveCodeToDB, updateCodeLocally, updateMockCodeLocally } from "../../features/code/codePersistenceSlice";
+import { fetchMyMock, clearMock } from "../../features/contests/contestMockSlice";
 
 import { languageBoilerplates } from "../../components/ProblemPageComps/LanguageBoilerplates";
 import MobileProblemView from "../../components/ProblemPageComps/MobileProblemView";
@@ -38,29 +39,43 @@ const ProblemDetailsPage = () => {
   const [isOutputMode, setIsOutputMode] = useState(false);
   const [testCases, setTestCases] = useState([{ id: 1, label: "Case 1", input: "" }]);
   const [activeTestCaseIdx, setActiveTestCaseIdx] = useState(0);
+  // Tracks whether this problem's submissions have settled — used in mock mode
+  // to decide blank-vs-saved code only once "already solved?" is known.
+  const [submissionsReady, setSubmissionsReady] = useState(false);
 
-  const { codeMap } = useSelector((state) => state.codePersistence);
+  const { codeMap, mockCodeMap } = useSelector((state) => state.codePersistence);
   const { number, contestId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isMock = searchParams.get("mock") === "1" && !!contestId;
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const {
+    mock: mockData,
+    contest: mockContest,
+    serverTimeOffset: mockServerOffset,
+  } = useSelector((state) => state.contestMock);
 
   const { currentProblem, problemLoading, problemError, problemErrorInfo, contestMeta, contestTimeOffset } = useSelector((state) => state.problems);
   const { items: userSubmissions, error } = useSelector((state) => state.problemSubmissions);
   const { loading: codeLoading, submissionId, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
 
-  // ─── Mobile code ref ────────────────────────────────────────────────────────
-  // On mobile, the editor is uncontrolled. We track its latest value in a ref
-  // so we can read it for Run/Submit without ever feeding it back as a prop.
-  const mobileCodeRef = useRef("");
-
   useEffect(() => {
+    setSubmissionsReady(false);
     if (!isGuest) {
-      dispatch(fetchSubmissionsByProblem(number));
+      dispatch(fetchSubmissionsByProblem(number)).finally(() => setSubmissionsReady(true));
+    } else {
+      setSubmissionsReady(true);
     }
     return () => dispatch(clearProblemSubmissions());
   }, [dispatch, number, isGuest]);
 
   const isSolved = isGuest ? false : userSubmissions.some((sub) => sub.verdict === "accepted");
+
+  // In a mock run, an already-solved problem should start from a clean
+  // boilerplate (don't reveal the old solution) — and we keep that attempt
+  // out of the saved draft so the real solution isn't overwritten.
+  const startBlank = isMock && isSolved;
 
   useEffect(() => {
     dispatch(fetchProblemByNumber(number));
@@ -77,6 +92,12 @@ const ProblemDetailsPage = () => {
     }
   }, [currentProblem?._id]);
 
+  // Mock mode: load the user's personal window + score for the banner/guards
+  useEffect(() => {
+    if (isMock && !isGuest) dispatch(fetchMyMock(contestId));
+    return () => dispatch(clearMock());
+  }, [dispatch, isMock, contestId, isGuest]);
+
   useEffect(() => {
     if (testCaseResults?.length > 0 || verdict || lastAction === "submit") {
       setIsOutputMode(true);
@@ -84,39 +105,37 @@ const ProblemDetailsPage = () => {
   }, [testCaseResults, verdict, lastAction]);
 
   useEffect(() => {
-    if (!isGuest && currentProblem?._id && language) {
-      dispatch(fetchSavedCode({ problemId: currentProblem._id, language }));
-    }
-  }, [currentProblem?._id, language, isGuest]);
+    if (isGuest || !currentProblem?._id || !language) return;
+    // In mock mode, wait until submissions settle so we never momentarily
+    // load the saved solution before knowing the problem was already solved.
+    if (isMock && !submissionsReady) return;
+    // Blank mock re-attempt: don't load the saved solution. The editor reads
+    // mockCodeMap (defaulting to boilerplate), so any code written this mock
+    // persists across navigation without touching the saved draft.
+    if (startBlank) return;
+    dispatch(fetchSavedCode({ problemId: currentProblem._id, language }));
+  }, [currentProblem?._id, language, isGuest, startBlank, isMock, submissionsReady]);
 
-  // When Redux loads fresh code (language switch / initial fetch), sync the
-  // mobile ref so Run/Submit always have the right starting value.
+  // Current editor contents — CodeMirror is controlled by this on both
+  // desktop and mobile. In a blank mock re-attempt it reads the mock-only
+  // store; otherwise the saved-draft codeMap (falling back to boilerplate).
   const reduxCode = isGuest
     ? languageBoilerplates[language]
-    : (codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language]);
+    : startBlank
+      ? (mockCodeMap?.[currentProblem?._id]?.[language] ?? languageBoilerplates[language])
+      : (codeMap?.[currentProblem?._id]?.[language] || languageBoilerplates[language]);
 
-  useEffect(() => {
-    mobileCodeRef.current = reduxCode;
-  }, [reduxCode]);
-
-  // ─── Desktop: controlled via Redux (works fine) ───────────────────────────
   const handleCodeChange = (newCode) => {
     if (isGuest) return;
+    if (startBlank) {
+      // Mock re-attempt — keep code in the mock-only store (persists across
+      // navigation this mock), never write to the saved draft or DB.
+      dispatch(updateMockCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
+      return;
+    }
     dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(() => {
-      dispatch(saveCodeToDB({ problemId: currentProblem._id, language, code: newCode }));
-    }, 2000);
-  };
-
-  // ─── Mobile: update ref only, debounce save — never touches Redux mid-type ─
-  const handleMobileCodeChange = (newCode) => {
-    if (isGuest) return;
-    mobileCodeRef.current = newCode;
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      // Write to Redux + save to DB only after user pauses typing
-      dispatch(updateCodeLocally({ problemId: currentProblem._id, language, code: newCode }));
       dispatch(saveCodeToDB({ problemId: currentProblem._id, language, code: newCode }));
     }, 2000);
   };
@@ -126,28 +145,37 @@ const ProblemDetailsPage = () => {
   const handleRun = () => {
     if (isGuest) return;
     setIsOutputMode(true);
-    // Use mobileCodeRef on mobile, Redux code on desktop
-    const isMobile = window.innerWidth < 768;
-    const codeToRun = isMobile ? mobileCodeRef.current : reduxCode;
-    dispatch(runAllTestCases({ code: codeToRun, language: backendLanguageMap[language] || language, testCases }));
+    dispatch(runAllTestCases({ code: reduxCode, language: backendLanguageMap[language] || language, testCases }));
   };
 
   const handleSubmit = () => {
     if (isGuest) return;
-    // Inside a contest, block submissions once time is up (server also enforces this)
-    if (contestId && contestMeta) {
+    if (isMock) {
+      // Mock run — block once the personal window has elapsed (server also enforces this)
+      if (mockData) {
+        const now = Date.now() + mockServerOffset;
+        if (now > new Date(mockData.endTime).getTime()) {
+          toast.error("Your mock window has ended");
+          return;
+        }
+      }
+    } else if (contestId && contestMeta) {
+      // Inside a live contest, block submissions once time is up (server also enforces this)
       const now = Date.now() + contestTimeOffset;
       if (now > new Date(contestMeta.endTime).getTime()) {
         toast.error("The contest has ended — submissions are closed");
         return;
       }
     }
-    const isMobile = window.innerWidth < 768;
-    const codeToSubmit = isMobile ? mobileCodeRef.current : reduxCode;
-    dispatch(submitCode({ problemId: currentProblem._id, code: codeToSubmit, language: backendLanguageMap[language] || language, contestId }))
+    const codeToSubmit = reduxCode;
+    // Only attach the contest when it's a live run or an active mock; otherwise
+    // submit as normal (public) practice so an ended-contest URL doesn't 403.
+    const isLiveContest = !!contestId && !!contestMeta && contestMeta.status === "running";
+    const submitContestId = isMock || isLiveContest ? contestId : null;
+    dispatch(submitCode({ problemId: currentProblem._id, code: codeToSubmit, language: backendLanguageMap[language] || language, contestId: submitContestId, mock: isMock }))
       .then((action) => {
-        if (submitCode.fulfilled.match(action) && action.payload?.contestUpdate?.pointsEarned && action.payload.verdict === "accepted") {
-          toast.success(`+${action.payload.contestUpdate.pointsEarned} contest points!`);
+        if (submitCode.fulfilled.match(action) && action.payload?.contestUpdate?.awarded) {
+          toast.success(`+${action.payload.contestUpdate.pointsEarned} ${isMock ? "mock" : "contest"} points!`);
         }
         dispatch(fetchSubmissionsByProblem(number));
       });
@@ -156,6 +184,12 @@ const ProblemDetailsPage = () => {
   const handleContestPhaseChange = useCallback((phase) => {
     if (phase === "ended") {
       toast("The contest has ended", { icon: "⏰" });
+    }
+  }, []);
+
+  const handleMockPhaseChange = useCallback((phase) => {
+    if (phase === "ended") {
+      toast("Your mock window has ended", { icon: "⏰" });
     }
   }, []);
 
@@ -190,24 +224,45 @@ const ProblemDetailsPage = () => {
   if (!currentProblem) return null;
 
   // contestMeta is only present while the problem is still contest-gated
-  // (server stops sending it once the contest ends and the problem is released)
-  const hideHints = !!contestMeta && contestMeta.status !== "ended";
+  // (server stops sending it once the contest ends and the problem is released).
+  // During a mock run we also hide hints to keep the contest experience intact.
+  const hideHints = (!!contestMeta && contestMeta.status !== "ended") || isMock;
+
+  // Mock banner context — built from the personal window + contest problem list.
+  // (contestMeta is null here because the problem is public after the contest ends.)
+  const mockMeta =
+    isMock && mockData && mockContest
+      ? {
+          id: mockContest._id,
+          title: mockContest.title,
+          startTime: mockData.startTime,
+          endTime: mockData.endTime,
+          problems: (mockContest.problems || []).map((p) => ({
+            problemNumber: p.problem?.problemNumber,
+            title: p.problem?.title,
+            points: p.points,
+          })),
+          points: (mockContest.problems || []).find(
+            (p) => p.problem?.problemNumber === Number(number)
+          )?.points,
+        }
+      : null;
 
   const sharedProps = {
     activeTab, setActiveTab,
     hideHints,
     currentProblem, userSubmissions,
     loading: codeLoading, error,
-    navigate, isSolved,
+    navigate,
+    // Hide the "solved" badge during a mock so a re-attempt feels fresh
+    // (the real solved status is still used internally for startBlank).
+    isSolved: isMock ? false : isSolved,
     language, setLanguage,
     submissionId,
-    // Desktop gets controlled Redux code; mobile gets the initial value only
+    // Controlled editor value (same for desktop and mobile now)
     code: reduxCode,
     handleRun, handleSubmit,
-    // Desktop handler (Redux-controlled)
     handleCodeChange,
-    // Mobile handler (ref-only, no Redux mid-type)
-    handleMobileCodeChange,
     verdict, failedCase, averageTime, lastAction,
     testCases, setTestCases,
     activeTestCaseIdx, setActiveTestCaseIdx,
@@ -216,13 +271,25 @@ const ProblemDetailsPage = () => {
 
   return (
     <div className="w-screen h-screen flex flex-col bg-zinc-950 text-white overflow-hidden">
-      {contestId && contestMeta && (
-        <ContestBanner
-          contestMeta={contestMeta}
-          serverTimeOffset={contestTimeOffset}
-          onPhaseChange={handleContestPhaseChange}
-          currentNumber={number}
-        />
+      {isMock ? (
+        mockMeta && (
+          <ContestBanner
+            contestMeta={mockMeta}
+            serverTimeOffset={mockServerOffset}
+            onPhaseChange={handleMockPhaseChange}
+            currentNumber={number}
+            mock
+          />
+        )
+      ) : (
+        contestId && contestMeta && (
+          <ContestBanner
+            contestMeta={contestMeta}
+            serverTimeOffset={contestTimeOffset}
+            onPhaseChange={handleContestPhaseChange}
+            currentNumber={number}
+          />
+        )
       )}
       <div ref={containerRef} className="w-full flex-1 min-h-0 md:flex overflow-hidden">
         <MobileProblemView {...sharedProps} mobileScrollRef={mobileScrollRef} />

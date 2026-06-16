@@ -1,15 +1,36 @@
-import { Editor } from "@monaco-editor/react";
+import CodeMirror from "@uiw/react-codemirror";
+import { EditorView } from "@codemirror/view";
+import { cpp } from "@codemirror/lang-cpp";
+import { python } from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
 import { ArrowLeft, CheckCheck, Play, Send } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearSaveSuccess } from "../../features/code/codePersistenceSlice";
 import { languageBoilerplates } from "./LanguageBoilerplates";
+import { editorExtensions } from "./editorTheme";
+
+// Map our language codes to CodeMirror language extensions.
+const languageExtension = (language) => {
+  switch (language) {
+    case "cpp":
+    case "c":
+      return [cpp()];
+    case "py":
+    case "python":
+      return [python()];
+    case "js":
+    case "javascript":
+      return [javascript()];
+    default:
+      return [];
+  }
+};
 
 const CodeEditorPanel = ({
   language, setLanguage, code,
   handleCodeChange,
-  handleMobileCodeChange,
-  onBackToDescription, isMobile, onRun, onSubmit, currentProblem,
+  onBackToDescription, isMobile, onRun, onSubmit,
 }) => {
   const dispatch = useDispatch();
   const tickTimeoutRef = useRef(null);
@@ -17,6 +38,8 @@ const CodeEditorPanel = ({
 
   const { saving, saveSuccess } = useSelector((state) => state.codePersistence);
   const { loading, lastAction } = useSelector((state) => state.code);
+
+  const isLoading = loading && (lastAction === "run" || lastAction === "submit");
 
   useEffect(() => {
     if (saveSuccess) {
@@ -45,11 +68,12 @@ const CodeEditorPanel = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isMobile, onRun, onSubmit, loading, lastAction]);
+  }, [isMobile, onRun, onSubmit, isLoading]);
 
-  const isLoading = loading && (lastAction === "run" || lastAction === "submit");
-
-  const mobileEditorKey = `mobile-${language}-${currentProblem?._id}`;
+  const extensions = useMemo(
+    () => [EditorView.lineWrapping, ...editorExtensions, ...languageExtension(language)],
+    [language]
+  );
 
   const toolbar = (
     <div className={`flex items-center px-3 py-2 bg-zinc-900 border-b border-zinc-800 gap-2 overflow-visible ${isMobile ? "justify-between" : ""}`}>
@@ -116,45 +140,21 @@ const CodeEditorPanel = ({
     </div>
   );
 
-  const sharedOptions = {
-    fontSize: 13,
-    minimap: { enabled: false },
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    wordWrap: "on",
-    tabSize: 2,
-    formatOnType: true,
-    formatOnPaste: true,
-    lineNumbersMinChars: 3,
-    padding: { top: 8 },
-  };
-
   return (
-    <div className={`flex flex-col ${isMobile ? "min-w-full h-full bg-zinc-950" : "h-full"}`}>
+    <div className={`flex flex-col ${isMobile ? "flex-1 min-h-0 bg-zinc-950" : "h-full"}`}>
       {toolbar}
 
-      {isMobile ? (
-        <Editor
-          key={mobileEditorKey}
-          height="80vh"
-          defaultLanguage={language}
-          language={language}
-          defaultValue={code}
-          onChange={handleMobileCodeChange}
-          theme="vs-dark"
-          options={sharedOptions}
-        />
-      ) : (
-        <Editor
-          height="100%"
-          defaultLanguage={language}
-          language={language}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <CodeMirror
           value={code}
+          height="100%"
+          theme="none"
+          extensions={extensions}
           onChange={handleCodeChange}
-          theme="vs-dark"
-          options={sharedOptions}
+          basicSetup={{ tabSize: 2 }}
+          style={{ height: "100%" }}
         />
-      )}
+      </div>
     </div>
   );
 };

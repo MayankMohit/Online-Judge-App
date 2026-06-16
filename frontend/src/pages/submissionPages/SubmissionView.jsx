@@ -1,14 +1,15 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { lazy, Suspense } from "react";
 import { fetchSubmissionById } from "../../features/submissions/submissionsSlice";
-import Editor from "@monaco-editor/react";
 import LoadingScreen from "../../components/LoadingScreen";
 import { ArrowLeft, Clock, User, Code2, CheckCircle, XCircle } from "lucide-react";
 import TopBar from "./TopBar";
 
+const CodeViewer = lazy(() => import("../../components/ProblemPageComps/CodeViewer"));
+
 const languageMap = { cpp: "C++", c: "C", py: "Python", js: "JavaScript" };
-const monacoLang = { py: "python", js: "javascript", cpp: "cpp", c: "c" };
 
 const verdictConfig = (verdict) => {
   switch (verdict) {
@@ -101,20 +102,10 @@ const SubmissionViewPage = () => {
             </div>
             <span className="text-xs text-zinc-500 font-mono uppercase">{languageMap[language] || language}</span>
           </div>
-          <div className="h-[55vh]">
-            <Editor
-              height="100%"
-              defaultLanguage={monacoLang[language] || language}
-              value={code}
-              theme="vs-dark"
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                fontSize: 13,
-                padding: { top: 12 },
-              }}
-            />
+          <div className="h-[55vh] overflow-hidden">
+            <Suspense fallback={<div className="h-full w-full bg-zinc-950" />}>
+              <CodeViewer value={code} language={language} />
+            </Suspense>
           </div>
         </div>
       </div>

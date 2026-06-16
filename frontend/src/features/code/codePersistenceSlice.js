@@ -44,6 +44,10 @@ const codePersistenceSlice = createSlice({
   name: "codePersistence",
   initialState: {
     codeMap: {},
+    // In-memory only: code written during a mock run. Kept separate from
+    // codeMap so it persists across navigation within the mock but never
+    // mixes with (or overwrites) the user's real saved drafts/solutions.
+    mockCodeMap: {},
     loading: false,
     saving: false,
     saveSuccess: false,
@@ -54,6 +58,14 @@ const codePersistenceSlice = createSlice({
       const { problemId, language, code } = action.payload;
       if (!state.codeMap[problemId]) state.codeMap[problemId] = {};
       state.codeMap[problemId][language] = code;
+    },
+    updateMockCodeLocally: (state, action) => {
+      const { problemId, language, code } = action.payload;
+      if (!state.mockCodeMap[problemId]) state.mockCodeMap[problemId] = {};
+      state.mockCodeMap[problemId][language] = code;
+    },
+    clearMockCode: (state) => {
+      state.mockCodeMap = {};
     },
     clearSaveSuccess: (state) => {
       state.saveSuccess = false;
@@ -95,5 +107,5 @@ const codePersistenceSlice = createSlice({
   },
 });
 
-export const { updateCodeLocally, clearSaveSuccess } = codePersistenceSlice.actions;
+export const { updateCodeLocally, updateMockCodeLocally, clearMockCode, clearSaveSuccess } = codePersistenceSlice.actions;
 export default codePersistenceSlice.reducer;

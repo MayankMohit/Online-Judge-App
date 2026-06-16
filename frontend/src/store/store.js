@@ -20,6 +20,7 @@ import contestsReducer from "../features/contests/contestsSlice";
 import standingsReducer from "../features/contests/standingsSlice";
 import contestAdminReducer from "../features/contests/contestAdminSlice";
 import contestHistoryReducer from "../features/contests/contestHistorySlice";
+import contestMockReducer from "../features/contests/contestMockSlice";
 
 export const store = configureStore({
   reducer: {
@@ -44,5 +45,6 @@ export const store = configureStore({
     standings: standingsReducer,
     contestAdmin: contestAdminReducer,
     contestHistory: contestHistoryReducer,
+    contestMock: contestMockReducer,
   },
 })

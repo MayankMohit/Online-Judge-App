@@ -12,6 +12,9 @@ import {
   getStandings,
   getMyParticipation,
   getMyContestHistory,
+  startMock,
+  getMyMock,
+  resetMock,
 } from "../controllers/contestController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { optionalAuth } from "../middlewares/optionalAuth.js";
@@ -27,6 +30,11 @@ router.get("/:id/standings", optionalAuth, getStandings);
 router.post("/:id/register", verifyToken, registerForContest);
 router.delete("/:id/register", verifyToken, unregisterFromContest);
 router.get("/:id/my-participation", verifyToken, getMyParticipation);
+
+// Mock (virtual) contest — personal timed re-run after a contest ends
+router.post("/:id/mock/start", verifyToken, startMock);
+router.get("/:id/mock/me", verifyToken, getMyMock);
+router.delete("/:id/mock", verifyToken, resetMock);
 
 // Admin only
 router.post("/", verifyToken, isAdmin, createContest);

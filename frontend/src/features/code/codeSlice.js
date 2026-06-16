@@ -39,9 +39,9 @@ export const runAllTestCases = createAsyncThunk(
 // Submit code
 export const submitCode = createAsyncThunk(
   "code/submit",
-  async ({ problemId, code, language, contestId }, thunkAPI) => {
+  async ({ problemId, code, language, contestId, mock }, thunkAPI) => {
     try {
-      const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language, contestId });
+      const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language, contestId, mock });
       return res.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || { error: "Submit failed" });

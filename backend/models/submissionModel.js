@@ -33,6 +33,10 @@ const submissionSchema = mongoose.Schema({
     ref: "Contest",
     default: null,
   },
+  mock: {
+    type: Boolean,
+    default: false,
+  },
   submittedAt: {
     type: Date,
     default: Date.now,

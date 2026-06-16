@@ -3,10 +3,11 @@ import { Trophy, ArrowLeft } from "lucide-react";
 import ContestTimer from "./ContestTimer";
 
 // Slim bar shown above the problem view when solving inside a contest.
-const ContestBanner = ({ contestMeta, serverTimeOffset, onPhaseChange, currentNumber }) => {
+const ContestBanner = ({ contestMeta, serverTimeOffset, onPhaseChange, currentNumber, mock }) => {
   if (!contestMeta) return null;
 
   const problems = contestMeta.problems || [];
+  const suffix = mock ? "?mock=1" : "";
 
   return (
     <div className="w-full flex items-center justify-between gap-3 px-4 py-2 bg-zinc-900 border-b border-purple-500/30">
@@ -16,7 +17,9 @@ const ContestBanner = ({ contestMeta, serverTimeOffset, onPhaseChange, currentNu
       >
         <ArrowLeft size={14} className="shrink-0" />
         <Trophy size={14} className="text-purple-400 shrink-0" />
-        <span className="font-medium truncate hidden sm:inline">{contestMeta.title}</span>
+        <span className="font-medium truncate hidden sm:inline">
+          {mock ? `Mock · ${contestMeta.title}` : contestMeta.title}
+        </span>
       </Link>
 
       {/* Problem switcher */}
@@ -28,7 +31,7 @@ const ContestBanner = ({ contestMeta, serverTimeOffset, onPhaseChange, currentNu
             return (
               <Link
                 key={p.problemNumber}
-                to={`/contests/${contestMeta.id}/problems/${p.problemNumber}`}
+                to={`/contests/${contestMeta.id}/problems/${p.problemNumber}${suffix}`}
                 title={`${label}. ${p.title} (${p.points} pts)`}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg border text-xs font-bold transition ${
                   isActive

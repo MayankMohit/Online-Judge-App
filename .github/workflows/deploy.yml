@@ -15,8 +15,15 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ubuntu
           key: ${{ secrets.VM_SSH_KEY }}
+          # Building the JDK-enabled compiler image + frontend on a 1GB VM is slow;
+          # the default 10m command timeout isn't enough.
+          command_timeout: 40m
           script: |
+            set -e
             cd /home/ubuntu/app
             git pull origin main
-            docker-compose down
-            docker-compose up --build -d
+            # Build first, then recreate only changed containers. The old stack keeps
+            # serving during the long build (no full-downtime `down` beforehand).
+            docker-compose up --build -d --remove-orphans
+            # Reclaim disk on the small VM (old images/layers add up, esp. the JDK image).
+            docker image prune -f

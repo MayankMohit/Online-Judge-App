@@ -253,9 +253,15 @@ judgeConfig: {
 }
 ```
 
-- [ ] **4a. Comparison modes** (cheap, do first): `exact`, `trimmed`, `token`,
-      `numeric` (epsilon), `unordered`. Implemented in a `comparators/` module
-      used by `/compiler/judge`.
+- [x] **4a. Comparison modes** ✅ DONE (2026-07-06): `exact`, `trimmed`, `token`,
+      `numeric` (absolute-OR-relative epsilon), `unordered` (order-independent line
+      multiset). Implemented in `comparators/index.js`; `compareOutput(mode, actual,
+      expected, options)` gained an `options` arg (carries `epsilon`). `/compiler/judge`
+      accepts `comparisonOptions`; `judgeService` and `validationService` pass
+      `{ epsilon }` from `problem.judgeConfig`. `problemModel.judgeConfig` gained
+      `epsilon`; create/update/validate controllers thread `comparisonEpsilon`. Admin
+      UI (`ReferenceSolutionSection`) exposes all five modes + a numeric-only epsilon
+      input. 12 comparator unit cases pass; frontend lints clean.
 - [ ] **4b. Custom checker** (Codeforces/`testlib` style): admin supplies a
       checker program receiving `(input, userOutput, expectedOutput)` → accept/reject.
       Judge runs the checker instead of string compare.
@@ -310,8 +316,9 @@ Files: `compiler-service/src/languages/*`, `compiler-service/Dockerfile`,
 **Verified:** validation service + validate controller tested against the live
 compiler — validate (match/mismatch), generate (JS + Python), and reference
 compile-error paths all behave correctly. Frontend lints clean (0 errors).
-**Note:** comparison modes exposed in the UI are limited to `exact`/`trimmed` until
-Phase 4 implements `token`/`numeric`/`unordered` in the compiler comparators.
+**Note:** ~~comparison modes exposed in the UI are limited to `exact`/`trimmed`~~
+Superseded by Phase 4a — all five modes (`exact`/`trimmed`/`token`/`numeric`/`unordered`)
+are now live in the comparators and exposed in the admin UI.
 
 Files: `backend/models/problemModel.js`, `backend/services/validationService.js`,
 `backend/controllers/problemController.js`, `backend/routes/problemRouter.js`,

@@ -1,0 +1,4 @@
+{
+  "ignore": ["temp/**", "temp/*", "temp"],
+  "ext": "js,mjs,json"
+}

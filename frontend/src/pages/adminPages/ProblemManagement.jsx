@@ -73,6 +73,7 @@ export default function ProblemManagement() {
     language: "cpp",
     code: "",
     comparisonMode: "trimmed",
+    comparisonEpsilon: "",
     validationMode: "validate",
   });
 
@@ -97,6 +98,8 @@ export default function ProblemManagement() {
           language: fetchedProblem.referenceSolution.language || prev.language,
           code: fetchedProblem.referenceSolution.code,
           comparisonMode: fetchedProblem.judgeConfig?.mode || prev.comparisonMode,
+          comparisonEpsilon:
+            fetchedProblem.judgeConfig?.epsilon ?? prev.comparisonEpsilon,
         }));
       }
     }

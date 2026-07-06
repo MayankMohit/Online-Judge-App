@@ -50,6 +50,7 @@ export const processSubmissionJudgement = async (submissionId) => {
       expectedOutput: tc.expectedOutput,
     })),
     comparisonMode: problem.judgeConfig?.mode || "trimmed",
+    comparisonOptions: { epsilon: problem.judgeConfig?.epsilon },
     limits: problem.limits || {},
   });
 

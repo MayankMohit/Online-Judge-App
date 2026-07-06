@@ -16,11 +16,15 @@ const LANGUAGES = [
   { value: "python", label: "Python" },
 ];
 
-// Only modes the compiler actually implements today (Phase 4 adds the rest).
 const COMPARISON_MODES = [
   { value: "trimmed", label: "Trimmed (ignore trailing whitespace)" },
   { value: "exact", label: "Exact match" },
+  { value: "token", label: "Tokens (ignore all whitespace)" },
+  { value: "numeric", label: "Numeric (float tolerance)" },
+  { value: "unordered", label: "Unordered lines (any order)" },
 ];
+
+const DEFAULT_EPSILON = 1e-6;
 
 const langExtension = (language) => {
   switch (language) {
@@ -78,6 +82,10 @@ export default function ReferenceSolutionSection({
             isHidden,
           })),
           comparisonMode: reference.comparisonMode,
+          comparisonEpsilon:
+            reference.comparisonMode === "numeric"
+              ? Number(reference.comparisonEpsilon) || DEFAULT_EPSILON
+              : undefined,
           validationMode: reference.validationMode,
         })
       ).unwrap();
@@ -148,6 +156,18 @@ export default function ReferenceSolutionSection({
           <option value="validate">Validate my expected outputs</option>
           <option value="generate">Generate expected outputs</option>
         </select>
+
+        {reference.comparisonMode === "numeric" && (
+          <input
+            type="number"
+            step="any"
+            min="0"
+            value={reference.comparisonEpsilon ?? ""}
+            placeholder={`epsilon (${DEFAULT_EPSILON})`}
+            onChange={(e) => update({ comparisonEpsilon: e.target.value })}
+            className="w-32 bg-zinc-800 border border-zinc-700 text-white px-2.5 py-1.5 rounded-lg text-xs focus:outline-none focus:border-purple-500"
+          />
+        )}
       </div>
 
       <div className="rounded-lg overflow-hidden border border-zinc-800">

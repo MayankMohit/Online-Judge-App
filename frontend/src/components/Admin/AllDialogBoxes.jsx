@@ -37,6 +37,10 @@ const AllDialogBoxes = ({
         referenceCode: reference.code,
         referenceLanguage: reference.language,
         comparisonMode: reference.comparisonMode,
+        comparisonEpsilon:
+          reference.comparisonMode === "numeric"
+            ? Number(reference.comparisonEpsilon) || 1e-6
+            : undefined,
         validationMode: reference.validationMode,
       }
     : {};

@@ -125,6 +125,7 @@ export const createProblem = async (req, res) => {
     referenceLanguage,
     validationMode = "validate", // "validate" | "generate" | "skip"
     comparisonMode = "trimmed",
+    comparisonEpsilon, // tolerance for numeric mode
     limits,
   } = req.body;
 
@@ -153,6 +154,7 @@ export const createProblem = async (req, res) => {
         referenceCode,
         testCases,
         mode: comparisonMode,
+        epsilon: comparisonEpsilon,
         limits: limits || {},
         generate: validationMode === "generate",
       });
@@ -196,7 +198,7 @@ export const createProblem = async (req, res) => {
       sampleInput,
       sampleOutput,
       testCases: finalTestCases,
-      judgeConfig: { mode: comparisonMode },
+      judgeConfig: { mode: comparisonMode, epsilon: comparisonEpsilon },
       limits: limits || undefined,
       referenceSolution:
         referenceCode && referenceLanguage
@@ -234,6 +236,7 @@ export const updateProblem = async (req, res) => {
       referenceLanguage,
       validationMode = "validate",
       comparisonMode,
+      comparisonEpsilon,
       ...rest
     } = req.body;
 
@@ -277,11 +280,16 @@ export const updateProblem = async (req, res) => {
       }
 
       const mode = comparisonMode || existing.judgeConfig?.mode || "trimmed";
+      const epsilon =
+        comparisonEpsilon !== undefined
+          ? comparisonEpsilon
+          : existing.judgeConfig?.epsilon;
       const result = await validateReferenceSolution({
         referenceLanguage: refLang,
         referenceCode: refCode,
         testCases: rest.testCases,
         mode,
+        epsilon,
         limits: rest.limits || {},
         generate: validationMode === "generate",
       });
@@ -299,7 +307,8 @@ export const updateProblem = async (req, res) => {
       update.referenceSolution = { language: referenceLanguage, code: referenceCode };
     }
 
-    if (comparisonMode) update.judgeConfig = { mode: comparisonMode };
+    if (comparisonMode)
+      update.judgeConfig = { mode: comparisonMode, epsilon: comparisonEpsilon };
 
     const updated = await Problem.findByIdAndUpdate(
       req.params.id,
@@ -332,6 +341,7 @@ export const validateProblemTestCases = async (req, res) => {
       referenceLanguage,
       testCases,
       comparisonMode = "trimmed",
+      comparisonEpsilon,
       limits,
       validationMode = "validate",
     } = req.body;
@@ -341,6 +351,7 @@ export const validateProblemTestCases = async (req, res) => {
       referenceCode,
       testCases,
       mode: comparisonMode,
+      epsilon: comparisonEpsilon,
       limits: limits || {},
       generate: validationMode === "generate",
     });

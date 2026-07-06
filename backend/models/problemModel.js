@@ -43,6 +43,8 @@ const problemSchema = mongoose.Schema({
             enum: ["exact", "trimmed", "token", "numeric", "unordered"],
             default: "trimmed",
         },
+        // Tolerance for `numeric` mode (absolute OR relative). Ignored otherwise.
+        epsilon: { type: Number },
     },
 
     // Optional per-problem execution limits; fall back to compiler defaults when unset.

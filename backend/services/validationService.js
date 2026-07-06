@@ -11,6 +11,7 @@ const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
  * @param {string}  opts.referenceCode
  * @param {Array}   opts.testCases          [{ input, expectedOutput, isHidden }]
  * @param {string}  [opts.mode="trimmed"]   comparison mode
+ * @param {number}  [opts.epsilon]          tolerance for numeric mode
  * @param {Object}  [opts.limits]           { timeLimitMs, memoryLimitMb }
  * @param {boolean} [opts.generate=false]   true => fill expectedOutput from reference
  *
@@ -29,6 +30,7 @@ export const validateReferenceSolution = async ({
   referenceCode,
   testCases = [],
   mode = "trimmed",
+  epsilon,
   limits = {},
   generate = false,
 }) => {
@@ -65,6 +67,7 @@ export const validateReferenceSolution = async ({
       expectedOutput: generate ? "" : tc.expectedOutput,
     })),
     comparisonMode: mode,
+    comparisonOptions: { epsilon },
     limits,
     stopOnFirstFailure: false, // run every case so admins see all problems at once
   });

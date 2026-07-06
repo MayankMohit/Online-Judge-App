@@ -89,6 +89,7 @@ export const judgeRoute = async (req, res) => {
     language,
     testCases = [],
     comparisonMode = "trimmed",
+    comparisonOptions = {},
     limits = {},
     stopOnFirstFailure = true,
   } = req.body;
@@ -137,7 +138,7 @@ export const judgeRoute = async (req, res) => {
 
       const passed =
         r.status === Status.OK &&
-        compareOutput(comparisonMode, r.output, tc.expectedOutput ?? "");
+        compareOutput(comparisonMode, r.output, tc.expectedOutput ?? "", comparisonOptions);
 
       return {
         status: r.status,

@@ -103,7 +103,7 @@ const MobileProblemView = ({
           </Suspense>
 
           <div className="bg-zinc-900 border-t border-zinc-800 shrink-0" style={{ height: "200px" }}>
-            {isSubmitResult ? (
+            {isSubmitResult && isOutputMode ? (
               <OutputTab
                 verdict={verdict}
                 submissionId={submissionId}
@@ -111,6 +111,7 @@ const MobileProblemView = ({
                 averageTime={averageTime}
                 lastAction={lastAction}
                 loading={loading}
+                onClose={() => setIsOutputMode(false)}
               />
             ) : (
               <TestCasePanel

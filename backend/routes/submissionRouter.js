@@ -3,6 +3,7 @@ const router = express.Router();
 
 import {
   createSubmission,
+  getSubmissionStatus,
   getUserSubmissions,
   getSubmissionById,
   getSubmissionsByProblem,
@@ -19,6 +20,8 @@ router.post("/", verifyToken, limiter, createSubmission);
 router.get("/", verifyToken, isAdmin, getAllSubmissions);
 
 router.get("/user", verifyToken, getUserSubmissions);
+
+router.get("/:id/status", verifyToken, getSubmissionStatus);
 
 router.get("/:id", verifyToken, getSubmissionById);
 

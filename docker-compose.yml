@@ -26,8 +26,22 @@ services:
       - "5000:5000"
     env_file:
       - ./backend/.env
+    environment:
+      # Enables background judging via BullMQ. Remove to fall back to synchronous judging.
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - compiler-service
+      - redis
+    restart: unless-stopped
+    networks:
+      - mern-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
     restart: unless-stopped
     networks:
       - mern-net
@@ -46,3 +60,6 @@ services:
 networks:
   mern-net:
     driver: bridge
+
+volumes:
+  redis-data:

@@ -25,9 +25,36 @@ const AllDialogBoxes = ({
   contestId,
   contestPoints,
   returnTo,
+  reference,
 }) => {
   const { createProblem, updateProblem, deleteProblem } = useProblemMutations();
   const navigate = useNavigate();
+
+  // Reference-solution fields sent with create/update so the backend validates
+  // the test cases before persisting.
+  const referencePayload = reference?.code?.trim()
+    ? {
+        referenceCode: reference.code,
+        referenceLanguage: reference.language,
+        comparisonMode: reference.comparisonMode,
+        validationMode: reference.validationMode,
+      }
+    : {};
+
+  // Turn a rejected mutation payload into a helpful message for the admin.
+  const showMutationError = (err, fallback) => {
+    if (err?.requiresReference) {
+      toast.error("Add a reference solution and validate the test cases first.");
+    } else if (err?.validation && !err.validation.ok) {
+      const failed = (err.validation.cases || []).filter((c) => !c.passed).length;
+      toast.error(
+        err.message ||
+          `Validation failed on ${failed} test case${failed === 1 ? "" : "s"}.`
+      );
+    } else {
+      toast.error(err?.message || fallback);
+    }
+  };
 
   const handleConfirmClear = () => {
     setProblem({
@@ -57,6 +84,7 @@ const AllDialogBoxes = ({
             isHidden: !!isHidden,
           })
         ),
+        ...referencePayload,
         ...(contestId && {
           contestId,
           points: Math.max(1, Number(contestPoints) || 100),
@@ -70,19 +98,19 @@ const AllDialogBoxes = ({
       navigate(returnTo || "/admin");
     } catch (err) {
       console.error("Add failed:", err);
-      toast.error("Failed to add problem");
+      showMutationError(err, "Failed to add problem");
     }
   };
 
   const handleEditConfirm = async () => {
     try {
-      await updateProblem(problem._id, problem).unwrap();
+      await updateProblem(problem._id, { ...problem, ...referencePayload }).unwrap();
       toast.success("Problem updated successfully");
       setShowEditDialog(false);
       navigate("/admin");
     } catch (err) {
       console.error("Edit failed:", err);
-      toast.error("Failed to update problem");
+      showMutationError(err, "Failed to update problem");
     }
   };
 

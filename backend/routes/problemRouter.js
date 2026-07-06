@@ -12,7 +12,8 @@ import {
   searchProblems,
   getUniqueTags,
   getProblemsByAdmin,
-  getProblemByAdmin
+  getProblemByAdmin,
+  validateProblemTestCases
 } from "../controllers/problemController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { optionalAuth } from "../middlewares/optionalAuth.js";
@@ -26,6 +27,7 @@ router.get("/tags", getUniqueTags);
 router.get("/number/:number", optionalAuth, getProblemByNumber);
 
 // Auth required
+router.post("/validate", verifyToken, isAdmin, validateProblemTestCases);
 router.post("/", verifyToken, isAdmin, createProblem);
 router.put("/:id", verifyToken, isAdmin, isProblemCreator, updateProblem);
 router.delete("/:id", verifyToken, isAdmin, isProblemCreator, deleteProblem);

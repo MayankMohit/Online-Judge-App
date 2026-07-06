@@ -13,6 +13,7 @@ import { fetchAutocomplete, clearAutocompleteError } from "../../features/ai/aiS
 import AllDialogBoxes from "../../components/Admin/AllDialogBoxes";
 import FormFieldRow from "../../components/Admin/FormFieldRow";
 import TestCaseSection from "../../components/Admin/TestCaseSection";
+import ReferenceSolutionSection from "../../components/Admin/ReferenceSolutionSection";
 import FooterButtons from "../../components/Admin/FooterButtons";
 import DifficultyTagsRow from "../../components/Admin/DifficultyTagsRow";
 import TitleStatementFields from "../../components/Admin/TitleStatementFields";
@@ -67,6 +68,14 @@ export default function ProblemManagement() {
   const [problem, setProblem] = useState(defaultProblem);
   const [formErrors, setFormErrors] = useState({});
 
+  // Phase 6: reference solution used to validate/generate test-case outputs.
+  const [reference, setReference] = useState({
+    language: "cpp",
+    code: "",
+    comparisonMode: "trimmed",
+    validationMode: "validate",
+  });
+
   // Track which field values the user typed themselves (before AI fills them)
   // This lets us restore user values on reset
   const [userSnapshot, setUserSnapshot] = useState(null);
@@ -80,8 +89,29 @@ export default function ProblemManagement() {
         id: tc.id || uuidv4(),
       }));
       setProblem({ ...defaultProblem, ...fetchedProblem, testCases: testCasesWithIds });
+
+      // Preload the saved reference solution / comparison mode when editing.
+      if (fetchedProblem.referenceSolution?.code) {
+        setReference((prev) => ({
+          ...prev,
+          language: fetchedProblem.referenceSolution.language || prev.language,
+          code: fetchedProblem.referenceSolution.code,
+          comparisonMode: fetchedProblem.judgeConfig?.mode || prev.comparisonMode,
+        }));
+      }
     }
   }, [isEditing, fetchedProblem]);
+
+  // Apply generated expected outputs back into the form's test cases.
+  const handleApplyGenerated = (updatedTestCases) => {
+    setProblem((prev) => ({
+      ...prev,
+      testCases: updatedTestCases.map((tc, i) => ({
+        ...tc,
+        id: prev.testCases?.[i]?.id || uuidv4(),
+      })),
+    }));
+  };
 
   const {
     handleChange,
@@ -272,6 +302,13 @@ export default function ProblemManagement() {
             removeTestCase={removeTestCase}
           />
 
+          <ReferenceSolutionSection
+            reference={reference}
+            setReference={setReference}
+            testCases={problem.testCases}
+            onApplyGenerated={handleApplyGenerated}
+          />
+
           <FooterButtons
             isEditing={isEditing}
             onDelete={() => setShowDeleteDialog(true)}
@@ -301,6 +338,7 @@ export default function ProblemManagement() {
         contestId={contestId}
         contestPoints={contestPoints}
         returnTo={returnTo}
+        reference={reference}
       />
     </div>
   );

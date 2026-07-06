@@ -21,6 +21,7 @@ import codeRoute from "./routes/codeRouter.js";
 import aiRoute from "./routes/aiRouter.js";
 import contestRoute from "./routes/contestRouter.js";
 import { startRenumberJob } from "./jobs/renumberJob.js";
+import { startJudgeWorker } from "./workers/judgeWorker.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +53,7 @@ const startServer = async () => {
 
     // Background jobs
     startRenumberJob();
+    startJudgeWorker(); // no-op unless REDIS_URL is configured
 
     // Start listening
     app.listen(PORT, '0.0.0.0', () => {

@@ -8,6 +8,7 @@ import {
   maybeReleaseContestProblems,
 } from "../utils/contestHelpers.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
+import { validateReferenceSolution } from "../services/validationService.js";
 
 export const getAllProblems = async (req, res) => {
   try {
@@ -119,6 +120,12 @@ export const createProblem = async (req, res) => {
     testCases,
     contestId,
     points,
+    // Phase 6: test-case validation
+    referenceCode,
+    referenceLanguage,
+    validationMode = "validate", // "validate" | "generate" | "skip"
+    comparisonMode = "trimmed",
+    limits,
   } = req.body;
 
   try {
@@ -128,6 +135,35 @@ export const createProblem = async (req, res) => {
         success: false,
         message: "Problem with this title already exists",
       });
+    }
+
+    // Validate test cases against a trusted reference solution before persisting.
+    // "skip" is an explicit admin override; otherwise a reference is required.
+    let finalTestCases = testCases;
+    if (validationMode !== "skip") {
+      if (!referenceCode || !referenceLanguage) {
+        return res.status(400).json({
+          success: false,
+          requiresReference: true,
+          message: "A reference solution is required to validate the test cases.",
+        });
+      }
+      const result = await validateReferenceSolution({
+        referenceLanguage,
+        referenceCode,
+        testCases,
+        mode: comparisonMode,
+        limits: limits || {},
+        generate: validationMode === "generate",
+      });
+      if (!result.ok) {
+        return res.status(400).json({
+          success: false,
+          message: result.message,
+          validation: result,
+        });
+      }
+      if (result.updatedTestCases) finalTestCases = result.updatedTestCases;
     }
 
     let contest = null;
@@ -159,7 +195,13 @@ export const createProblem = async (req, res) => {
       constraints,
       sampleInput,
       sampleOutput,
-      testCases,
+      testCases: finalTestCases,
+      judgeConfig: { mode: comparisonMode },
+      limits: limits || undefined,
+      referenceSolution:
+        referenceCode && referenceLanguage
+          ? { language: referenceLanguage, code: referenceCode }
+          : undefined,
       createdBy: req.userId,
       contest: contest ? contest._id : null,
       isPublic: !contest,
@@ -187,9 +229,81 @@ export const createProblem = async (req, res) => {
 
 export const updateProblem = async (req, res) => {
   try {
+    const {
+      referenceCode,
+      referenceLanguage,
+      validationMode = "validate",
+      comparisonMode,
+      ...rest
+    } = req.body;
+
+    const update = { ...rest };
+    const skipValidation = validationMode === "skip";
+
+    // Only re-validate when the test cases actually change. A metadata-only edit
+    // (statement, tags, …) that resends identical test cases skips the reference run.
+    let existing = null;
+    let testsChanged = false;
+    if (Array.isArray(rest.testCases)) {
+      existing = await Problem.findById(req.params.id).select(
+        "referenceSolution judgeConfig testCases"
+      );
+      if (!existing) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Problem not found" });
+      }
+      const normalize = (tcs) =>
+        JSON.stringify(
+          (tcs || []).map((tc) => ({
+            input: tc.input ?? "",
+            expectedOutput: tc.expectedOutput ?? "",
+            isHidden: !!tc.isHidden,
+          }))
+        );
+      testsChanged = normalize(rest.testCases) !== normalize(existing.testCases);
+    }
+
+    if (testsChanged && !skipValidation) {
+
+      const refLang = referenceLanguage || existing.referenceSolution?.language;
+      const refCode = referenceCode || existing.referenceSolution?.code;
+      if (!refCode || !refLang) {
+        return res.status(400).json({
+          success: false,
+          requiresReference: true,
+          message: "A reference solution is required to validate the test cases.",
+        });
+      }
+
+      const mode = comparisonMode || existing.judgeConfig?.mode || "trimmed";
+      const result = await validateReferenceSolution({
+        referenceLanguage: refLang,
+        referenceCode: refCode,
+        testCases: rest.testCases,
+        mode,
+        limits: rest.limits || {},
+        generate: validationMode === "generate",
+      });
+      if (!result.ok) {
+        return res.status(400).json({
+          success: false,
+          message: result.message,
+          validation: result,
+        });
+      }
+      if (result.updatedTestCases) update.testCases = result.updatedTestCases;
+      update.referenceSolution = { language: refLang, code: refCode };
+    } else if (referenceCode && referenceLanguage) {
+      // Reference supplied without changing test cases — persist it as-is.
+      update.referenceSolution = { language: referenceLanguage, code: referenceCode };
+    }
+
+    if (comparisonMode) update.judgeConfig = { mode: comparisonMode };
+
     const updated = await Problem.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: update },
       { new: true, runValidators: true }
     );
 
@@ -204,6 +318,40 @@ export const updateProblem = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to update problem" });
+  }
+};
+
+/**
+ * POST /problems/validate — dry-run the reference solution against the given
+ * test cases without persisting anything. Powers the admin "Validate" button.
+ */
+export const validateProblemTestCases = async (req, res) => {
+  try {
+    const {
+      referenceCode,
+      referenceLanguage,
+      testCases,
+      comparisonMode = "trimmed",
+      limits,
+      validationMode = "validate",
+    } = req.body;
+
+    const result = await validateReferenceSolution({
+      referenceLanguage,
+      referenceCode,
+      testCases,
+      mode: comparisonMode,
+      limits: limits || {},
+      generate: validationMode === "generate",
+    });
+
+    return res.status(200).json({ success: true, validation: result });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Validation failed",
+      error: err.response?.data?.error || err.message || "Unknown error",
+    });
   }
 };
 

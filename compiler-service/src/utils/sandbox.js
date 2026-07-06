@@ -1,33 +1,94 @@
 import { spawn } from "child_process";
-import fs from "fs";
+import os from "os";
+
+const isWindows = os.platform() === "win32";
 
 /**
- * Runs a command in a sandboxed environment.
- * 
- * @param {Object} options
- * @param {string} options.command - Command to run (e.g., node, python3).
- * @param {string[]} options.args - Arguments for the command.
- * @param {string} options.input - Input to be fed to stdin.
- * @param {string} [options.cwd] - Working directory.
- * @param {number} [options.timeout=3000] - Max execution time (ms).
- * @returns {Promise<Object>} - { success, output, error, time }
+ * Execution status codes returned by the sandbox. The backend maps these
+ * directly to verdicts instead of string-matching error text.
  */
-export const runInSandbox = ({ command, args, input = "", cwd, timeout = 3000 }) => {
+export const Status = {
+  OK: "OK",
+  RUNTIME_ERROR: "RUNTIME_ERROR",
+  TLE: "TLE",
+  MLE: "MLE",
+  INTERNAL: "INTERNAL",
+};
+
+const DEFAULT_TIME_LIMIT_MS = 3000;
+const DEFAULT_MEMORY_LIMIT_MB = 256;
+const MAX_OUTPUT_BYTES = 1024 * 1024; // 1 MB cap to prevent output floods
+
+/**
+ * Runs a command with time + memory limits and returns a structured result.
+ *
+ * On Linux the command is wrapped in `sh -c 'ulimit -t <s>; [ulimit -v <kb>;] exec ...'`
+ * so a runaway process is killed by the OS rather than taking down the container.
+ * `ulimit -v` is applied only when `useAddressSpaceLimit` is set (unsafe for Node/JVM,
+ * which reserve large virtual memory regardless of heap use). `sh` (not bash) is used
+ * because the Alpine runtime image ships busybox ash, not bash.
+ * On Windows (local dev) resource limits are skipped — only the wall-clock timer applies.
+ *
+ * @returns {Promise<{ status, output, error, time }>}
+ */
+export const runInSandbox = ({
+  command,
+  args = [],
+  input = "",
+  cwd,
+  timeout = DEFAULT_TIME_LIMIT_MS,
+  memoryLimitMb = DEFAULT_MEMORY_LIMIT_MB,
+  useAddressSpaceLimit = true,
+}) => {
   return new Promise((resolve) => {
     const startTime = Date.now();
-    const child = spawn(command, args, { cwd });
+
+    let child;
+    if (isWindows) {
+      child = spawn(command, args, { cwd });
+    } else {
+      // ulimit -t is CPU seconds; ulimit -v is virtual memory in KB.
+      const cpuSeconds = Math.ceil(timeout / 1000) + 1;
+      const quoted = [command, ...args]
+        .map((a) => `'${String(a).replace(/'/g, "'\\''")}'`)
+        .join(" ");
+      const limits = [`ulimit -t ${cpuSeconds}`];
+      if (useAddressSpaceLimit) {
+        const memKb = Math.max(memoryLimitMb, 32) * 1024;
+        limits.push(`ulimit -v ${memKb}`);
+      }
+      const wrapped = `${limits.join("; ")}; exec ${quoted}`;
+      child = spawn("sh", ["-c", wrapped], { cwd });
+    }
 
     let output = "";
     let errorOutput = "";
+    let outputBytes = 0;
+    let killedForOutput = false;
     let isTimeout = false;
+    let settled = false;
 
-    // Write input only if non-empty
-    if (input && input.length > 0) {
-      child.stdin.write(input);
+    const done = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ ...result, time: Date.now() - startTime });
+    };
+
+    try {
+      if (input && input.length > 0) child.stdin.write(input);
+      child.stdin.end();
+    } catch {
+      // stdin may already be closed if the process died instantly; ignore.
     }
-    child.stdin.end();
 
     child.stdout.on("data", (data) => {
+      outputBytes += data.length;
+      if (outputBytes > MAX_OUTPUT_BYTES) {
+        killedForOutput = true;
+        child.kill("SIGKILL");
+        return;
+      }
       output += data.toString();
     });
 
@@ -41,43 +102,51 @@ export const runInSandbox = ({ command, args, input = "", cwd, timeout = 3000 })
     }, timeout);
 
     child.on("error", (err) => {
-      clearTimeout(timer);
-      return resolve({
-        success: false,
+      done({
+        status: Status.INTERNAL,
         output: null,
         error: `Spawn error: ${err.message}`,
-        time: Date.now() - startTime,
       });
     });
 
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      const executionTime = Date.now() - startTime;
-
+    child.on("close", (code, signal) => {
       if (isTimeout) {
-        return resolve({
-          success: false,
+        return done({ status: Status.TLE, output: null, error: "Time Limit Exceeded" });
+      }
+
+      if (killedForOutput) {
+        return done({
+          status: Status.RUNTIME_ERROR,
           output: null,
-          error: "Time Limit Exceeded",
-          time: executionTime,
+          error: "Output limit exceeded",
         });
       }
 
-      // If process exits with non-zero code and there's stderr output
-      if (code !== 0 && errorOutput.trim()) {
-        return resolve({
-          success: false,
+      // ulimit -t sends SIGXCPU/SIGKILL when CPU time is exhausted -> treat as TLE.
+      if (signal === "SIGXCPU") {
+        return done({ status: Status.TLE, output: null, error: "Time Limit Exceeded" });
+      }
+
+      // Memory-limit hits usually surface as bad_alloc / non-zero exit; heuristically
+      // flag common out-of-memory signatures as MLE, otherwise runtime error.
+      if (code !== 0) {
+        const lower = errorOutput.toLowerCase();
+        const isMle =
+          lower.includes("bad_alloc") ||
+          lower.includes("out of memory") ||
+          lower.includes("memoryerror") ||
+          lower.includes("cannot allocate");
+        return done({
+          status: isMle ? Status.MLE : Status.RUNTIME_ERROR,
           output: null,
-          error: errorOutput.trim(),
-          time: executionTime,
+          error: errorOutput.trim() || `Process exited with code ${code}`,
         });
       }
 
-      return resolve({
-        success: true,
+      return done({
+        status: Status.OK,
         output: output.length > 0 ? output.trimEnd() : "",
         error: null,
-        time: executionTime,
       });
     });
   });

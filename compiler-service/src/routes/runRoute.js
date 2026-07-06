@@ -1,7 +1,9 @@
 import express from "express";
-import { runRoute } from "../controllers/runController.js";
+import { runRoute, judgeRoute } from "../controllers/judgeController.js";
+
 const router = express.Router();
 
 router.post("/run", runRoute);
+router.post("/judge", judgeRoute);
 
 export default router;

@@ -36,6 +36,27 @@ const problemSchema = mongoose.Schema({
         }
     ],
 
+    // How submitted output is compared against expectedOutput (Phase 4 extends this).
+    judgeConfig: {
+        mode: {
+            type: String,
+            enum: ["exact", "trimmed", "token", "numeric", "unordered"],
+            default: "trimmed",
+        },
+    },
+
+    // Optional per-problem execution limits; fall back to compiler defaults when unset.
+    limits: {
+        timeLimitMs: { type: Number },
+        memoryLimitMb: { type: Number },
+    },
+
+    // Trusted solution used to validate/generate expected outputs at create/edit time.
+    referenceSolution: {
+        language: { type: String },
+        code: { type: String },
+    },
+
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { User } from "../models/userModel.js";
@@ -6,8 +5,8 @@ import { Contest } from "../models/contestModel.js";
 import { ContestParticipation } from "../models/contestParticipationModel.js";
 import { MockParticipation } from "../models/mockParticipationModel.js";
 import { getContestStatus } from "../utils/contestHelpers.js";
-
-const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
+import { isQueueEnabled, enqueueJudge } from "../queues/judgeQueue.js";
+import { processSubmissionJudgement } from "../services/judgeService.js";
 
 export const createSubmission = async (req, res) => {
   const { problemId, code, language, contestId, mock } = req.body;
@@ -24,9 +23,8 @@ export const createSubmission = async (req, res) => {
         .json({ success: false, message: "Problem not found" });
     }
 
-    // Contest validation — before judging, using arrival time
-    let contestProblemPoints = null;
-    let mockParticipation = null;
+    // Contest validation — MUST run at arrival time (before enqueueing), so that
+    // async judging can't let a submission slip past a closed window.
     if (contestId) {
       const receivedAt = new Date();
       const contest = await Contest.findById(contestId);
@@ -54,7 +52,7 @@ export const createSubmission = async (req, res) => {
             message: "Mock contests are available only after the contest ends",
           });
         }
-        mockParticipation = await MockParticipation.findOne({
+        const mockParticipation = await MockParticipation.findOne({
           contest: contest._id,
           user: req.userId,
         });
@@ -96,167 +94,40 @@ export const createSubmission = async (req, res) => {
           });
         }
       }
-
-      contestProblemPoints = entry.points;
     }
 
-    const testCases = problem.testCases || [];
-    let verdict = "accepted";
-    let failedCase = null;
-    let totalTime = 0;
-    let testCaseCount = 0;
-
-    for (const testCase of testCases) {
-      const { data } = await axios.post(`${BASE_URL}/compiler/run/`, {
-        code,
-        language,
-        input: testCase.input,
-      });
-
-      const { success, output, error, time } = data;
-
-      // Fix: handle numeric or string time
-      const timeMs =
-        typeof time === "string"
-          ? parseInt(time.replace("ms", ""), 10)
-          : Number(time || 0);
-
-      totalTime += timeMs;
-      testCaseCount++;
-
-      if (!success) {
-        const lowerError = (error || "").toLowerCase();
-
-        if (lowerError.includes("time limit")) {
-          verdict = "time_limit_exceeded";
-        } else if (
-          (language === "cpp" || language === "c") &&
-          (lowerError.includes("error:") || lowerError.includes("expected"))
-        ) {
-          verdict = "compilation_error";
-        } else if (
-          (language === "py" || language === "js") &&
-          lowerError.includes("syntax")
-        ) {
-          verdict = "compilation_error";
-        } else {
-          verdict = "runtime_error";
-        }
-
-        failedCase = {
-          input: testCase.input,
-          expectedOutput: testCase.expectedOutput,
-          actualOutput: error || "Compilation/Runtime failed.",
-        };
-        break;
-      }
-
-      const cleanOutput = (output ?? "").trim();
-      const expectedOutput = testCase.expectedOutput.trim();
-
-      if (cleanOutput !== expectedOutput) {
-        verdict = "wrong_answer";
-        failedCase = {
-          input: testCase.input,
-          expectedOutput: testCase.expectedOutput,
-          actualOutput: cleanOutput,
-        };
-        break;
-      }
-    }
-
-    const averageTime =
-      testCaseCount > 0 ? (totalTime / testCaseCount).toFixed(2) : 0;
-
+    // Persist the submission immediately (arrival time = submittedAt) so contest
+    // ordering is preserved regardless of when judging actually completes.
     const submission = new Submission({
       user: req.userId,
       problem: problemId,
       code,
       language,
-      verdict,
-      averageTime,
       contest: contestId || null,
       mock: !!mock,
+      status: "queued",
     });
-
     await submission.save();
 
-    const user = await User.findById(req.userId);
-    user.submissions.push(submission._id);
-    user.totalSubmissions++;
-
-    const alreadySolved = user.solvedProblems.some(
-      (p) => p.problemId.toString() === problemId && p.status === "accepted"
-    );
-
-    if (verdict === "accepted" && !alreadySolved) {
-      user.solvedProblems.push({
-        problemId,
-        status: "accepted",
+    // Background path: enqueue and return immediately; the client polls for status.
+    if (isQueueEnabled) {
+      await enqueueJudge(submission._id.toString());
+      return res.status(202).json({
+        success: true,
         submissionId: submission._id,
-        solvedAt: new Date(),
+        status: "judging",
+        message: "Submission queued for judging",
       });
-      user.totalProblemsSolved++;
     }
 
-    await user.save();
-
-    // Contest scoring — incremental update on the participation doc.
-    // Mock runs score into MockParticipation; live runs into ContestParticipation.
-    // Both share the same problemStats/score shape, so the update logic is identical.
-    let contestUpdate = null;
-    if (contestId) {
-      const participation = mock
-        ? mockParticipation
-        : await ContestParticipation.findOne({
-            contest: contestId,
-            user: req.userId,
-          });
-
-      if (participation) {
-        let stats = participation.problemStats.find(
-          (s) => s.problem.toString() === problemId
-        );
-        if (!stats) {
-          participation.problemStats.push({ problem: problemId });
-          stats = participation.problemStats[participation.problemStats.length - 1];
-        }
-
-        // awarded = points were earned on THIS submission (first solve only),
-        // so the client knows when to show the "+X points" toast.
-        let awarded = false;
-        if (!stats.solved) {
-          if (verdict === "accepted") {
-            stats.solved = true;
-            stats.solvedAt = submission.submittedAt;
-            stats.pointsEarned = contestProblemPoints;
-            participation.score += contestProblemPoints;
-            participation.lastAcceptedAt = submission.submittedAt;
-            awarded = true;
-          } else {
-            stats.attempts += 1;
-            participation.totalAttempts += 1;
-          }
-          await participation.save();
-        }
-
-        contestUpdate = {
-          score: participation.score,
-          solved: stats.solved,
-          pointsEarned: stats.pointsEarned,
-          awarded,
-        };
-      }
-    }
-
+    // Synchronous fallback (no Redis configured): judge inline and return the result.
+    const result = await processSubmissionJudgement(submission._id);
     return res.status(201).json({
       success: true,
       submissionId: submission._id,
+      status: "completed",
       message: "Submission created successfully",
-      verdict,
-      averageTime,
-      failedCase: verdict !== "accepted" ? failedCase : null,
-      contestUpdate,
+      ...result,
     });
   } catch (error) {
     return res.status(500).json({
@@ -264,6 +135,47 @@ export const createSubmission = async (req, res) => {
       message: "Failed to submit",
       error: error.response?.data?.error || error.message || "Unknown error",
     });
+  }
+};
+
+/**
+ * GET /api/submissions/:id/status — polled by the client while a submission is
+ * being judged in the background. Returns the verdict + details once completed.
+ */
+export const getSubmissionStatus = async (req, res) => {
+  try {
+    const submission = await Submission.findById(req.params.id).select(
+      "user status verdict averageTime failedCase contestResult judgeError"
+    );
+    if (!submission) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Submission not found" });
+    }
+    if (submission.user.toString() !== req.userId) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const done = submission.status === "completed";
+    return res.status(200).json({
+      success: true,
+      status: submission.status,
+      verdict: done ? submission.verdict : null,
+      averageTime: done ? submission.averageTime : null,
+      failedCase:
+        done && submission.verdict !== "accepted"
+          ? submission.failedCase || null
+          : null,
+      contestUpdate: done ? submission.contestResult || null : null,
+      error:
+        submission.status === "error"
+          ? submission.judgeError || "Judging failed"
+          : null,
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch submission status" });
   }
 };
 

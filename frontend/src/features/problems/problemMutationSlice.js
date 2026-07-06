@@ -2,6 +2,13 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+// Keep the full error payload (message + per-case validation) so the UI can
+// explain exactly which test cases failed, not just show a generic toast.
+const rejectData = (err, fallback) =>
+  err.response?.data
+    ? { ...err.response.data, message: err.response.data.message || fallback }
+    : { message: fallback };
+
 export const createProblem = createAsyncThunk(
   "problem/create",
   async (data, { rejectWithValue }) => {
@@ -9,7 +16,7 @@ export const createProblem = createAsyncThunk(
       const res = await axios.post(`${BASE_URL}/api/problems`, data);
       return res.data.problem;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Create failed");
+      return rejectWithValue(rejectData(err, "Create failed"));
     }
   }
 );
@@ -21,7 +28,22 @@ export const updateProblem = createAsyncThunk(
       const res = await axios.put(`${BASE_URL}/api/problems/${id}`, data);
       return res.data.problem;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Update failed");
+      return rejectWithValue(rejectData(err, "Update failed"));
+    }
+  }
+);
+
+// Dry-run the reference solution against the test cases without persisting.
+export const validateTestCases = createAsyncThunk(
+  "problem/validateTestCases",
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(`${BASE_URL}/api/problems/validate`, data);
+      return res.data.validation;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.error || err.response?.data?.message || "Validation failed"
+      );
     }
   }
 );

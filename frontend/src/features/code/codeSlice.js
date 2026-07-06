@@ -30,19 +30,40 @@ export const runAllTestCases = createAsyncThunk(
         )
       );
       return results;
-    } catch (err) {
+    } catch {
       return thunkAPI.rejectWithValue({ error: "Run failed" });
     }
   }
 );
 
-// Submit code
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Submit code. The backend may judge synchronously (returns the verdict directly)
+// or in the background (returns 202 with status "judging"); in the latter case we
+// poll the status endpoint until the verdict is ready.
 export const submitCode = createAsyncThunk(
   "code/submit",
   async ({ problemId, code, language, contestId, mock }, thunkAPI) => {
     try {
       const res = await axios.post(`${BASE_URL}/api/submissions/`, { problemId, code, language, contestId, mock });
-      return res.data;
+      const data = res.data;
+
+      // Synchronous path — verdict already present.
+      if (data.status !== "judging" && data.verdict) return data;
+
+      // Background path — poll until completed / error (max ~60s).
+      const submissionId = data.submissionId;
+      for (let attempt = 0; attempt < 120; attempt++) {
+        await sleep(attempt < 5 ? 400 : 800);
+        const { data: s } = await axios.get(`${BASE_URL}/api/submissions/${submissionId}/status`);
+        if (s.status === "completed") {
+          return { ...s, submissionId };
+        }
+        if (s.status === "error") {
+          return thunkAPI.rejectWithValue({ error: s.error || "Judging failed" });
+        }
+      }
+      return thunkAPI.rejectWithValue({ error: "Judging timed out. Check submissions later." });
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || { error: "Submit failed" });
     }

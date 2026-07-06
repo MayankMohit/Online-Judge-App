@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 import {
   JUDGE_QUEUE,
   isQueueEnabled,
-  createRedisConnection,
+  createWorkerConnection,
 } from "../queues/judgeQueue.js";
 import { Submission } from "../models/submissionModel.js";
 import {
@@ -29,7 +29,7 @@ export const startJudgeWorker = () => {
       await Submission.findByIdAndUpdate(submissionId, { status: "judging" });
       await processSubmissionJudgement(submissionId);
     },
-    { connection: createRedisConnection(), concurrency }
+    { connection: createWorkerConnection(), concurrency }
   );
 
   worker.on("failed", async (job, err) => {

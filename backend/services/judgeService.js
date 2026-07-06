@@ -24,6 +24,18 @@ export const processSubmissionJudgement = async (submissionId) => {
   const submission = await Submission.findById(submissionId);
   if (!submission) throw new Error("Submission not found");
 
+  // Idempotency guard: if this submission was already judged (e.g. via the
+  // synchronous fallback when Redis was briefly down), don't judge/score it twice.
+  if (submission.status === "completed") {
+    return {
+      verdict: submission.verdict,
+      averageTime: submission.averageTime,
+      failedCase:
+        submission.verdict !== "accepted" ? submission.failedCase || null : null,
+      contestUpdate: submission.contestResult || null,
+    };
+  }
+
   const problem = await Problem.findById(submission.problem);
   if (!problem) throw new Error("Problem not found");
 

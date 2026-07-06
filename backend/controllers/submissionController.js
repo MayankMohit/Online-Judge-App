@@ -110,17 +110,26 @@ export const createSubmission = async (req, res) => {
     await submission.save();
 
     // Background path: enqueue and return immediately; the client polls for status.
+    // If Redis is unreachable, enqueue fails fast (commandTimeout) and we fall
+    // through to synchronous judging so submissions still work.
     if (isQueueEnabled) {
-      await enqueueJudge(submission._id.toString());
-      return res.status(202).json({
-        success: true,
-        submissionId: submission._id,
-        status: "judging",
-        message: "Submission queued for judging",
-      });
+      try {
+        await enqueueJudge(submission._id.toString());
+        return res.status(202).json({
+          success: true,
+          submissionId: submission._id,
+          status: "judging",
+          message: "Submission queued for judging",
+        });
+      } catch (err) {
+        console.error(
+          "Judge enqueue failed (Redis unreachable?) — judging synchronously:",
+          err.message
+        );
+      }
     }
 
-    // Synchronous fallback (no Redis configured): judge inline and return the result.
+    // Synchronous path: no Redis configured, or enqueue failed. Judge inline.
     const result = await processSubmissionJudgement(submission._id);
     return res.status(201).json({
       success: true,

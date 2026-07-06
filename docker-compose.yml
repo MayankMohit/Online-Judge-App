@@ -30,8 +30,10 @@ services:
       # Enables background judging via BullMQ. Remove to fall back to synchronous judging.
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - compiler-service
-      - redis
+      compiler-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - mern-net
@@ -43,6 +45,12 @@ services:
     volumes:
       - redis-data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     networks:
       - mern-net
 

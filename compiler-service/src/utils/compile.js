@@ -1,7 +1,10 @@
 import { spawn } from "child_process";
 import { cleanCompilerError } from "./cleanError.js";
 
-const COMPILE_TIMEOUT_MS = 10000;
+// Compilation (esp. C++ -O2 with <bits/stdc++.h> on musl/Alpine and small VMs)
+// can legitimately take well over 10s. Keep this generous — it caps a runaway
+// compiler, it is NOT a user-facing latency budget. Overridable via env.
+const COMPILE_TIMEOUT_MS = Number(process.env.COMPILE_TIMEOUT_MS) || 30000;
 
 /**
  * Runs a compile command once and resolves with a structured result.
@@ -39,6 +42,10 @@ export const compileSource = ({ command, args }) => {
     child.stderr.on("data", (data) => {
       stderr += data.toString();
     });
+
+    // Drain stdout so a compiler that writes a lot to it can't fill the OS pipe
+    // buffer and block (which would otherwise look like a timeout).
+    child.stdout.on("data", () => {});
 
     child.on("error", (err) => {
       finish({

@@ -7,7 +7,20 @@ RUN apk update && apk add --no-cache \
   make \
   libc6-compat \
   python3 \
-  py3-pip 
+  py3-pip
+
+# Precompile <bits/stdc++.h> into a PCH so C++ compiles don't re-parse the giant
+# header every time. Flags MUST match the judge's compile flags (-O2 -std=c++17)
+# or g++ silently ignores the PCH. g++ auto-uses stdc++.h.gch when present next
+# to stdc++.h. Guarded so a missing header never fails the image build.
+RUN STDCPP=$(find /usr/include -name 'stdc++.h' 2>/dev/null | head -n1); \
+  if [ -n "$STDCPP" ]; then \
+    g++ -O2 -std=c++17 -x c++-header "$STDCPP" -o "$STDCPP.gch" \
+      && echo "Precompiled header built: $STDCPP.gch"; \
+  else \
+    echo "bits/stdc++.h not found; skipping PCH (compiles will be slower)"; \
+  fi
+
 COPY package*.json ./
 RUN npm install
 COPY . .

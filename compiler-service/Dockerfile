@@ -16,6 +16,14 @@ RUN apk update && apk add --no-cache \
 
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
 
+# Unprivileged user that SUBMITTED code executes as. The Node server stays root so
+# it can manage temp files and drop privileges per-run (the isolate model: root
+# supervisor, unprivileged execution). SANDBOX_UID/GID tell sandbox.js to setuid
+# the child; unset in local dev (Windows), so dev runs without dropping privileges.
+RUN addgroup -g 1001 runner && adduser -D -u 1001 -G runner runner
+ENV SANDBOX_UID=1001 \
+    SANDBOX_GID=1001
+
 # Precompile <bits/stdc++.h> into a PCH so C++ compiles don't re-parse the giant
 # header every time. Flags MUST match the judge's compile flags (-O2 -std=c++17)
 # or g++ silently ignores the PCH. g++ auto-uses stdc++.h.gch when present next

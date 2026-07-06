@@ -19,6 +19,16 @@ const DEFAULT_TIME_LIMIT_MS = 3000;
 const DEFAULT_MEMORY_LIMIT_MB = 256;
 const MAX_OUTPUT_BYTES = 1024 * 1024; // 1 MB cap to prevent output floods
 
+// Submitted code executes as this unprivileged uid/gid when set (Docker provides
+// them; unset in local dev, where no privilege drop is attempted). The Node server
+// must be root for setuid to succeed.
+const SANDBOX_UID = process.env.SANDBOX_UID ? Number(process.env.SANDBOX_UID) : null;
+const SANDBOX_GID = process.env.SANDBOX_GID ? Number(process.env.SANDBOX_GID) : null;
+// Largest file the process may create (KB), enforced via `ulimit -f`, to stop a
+// submission from flooding the container disk. ulimit -f counts 512-byte blocks.
+const MAX_FILE_SIZE_KB = Number(process.env.SANDBOX_FSIZE_KB) || 30720; // 30 MB
+const MAX_FILE_SIZE_BLOCKS = MAX_FILE_SIZE_KB * 2;
+
 /**
  * Runs a command with time + memory limits and returns a structured result.
  *
@@ -55,18 +65,30 @@ export const runInSandbox = ({
     if (isWindows) {
       child = spawn(command, args, { cwd, env: childEnv });
     } else {
-      // ulimit -t is CPU seconds; ulimit -v is virtual memory in KB.
+      // ulimit -t is CPU seconds; ulimit -v is virtual memory in KB; ulimit -f is
+      // the max file size (512-byte blocks) the process may write.
       const cpuSeconds = Math.ceil(timeout / 1000) + 1;
       const quoted = [command, ...args]
         .map((a) => `'${String(a).replace(/'/g, "'\\''")}'`)
         .join(" ");
-      const limits = [`ulimit -t ${cpuSeconds}`];
+      const limits = [
+        `ulimit -t ${cpuSeconds}`,
+        `ulimit -f ${MAX_FILE_SIZE_BLOCKS}`,
+      ];
       if (useAddressSpaceLimit) {
         const memKb = Math.max(memoryLimitMb, 32) * 1024;
         limits.push(`ulimit -v ${memKb}`);
       }
       const wrapped = `${limits.join("; ")}; exec ${quoted}`;
-      child = spawn("sh", ["-c", wrapped], { cwd, env: childEnv });
+
+      // Drop to the unprivileged sandbox user so submitted code can't touch the
+      // container filesystem or run as root. Requires the server to be root.
+      const spawnOpts = { cwd, env: childEnv };
+      if (SANDBOX_UID != null) {
+        spawnOpts.uid = SANDBOX_UID;
+        if (SANDBOX_GID != null) spawnOpts.gid = SANDBOX_GID;
+      }
+      child = spawn("sh", ["-c", wrapped], spawnOpts);
     }
 
     let output = "";

@@ -20,8 +20,12 @@ const cases = [
   { lang: "py",   want: "accepted", tests: sumTests, code: `a,b=map(int,input().split())\nprint(a+b)` },
   { lang: "js",   want: "accepted", tests: sumTests, code: `const [a,b]=input.split(/\\s+/).map(Number);\nconsole.log(a+b);` },
   { lang: "java", want: "accepted", tests: sumTests, code: `import java.util.*;\npublic class Main{public static void main(String[] x){Scanner s=new Scanner(System.in);System.out.println(s.nextInt()+s.nextInt());}}` },
-  { lang: "go",   want: "accepted", tests: sumTests, code: `package main\nimport "fmt"\nfunc main(){var a,b int;fmt.Scan(&a,&b);fmt.Println(a+b)}` },
-  { lang: "rust", want: "accepted", tests: sumTests, code: `use std::io::*;\nfn main(){let mut s=String::new();stdin().read_to_string(&mut s).unwrap();let v:Vec<i64>=s.split_whitespace().map(|x|x.parse().unwrap()).collect();println!("{}",v[0]+v[1]);}` },
+  // go/rust are gated off in the prod image (1GB host). Set TEST_GO_RUST=1 to test
+  // them after restoring the toolchains in the Dockerfile.
+  ...(process.env.TEST_GO_RUST ? [
+    { lang: "go",   want: "accepted", tests: sumTests, code: `package main\nimport "fmt"\nfunc main(){var a,b int;fmt.Scan(&a,&b);fmt.Println(a+b)}` },
+    { lang: "rust", want: "accepted", tests: sumTests, code: `use std::io::*;\nfn main(){let mut s=String::new();stdin().read_to_string(&mut s).unwrap();let v:Vec<i64>=s.split_whitespace().map(|x|x.parse().unwrap()).collect();println!("{}",v[0]+v[1]);}` },
+  ] : []),
   // Isolated-source error paths:
   { lang: "java", want: "runtime_error", tests: [{ input: "1 0\n", expectedOutput: "x" }], code: `public class Main{public static void main(String[] a){int[] z=new int[1];System.out.println(z[5]);}}` },
   { lang: "java", want: "compilation_error", tests: [{ input: "", expectedOutput: "" }], code: `public class Main{public static void main(String[] a){ this is not valid java }}` },

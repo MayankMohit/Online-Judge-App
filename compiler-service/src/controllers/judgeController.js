@@ -1,7 +1,7 @@
 import path from "path";
-import { existsSync, mkdirSync, unlink } from "fs";
+import { existsSync, mkdirSync, unlink, rm } from "fs";
 import { resolveLanguage } from "../languages/index.js";
-import { generateFile } from "../utils/generateFile.js";
+import { generateFile, generateIsolatedFile } from "../utils/generateFile.js";
 import { compileSource } from "../utils/compile.js";
 import { runInSandbox, Status } from "../utils/sandbox.js";
 import { compareOutput } from "../comparators/index.js";
@@ -46,6 +46,29 @@ const scrubPaths = (message, srcPath, artifactPath, extension) => {
  */
 const prepareExecutable = async (langConfig, code) => {
   const finalCode = langConfig.prepare ? langConfig.prepare(code) : code;
+
+  // Isolated-source languages (e.g. Java) live in their own directory under a
+  // fixed filename; the compiled output stays in that directory and `execTarget`
+  // is the directory itself (used as the classpath / working root).
+  if (langConfig.isolatedSource) {
+    const { filePath: srcPath, dir } = generateIsolatedFile(
+      langConfig.sourceName,
+      langConfig.extension,
+      finalCode
+    );
+    const cleanup = () => rm(dir, { recursive: true, force: true }, () => {});
+
+    let compile = { success: true, error: null, warnings: null };
+    if (langConfig.needsCompile) {
+      compile = await compileSource(langConfig.compile(srcPath));
+      if (!compile.success) {
+        cleanup();
+        return { ok: false, compile, execTarget: null, cleanup: () => {} };
+      }
+    }
+    return { ok: true, compile, execTarget: dir, srcPath, artifactPath: null, cleanup };
+  }
+
   const srcPath = generateFile(langConfig.extension, finalCode);
   const jobId = path.basename(srcPath).split(".")[0];
 

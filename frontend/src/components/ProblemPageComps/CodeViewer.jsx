@@ -4,6 +4,7 @@ import { EditorState } from "@codemirror/state";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
 import { javascript } from "@codemirror/lang-javascript";
+import { java } from "@codemirror/lang-java";
 import { editorExtensions } from "./editorTheme";
 
 const languageExtension = (language) => {
@@ -17,6 +18,8 @@ const languageExtension = (language) => {
     case "js":
     case "javascript":
       return [javascript()];
+    case "java":
+      return [java()];
     default:
       return [];
   }

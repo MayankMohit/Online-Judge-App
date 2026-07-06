@@ -3,6 +3,7 @@ import { EditorView } from "@codemirror/view";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
 import { javascript } from "@codemirror/lang-javascript";
+import { java } from "@codemirror/lang-java";
 import { ArrowLeft, CheckCheck, Play, Send } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,6 +23,8 @@ const languageExtension = (language) => {
     case "js":
     case "javascript":
       return [javascript()];
+    case "java":
+      return [java()];
     default:
       return [];
   }
@@ -92,12 +95,15 @@ const CodeEditorPanel = ({
         onChange={(e) => setLanguage(e.target.value)}
       >
         {Object.keys(languageBoilerplates).map((lang) => (
-          <option key={lang} value={lang} disabled={lang === "js" || lang === "javascript"}>
-            {lang.charAt(0).toUpperCase() + lang.slice(1)}
+          <option
+            key={lang}
+            value={lang}
+            // go/rust toolchains omitted from the image (1GB host); rest enabled.
+            disabled={["go", "rust"].includes(lang)}
+          >
+            {lang === "cpp" ? "C++" : lang.charAt(0).toUpperCase() + lang.slice(1)}
           </option>
         ))}
-        <option value="java" disabled>Java</option>
-        <option value="go" disabled>Go</option>
       </select>
 
       <div className="flex-1 flex items-center">

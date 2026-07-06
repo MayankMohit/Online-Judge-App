@@ -140,7 +140,7 @@ const ProblemDetailsPage = () => {
     }, 2000);
   };
 
-  const backendLanguageMap = { python: "py", javascript: "js", cpp: "cpp", c: "c" };
+  const backendLanguageMap = { python: "py", javascript: "js", cpp: "cpp", c: "c", java: "java", go: "go", rust: "rust" };
 
   const handleRun = () => {
     if (isGuest) return;

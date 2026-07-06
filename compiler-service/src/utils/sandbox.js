@@ -43,9 +43,17 @@ export const runInSandbox = ({
   return new Promise((resolve) => {
     const startTime = Date.now();
 
+    // Force plain, non-ANSI output regardless of the parent environment. Without
+    // this, Node colorizes non-string console.log args (e.g. console.log(42) ->
+    // "\x1b[33m42\x1b[39m") whenever FORCE_COLOR is inherited, which silently
+    // breaks output comparison. NO_COLOR is the cross-tool standard; dropping
+    // FORCE_COLOR ensures it isn't overridden.
+    const childEnv = { ...process.env, NO_COLOR: "1" };
+    delete childEnv.FORCE_COLOR;
+
     let child;
     if (isWindows) {
-      child = spawn(command, args, { cwd });
+      child = spawn(command, args, { cwd, env: childEnv });
     } else {
       // ulimit -t is CPU seconds; ulimit -v is virtual memory in KB.
       const cpuSeconds = Math.ceil(timeout / 1000) + 1;
@@ -58,7 +66,7 @@ export const runInSandbox = ({
         limits.push(`ulimit -v ${memKb}`);
       }
       const wrapped = `${limits.join("; ")}; exec ${quoted}`;
-      child = spawn("sh", ["-c", wrapped], { cwd });
+      child = spawn("sh", ["-c", wrapped], { cwd, env: childEnv });
     }
 
     let output = "";

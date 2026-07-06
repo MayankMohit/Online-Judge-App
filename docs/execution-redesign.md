@@ -281,15 +281,45 @@ Files: `compiler-service/src/comparators/*`,
 `compiler-service/src/drivers/<lang>/*`, `backend/models/problemModel.js`,
 admin problem form + `ProblemDescriptionPanel`/editor starter-stub wiring.
 
-### Phase 5 — More languages + reliability (~2 days, easy after Phase 1)
-- [ ] Add **Java, Go, Rust, C#, TypeScript, Kotlin** as registry entries + Docker
-      toolchain layers.
-- [ ] Harden existing: `-O2 -std=c++17 -lm`, `-Wall` as **warnings not errors**,
-      pin interpreter versions, replace the Node stdin wrapper, per-language
-      error cleaners. Update `submissionModel.language` enum + frontend language list.
+### Phase 5 — More languages + reliability — ✅ DONE (Java/Go/Rust) 2026-07-06
+- [x] Added **Java, Go, Rust** as registry entries + Docker toolchain layers
+      (`openjdk21`, `go`, `rust`). Java (JVM) and Go both reserve large virtual
+      memory → `addressSpaceLimit:false` (Java capped via `-Xmx`, like Node); Rust is
+      a native binary → `ulimit -v` applies. Go/Rust compile to a single binary and
+      reuse the existing artifact model; Java uses a new **isolated-source** path.
+- [x] **Isolated-source support** (`generateIsolatedFile` + `isolatedSource` flag):
+      Java source is written as `Main.java` in a per-job directory so concurrent
+      jobs don't clobber each other's `Main.class`; `execTarget` is the directory,
+      run = `java -cp <dir> Main`. Verified collision-free under 4-way concurrency.
+- [x] `submissionModel.language` enum extended (`java`,`go`,`rust`); frontend
+      selector now renders them from `languageBoilerplates` (starter stubs added),
+      `backendLanguageMap` passes the ids through, C++ label fixed to "C++".
+- [x] Existing C/C++ already hardened in Phase 0/1 (`-O2 -std=c++17 -lm`, warnings
+      ≠ errors) and Phase-5-adjacent PCH work (sub-second C++ compiles).
 
-Files: `compiler-service/src/languages/*`, `compiler-service/Dockerfile`,
-`submissionModel.js`, frontend language selector.
+**Verified in-container** (`scripts/test-languages.mjs`): all 7 languages
+(cpp/c/py/js/java/go/rust) judge a stdin "sum" program → accepted; Java isolated
+path yields correct `runtime_error` and `compilation_error`; 4-way Java concurrency
+collision-free; timings healthy (rust ~170ms, go ~300ms, java ~650ms wall incl compile).
+
+**Gated off in prod (2026-07-06):** Go + Rust toolchains removed from the Docker
+image and disabled in the UI selector to keep the image small on the **1GB-RAM host**.
+Registry entries + isolated-source machinery remain; re-enable by restoring the
+Dockerfile `go rust` layer (+ Go env) and dropping them from the selector's disabled
+list. **Java stays enabled.**
+
+**Deferred (heavier musl toolchains / image bloat):** C#, Kotlin, TypeScript.
+TypeScript needs a transpile step (esbuild/tsc); C# (`dotnet`) and Kotlin (`kotlinc`)
+add large layers and slow startup. Add later as demand warrants — the registry +
+isolated-source machinery already supports whatever plumbing they need.
+
+Files: `compiler-service/src/languages/index.js`,
+`compiler-service/src/utils/generateFile.js`,
+`compiler-service/src/controllers/judgeController.js`,
+`compiler-service/Dockerfile`, `backend/models/submissionModel.js`,
+`frontend/src/components/ProblemPageComps/{LanguageBoilerplates,CodeEditorPanel}.jsx`,
+`frontend/src/pages/mainPages/ProblemDetailsPage.jsx`,
+`compiler-service/scripts/test-languages.mjs`.
 
 ### Phase 6 — Admin test-case validation ✅ DONE (2026-07-06)
 - [x] Added **reference solution** (`referenceSolution {language, code}`),

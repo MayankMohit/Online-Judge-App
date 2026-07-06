@@ -7,7 +7,14 @@ RUN apk update && apk add --no-cache \
   make \
   libc6-compat \
   python3 \
-  py3-pip
+  py3-pip \
+  openjdk21
+# Go + Rust toolchains are intentionally omitted to keep the image small on the
+# 1GB-RAM host. To re-enable: add `go rust` above and restore the Go env vars
+# (CGO_ENABLED=0, GOCACHE=/tmp/go-build, GOPATH=/tmp/go). The language registry
+# entries for go/rust already exist; only the toolchain + UI toggle are gated.
+
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
 
 # Precompile <bits/stdc++.h> into a PCH so C++ compiles don't re-parse the giant
 # header every time. Flags MUST match the judge's compile flags (-O2 -std=c++17)

@@ -19,3 +19,20 @@ export const generateFile = (extension, code) => {
   writeFileSync(filePath, code);
   return filePath;
 };
+
+/**
+ * Writes source into its own per-job directory under a FIXED filename.
+ * Needed for languages whose source file must be named after a class
+ * (e.g. Java's `Main.java`) — the per-job dir avoids `Main.class` collisions
+ * across concurrent judges.
+ *
+ * @returns {{ filePath, dir }}
+ */
+export const generateIsolatedFile = (sourceName, extension, code) => {
+  const jobId = uuid();
+  const dir = path.join(codesDir, jobId);
+  mkdirSync(dir, { recursive: true });
+  const filePath = path.join(dir, `${sourceName}.${extension}`);
+  writeFileSync(filePath, code);
+  return { filePath, dir };
+};

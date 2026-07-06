@@ -74,6 +74,60 @@ const languages = {
         : [target],
     }),
   },
+
+  java: {
+    id: "java",
+    aliases: ["java"],
+    extension: "java",
+    needsCompile: true,
+    // JVM reserves large virtual memory; ulimit -v breaks it. Cap the heap via -Xmx.
+    addressSpaceLimit: false,
+    // The public class must be `Main`, and the file must be named Main.java in its
+    // own directory (so concurrent jobs don't clobber each other's Main.class).
+    isolatedSource: true,
+    sourceName: "Main",
+    compile: (src) => ({ command: "javac", args: [src] }), // -> Main.class beside src
+    // For isolated languages `target` is the working directory (the classpath root).
+    run: (dir, { memoryLimitMb } = {}) => ({
+      command: "java",
+      args: [
+        ...(memoryLimitMb ? [`-Xmx${memoryLimitMb}m`] : []),
+        "-XX:+UseSerialGC", // fewer JIT/GC threads => cheaper under CPU-time limits
+        "-cp",
+        dir,
+        "Main",
+      ],
+    }),
+  },
+
+  go: {
+    id: "go",
+    aliases: ["go", "golang"],
+    extension: "go",
+    needsCompile: true,
+    // Go's runtime reserves a large virtual address space; ulimit -v breaks it.
+    addressSpaceLimit: false,
+    compile: (src, artifact) => ({
+      command: "go",
+      args: ["build", "-o", artifact, src],
+    }),
+    artifact: (jobId) => `${jobId}${isWindows ? ".exe" : ".out"}`,
+    run: (target) => ({ command: target, args: [] }),
+  },
+
+  rust: {
+    id: "rust",
+    aliases: ["rust", "rs"],
+    extension: "rs",
+    needsCompile: true,
+    addressSpaceLimit: true, // native binary — ulimit -v is a safe memory cap
+    compile: (src, artifact) => ({
+      command: "rustc",
+      args: [src, "-O", "-o", artifact],
+    }),
+    artifact: (jobId) => `${jobId}${isWindows ? ".exe" : ".out"}`,
+    run: (target) => ({ command: target, args: [] }),
+  },
 };
 
 // Build an alias -> config lookup table.

@@ -95,13 +95,12 @@ services:
     pids_limit: 256
     mem_limit: 512m
     mem_reservation: 256m
-    # Transient per-job scratch on tmpfs (RAM): faster I/O, auto-cleared, no disk
-    # wear. size= is a cap, not a reservation — actual use is a few MB (source is
-    # KB, artifacts a few MB). The compile cache stays on disk (/app/temp/cache) so
-    # it survives container restarts.
-    tmpfs:
-      - /app/temp/codes:size=64m
-      - /app/temp/outputs:size=64m
+    # NOTE: /app/temp is deliberately kept on the container's disk layer, NOT tmpfs.
+    # Compiled artifacts must be (a) executable — Docker mounts tmpfs `noexec` by
+    # default, so C/C++/Go binaries there fail with "Permission denied" — and (b) on
+    # the same filesystem as the on-disk compile cache (/app/temp/cache) so they can
+    # be atomically renamed into it (a cross-device rename fails with EXDEV, which
+    # silently defeats the cache). tmpfs would also consume the scarce 1GB of RAM.
     # judge-net is internal (no internet egress) and does NOT include redis/mongo,
     # so submitted code can't phone home or reach the unauthenticated queue.
     networks:

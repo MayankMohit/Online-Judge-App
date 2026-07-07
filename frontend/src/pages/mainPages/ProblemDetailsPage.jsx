@@ -12,6 +12,7 @@ import { fetchSavedCode, saveCodeToDB, updateCodeLocally, updateMockCodeLocally 
 import { fetchMyMock, clearMock } from "../../features/contests/contestMockSlice";
 
 import { languageBoilerplates } from "../../components/ProblemPageComps/LanguageBoilerplates";
+import { getPreferredLanguage, savePreferredLanguage } from "../../utils/languagePreference";
 import MobileProblemView from "../../components/ProblemPageComps/MobileProblemView";
 import DesktopProblemView from "../../components/ProblemPageComps/DesktopProblemView";
 import ContestBanner from "../../components/ContestComps/ContestBanner";
@@ -35,7 +36,8 @@ const ProblemDetailsPage = () => {
   const saveTimeout = useRef(null);
 
   const [activeTab, setActiveTab] = useState("description");
-  const [language, setLanguage] = useState("cpp");
+  // Start from the user's remembered language (per-device); falls back to C++.
+  const [language, setLanguage] = useState(getPreferredLanguage);
   const [isOutputMode, setIsOutputMode] = useState(false);
   const [testCases, setTestCases] = useState([{ id: 1, label: "Case 1", input: "" }]);
   const [activeTestCaseIdx, setActiveTestCaseIdx] = useState(0);
@@ -69,6 +71,11 @@ const ProblemDetailsPage = () => {
     }
     return () => dispatch(clearProblemSubmissions());
   }, [dispatch, number, isGuest]);
+
+  // Remember the user's language choice so it carries to the next problem/session.
+  useEffect(() => {
+    savePreferredLanguage(language);
+  }, [language]);
 
   const isSolved = isGuest ? false : userSubmissions.some((sub) => sub.verdict === "accepted");
 

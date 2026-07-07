@@ -13,9 +13,9 @@ import {
 } from "../controllers/submissionController.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
-import { limiter } from "../middlewares/rateLimiter.js";
+import { judgeLimiter } from "../middlewares/rateLimiter.js";
 
-router.post("/", verifyToken, limiter, createSubmission);
+router.post("/", verifyToken, judgeLimiter, createSubmission);
 
 router.get("/", verifyToken, isAdmin, getAllSubmissions);
 

@@ -23,6 +23,7 @@ import contestRoute from "./routes/contestRouter.js";
 import { startRenumberJob } from "./jobs/renumberJob.js";
 import { startJudgeWorker } from "./workers/judgeWorker.js";
 import { sanitizeBody } from "./middlewares/sanitize.js";
+import { apiLimiter } from "./middlewares/rateLimiter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -46,6 +47,11 @@ const startServer = async () => {
     app.use(cookieParser());
     app.use(express.json({ limit: "1mb" })); // cap request bodies (code + test cases)
     app.use(sanitizeBody); // strip NoSQL operator injection from request bodies
+
+    // Global anti-flood backstop for every /api route (the expensive endpoints keep
+    // their own tighter per-user limiters). Applied after trust proxy so it keys on
+    // the real client IP.
+    app.use("/api", apiLimiter);
 
     // Routes
     app.use("/api/auth", authRoute);

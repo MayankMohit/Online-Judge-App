@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+# Runtime scratch: per-job source/artifacts and the content-addressed compile cache
+temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

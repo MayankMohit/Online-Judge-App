@@ -1,21 +1,75 @@
 import path from "path";
-import { existsSync, mkdirSync, unlink, rm } from "fs";
+import { existsSync, unlink, rm, renameSync, utimesSync } from "fs";
 import { resolveLanguage } from "../languages/index.js";
 import { generateFile, generateIsolatedFile } from "../utils/generateFile.js";
 import { compileSource } from "../utils/compile.js";
 import { runInSandbox, Status } from "../utils/sandbox.js";
 import { compareOutput } from "../comparators/index.js";
 import { mapWithConcurrency } from "../utils/pool.js";
+import { outputsDir } from "../utils/paths.js";
+import {
+  compileFlagSignature,
+  computeCacheKey,
+  cachedArtifactPath,
+  cachedDirPath,
+} from "../utils/compileCache.js";
 
-const outputDir = path.join(path.resolve(), "temp", "outputs");
-if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
+const outputDir = outputsDir;
 
 const RUN_CONCURRENCY = Number(process.env.RUN_CONCURRENCY) || 4;
 const DEFAULT_TIME_LIMIT_MS = 3000;
 const DEFAULT_MEMORY_LIMIT_MB = 256;
+// Hard ceilings so a mis-set per-problem limit can't starve the VM.
+const MAX_TIME_LIMIT_MS = Number(process.env.MAX_TIME_LIMIT_MS) || 10000;
+const MAX_MEMORY_LIMIT_MB = Number(process.env.MAX_MEMORY_LIMIT_MB) || 512;
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
 const safeUnlink = (file) => {
   if (file) unlink(file, () => {});
+};
+
+// Mark a cache entry as recently used so the janitor's LRU trim doesn't evict a
+// hot artifact out from under a running job.
+const touchCache = (p) => {
+  try {
+    const now = new Date();
+    utimesSync(p, now, now);
+  } catch {
+    // best-effort; a missing/locked entry just won't be touched.
+  }
+};
+
+// Atomically move a freshly compiled file artifact into the cache. On POSIX a
+// rename over an existing file is an atomic replace (identical content, same key),
+// so concurrent misses are safe. If the move fails and no cached copy exists, fall
+// back to running the temp artifact directly.
+const promoteFileToCache = (tmp, dest) => {
+  try {
+    renameSync(tmp, dest);
+    return dest;
+  } catch {
+    if (existsSync(dest)) {
+      safeUnlink(tmp);
+      return dest;
+    }
+    return tmp;
+  }
+};
+
+// Same, for isolated-source languages whose artifact is a whole directory. rename
+// onto an existing non-empty dir throws, so on a race we drop ours and use the
+// entry that won.
+const promoteDirToCache = (tmpDir, destDir) => {
+  try {
+    renameSync(tmpDir, destDir);
+    return destDir;
+  } catch {
+    if (existsSync(destDir)) {
+      rm(tmpDir, { recursive: true, force: true }, () => {});
+      return destDir;
+    }
+    return tmpDir;
+  }
 };
 
 /**
@@ -51,51 +105,105 @@ const prepareExecutable = async (langConfig, code) => {
   // fixed filename; the compiled output stays in that directory and `execTarget`
   // is the directory itself (used as the classpath / working root).
   if (langConfig.isolatedSource) {
+    if (langConfig.needsCompile) {
+      // Compile cache: key on language + flags + source. A hit runs the cached
+      // classes directly with no compile step.
+      const key = computeCacheKey(
+        langConfig.id,
+        compileFlagSignature(langConfig),
+        finalCode
+      );
+      const cachedDir = cachedDirPath(key);
+      if (existsSync(cachedDir)) {
+        touchCache(cachedDir);
+        return {
+          ok: true,
+          compile: { success: true, error: null, warnings: null, cached: true },
+          execTarget: cachedDir,
+          srcPath: null,
+          artifactPath: null,
+          cleanup: () => {},
+        };
+      }
+
+      // Miss: compile in a per-job dir, then promote the whole dir into the cache.
+      const { filePath: srcPath, dir } = generateIsolatedFile(
+        langConfig.sourceName,
+        langConfig.extension,
+        finalCode
+      );
+      const compile = await compileSource(langConfig.compile(srcPath));
+      if (!compile.success) {
+        rm(dir, { recursive: true, force: true }, () => {});
+        return { ok: false, compile, execTarget: null, cleanup: () => {} };
+      }
+      const execTarget = promoteDirToCache(dir, cachedDir);
+      return { ok: true, compile, execTarget, srcPath: null, artifactPath: null, cleanup: () => {} };
+    }
+
+    // Non-compiled isolated language (none today) — no cache, clean up inline.
     const { filePath: srcPath, dir } = generateIsolatedFile(
       langConfig.sourceName,
       langConfig.extension,
       finalCode
     );
-    const cleanup = () => rm(dir, { recursive: true, force: true }, () => {});
-
-    let compile = { success: true, error: null, warnings: null };
-    if (langConfig.needsCompile) {
-      compile = await compileSource(langConfig.compile(srcPath));
-      if (!compile.success) {
-        cleanup();
-        return { ok: false, compile, execTarget: null, cleanup: () => {} };
-      }
-    }
-    return { ok: true, compile, execTarget: dir, srcPath, artifactPath: null, cleanup };
+    return {
+      ok: true,
+      compile: { success: true, error: null, warnings: null },
+      execTarget: dir,
+      srcPath,
+      artifactPath: null,
+      cleanup: () => rm(dir, { recursive: true, force: true }, () => {}),
+    };
   }
 
-  const srcPath = generateFile(langConfig.extension, finalCode);
-  const jobId = path.basename(srcPath).split(".")[0];
-
-  const cleanupFiles = [srcPath];
-  const cleanup = () => cleanupFiles.forEach(safeUnlink);
-
+  // Interpreted single-file languages (Python, JS): keep the source around so
+  // stack traces can be path-scrubbed, and clean it up after the run.
   if (!langConfig.needsCompile) {
+    const srcPath = generateFile(langConfig.extension, finalCode);
     return {
       ok: true,
       compile: { success: true, error: null, warnings: null },
       execTarget: srcPath,
       srcPath,
       artifactPath: null,
-      cleanup,
+      cleanup: () => safeUnlink(srcPath),
     };
   }
 
-  const artifactPath = path.join(outputDir, langConfig.artifact(jobId));
-  cleanupFiles.push(artifactPath);
-
-  const compile = await compileSource(langConfig.compile(srcPath, artifactPath));
-  if (!compile.success) {
-    cleanup();
-    return { ok: false, compile, execTarget: null, cleanup: () => {} };
+  // Compiled single-file languages (C, C++, Go, Rust) — content-addressed cache.
+  const ext = path.extname(langConfig.artifact("x")).replace(/^\./, "");
+  const key = computeCacheKey(
+    langConfig.id,
+    compileFlagSignature(langConfig),
+    finalCode
+  );
+  const cachedArtifact = cachedArtifactPath(key, ext);
+  if (existsSync(cachedArtifact)) {
+    touchCache(cachedArtifact);
+    return {
+      ok: true,
+      compile: { success: true, error: null, warnings: null, cached: true },
+      execTarget: cachedArtifact,
+      srcPath: null,
+      artifactPath: null,
+      cleanup: () => {},
+    };
   }
 
-  return { ok: true, compile, execTarget: artifactPath, srcPath, artifactPath, cleanup };
+  // Miss: write source, compile to a temp artifact, promote it into the cache.
+  const srcPath = generateFile(langConfig.extension, finalCode);
+  const jobId = path.basename(srcPath).split(".")[0];
+  const tmpArtifact = path.join(outputDir, langConfig.artifact(jobId));
+  const compile = await compileSource(langConfig.compile(srcPath, tmpArtifact));
+  if (!compile.success) {
+    safeUnlink(srcPath);
+    safeUnlink(tmpArtifact);
+    return { ok: false, compile, execTarget: null, cleanup: () => {} };
+  }
+  const execTarget = promoteFileToCache(tmpArtifact, cachedArtifact);
+  safeUnlink(srcPath); // source no longer needed once compiled
+  return { ok: true, compile, execTarget, srcPath: null, artifactPath: null, cleanup: () => {} };
 };
 
 /**
@@ -128,8 +236,16 @@ export const judgeRoute = async (req, res) => {
     return res.status(400).json({ success: false, message: "Unsupported language" });
   }
 
-  const timeLimitMs = Number(limits.timeLimitMs) || DEFAULT_TIME_LIMIT_MS;
-  const memoryLimitMb = Number(limits.memoryLimitMb) || DEFAULT_MEMORY_LIMIT_MB;
+  const timeLimitMs = clamp(
+    Number(limits.timeLimitMs) || DEFAULT_TIME_LIMIT_MS,
+    100,
+    MAX_TIME_LIMIT_MS
+  );
+  const memoryLimitMb = clamp(
+    Number(limits.memoryLimitMb) || DEFAULT_MEMORY_LIMIT_MB,
+    16,
+    MAX_MEMORY_LIMIT_MB
+  );
 
   try {
     const prepared = await prepareExecutable(langConfig, code);
@@ -174,13 +290,15 @@ export const judgeRoute = async (req, res) => {
 
     let results;
     if (stopOnFirstFailure) {
-      // Sequential-with-early-exit keeps failures cheap; the common accepted path
-      // still benefits from a single compile. Parallel mode below for full runs.
+      // Run in bounded-concurrency batches and stop after the first batch that
+      // contains a failure. This keeps wrong answers cheap (early exit) while the
+      // common accepted path — where every case passes — runs in parallel.
       results = [];
-      for (const tc of testCases) {
-        const r = await runOne(tc);
-        results.push(r);
-        if (!r.passed) break;
+      for (let i = 0; i < testCases.length; i += RUN_CONCURRENCY) {
+        const batch = testCases.slice(i, i + RUN_CONCURRENCY);
+        const batchResults = await mapWithConcurrency(batch, RUN_CONCURRENCY, runOne);
+        results.push(...batchResults);
+        if (batchResults.some((r) => !r.passed)) break;
       }
     } else {
       results = await mapWithConcurrency(testCases, RUN_CONCURRENCY, runOne);
@@ -248,8 +366,16 @@ export const runRoute = async (req, res) => {
     return res.status(400).json({ success: false, message: "Unsupported language" });
   }
 
-  const timeLimitMs = Number(limits.timeLimitMs) || DEFAULT_TIME_LIMIT_MS;
-  const memoryLimitMb = Number(limits.memoryLimitMb) || DEFAULT_MEMORY_LIMIT_MB;
+  const timeLimitMs = clamp(
+    Number(limits.timeLimitMs) || DEFAULT_TIME_LIMIT_MS,
+    100,
+    MAX_TIME_LIMIT_MS
+  );
+  const memoryLimitMb = clamp(
+    Number(limits.memoryLimitMb) || DEFAULT_MEMORY_LIMIT_MB,
+    16,
+    MAX_MEMORY_LIMIT_MB
+  );
 
   try {
     const prepared = await prepareExecutable(langConfig, code);

@@ -93,6 +93,9 @@ const languages = {
       args: [
         ...(memoryLimitMb ? [`-Xmx${memoryLimitMb}m`] : []),
         "-XX:+UseSerialGC", // fewer JIT/GC threads => cheaper under CPU-time limits
+        "-XX:TieredStopAtLevel=1", // skip the C2 JIT: much faster startup for short programs
+        "-XX:-UsePerfData", // don't create the hsperfdata file (startup win; the
+                            // locked-down sandbox can't write it anyway)
         "-cp",
         dir,
         "Main",

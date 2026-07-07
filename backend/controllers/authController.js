@@ -118,10 +118,14 @@ export const logout = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
+    // Always return the same message so this endpoint can't be used to enumerate
+    // which emails have accounts.
+    const GENERIC_MESSAGE =
+        "If an account exists for that email, a password reset link has been sent.";
     try {
         const user = await User.findOne({ email })
         if (!user) {
-            return res.status(400).json({success: false, message: "No Existing User, create a new account."})
+            return res.status(200).json({ status: true, message: GENERIC_MESSAGE });
         }
         const resetToken = crypto.randomBytes(20).toString("hex");
         const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
@@ -131,7 +135,7 @@ export const forgotPassword = async (req, res) => {
         await user.save();
 
         await sendPasswordResetEmail(user.email, user.name, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
-        res.status(200).json({ status: true, message: `Password Reset link sent to your email` });
+        res.status(200).json({ status: true, message: GENERIC_MESSAGE });
 
     } catch (error) {
         res.status(400).json({ status: false, message: error.message });

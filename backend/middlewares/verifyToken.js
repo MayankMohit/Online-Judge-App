@@ -11,6 +11,7 @@ export const verifyToken = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
-        res.status(500).json({ success: false, message: "Server Error" });
+        // Malformed/expired token — tell the client to re-authenticate (not a 500).
+        res.status(401).json({ success: false, message: "Unauthorized: Invalid or expired token" });
     }
 }

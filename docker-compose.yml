@@ -1,3 +1,10 @@
+# Cap container log growth so json-file logs can't fill the small VM disk.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   frontend:
     build:
@@ -16,6 +23,7 @@ services:
       - mern-net
     env_file:
       - ./frontend/.env
+    logging: *default-logging
 
   backend:
     build:
@@ -28,31 +36,46 @@ services:
       - ./backend/.env
     environment:
       # Enables background judging via BullMQ. Remove to fall back to synchronous judging.
-      - REDIS_URL=redis://redis:6379
+      # Includes the redis password when REDIS_PASSWORD is set (empty => no auth).
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      # Reach the compiler over the isolated judge-net by service name. Pinned here
+      # so it's correct regardless of backend/.env.
+      - COMPILER_URL=http://compiler-service:5001
+      # Enables the Secure cookie flag and production error handling.
+      - NODE_ENV=production
     depends_on:
       compiler-service:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - mern-net
+      - judge-net
+    logging: *default-logging
 
   redis:
-    image: redis:7-alpine
+    # Pinned by digest for reproducible builds. Bump periodically for security updates.
+    image: redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
     container_name: redis
-    command: ["redis-server", "--appendonly", "yes"]
+    # requirepass activates when REDIS_PASSWORD is set in the root .env; empty =>
+    # no auth (unchanged). Defense-in-depth behind the already-isolated network.
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-}"]
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     volumes:
       - redis-data:/data
     restart: unless-stopped
+    # Ping with the password if set, otherwise fall back to unauthenticated ping.
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" --no-auth-warning ping 2>/dev/null | grep -q PONG || redis-cli ping 2>/dev/null | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 5
       start_period: 5s
     networks:
       - mern-net
+    logging: *default-logging
 
   compiler-service:
     build:
@@ -61,13 +84,44 @@ services:
     container_name: compiler-service
     env_file:
       - ./compiler-service/.env
+    environment:
+      # Two concurrent runs fit the 1GB VM's memory budget under mem_limit below.
+      - RUN_CONCURRENCY=2
     restart: unless-stopped
+    # Host protection for untrusted submitted code:
+    #  - pids_limit caps total processes so a fork bomb can't exhaust host PIDs.
+    #  - mem_limit is the ONLY hard memory cap for JVM/Node/Go runs (ulimit -v can't
+    #    be used for them); it also backstops a memory bomb in any language.
+    pids_limit: 256
+    mem_limit: 512m
+    mem_reservation: 256m
+    # Transient per-job scratch on tmpfs (RAM): faster I/O, auto-cleared, no disk
+    # wear. size= is a cap, not a reservation — actual use is a few MB (source is
+    # KB, artifacts a few MB). The compile cache stays on disk (/app/temp/cache) so
+    # it survives container restarts.
+    tmpfs:
+      - /app/temp/codes:size=64m
+      - /app/temp/outputs:size=64m
+    # judge-net is internal (no internet egress) and does NOT include redis/mongo,
+    # so submitted code can't phone home or reach the unauthenticated queue.
     networks:
-      - mern-net
+      - judge-net
+    logging: *default-logging
+    # Gates the backend's startup (depends_on: service_healthy) so judges aren't
+    # sent before the compiler is accepting requests.
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 networks:
   mern-net:
     driver: bridge
+  judge-net:
+    driver: bridge
+    internal: true
 
 volumes:
   redis-data:

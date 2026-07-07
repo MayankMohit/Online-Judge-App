@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
+import { compilerClient } from "../utils/compilerClient.js";
 
 export const runCode = async (req, res) => {
   const { code, language, input = "" } = req.body;
@@ -13,11 +11,11 @@ export const runCode = async (req, res) => {
   }
 
   try {
-    const compilerResponse = await axios.post(`${BASE_URL}/compiler/run/`, {
-      code,
-      language,
-      input,
-    });
+    const compilerResponse = await compilerClient.post(
+      `/compiler/run/`,
+      { code, language, input },
+      { timeout: 30000 } // interactive path — fail fast rather than hang the user
+    );
 
     const { success, output, error, time } = compilerResponse.data;
 

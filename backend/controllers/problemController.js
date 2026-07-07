@@ -9,12 +9,26 @@ import {
 } from "../utils/contestHelpers.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
 import { validateReferenceSolution } from "../services/validationService.js";
+import {
+  getCachedList,
+  setCachedList,
+  invalidateProblemCaches,
+} from "../utils/caches.js";
+
+const ALL_PROBLEMS_KEY = "all-problems";
+const UNIQUE_TAGS_KEY = "unique-tags";
 
 export const getAllProblems = async (req, res) => {
   try {
+    const cached = getCachedList(ALL_PROBLEMS_KEY);
+    if (cached) {
+      return res.status(200).json({ success: true, problems: cached });
+    }
     const problems = await Problem.find({ isPublic: { $ne: false } })
-      .select("-testCases")
-      .sort({ problemNumber: 1 });
+      .select("-testCases -referenceSolution")
+      .sort({ problemNumber: 1 })
+      .lean();
+    setCachedList(ALL_PROBLEMS_KEY, problems);
     res.status(200).json({ success: true, problems });
   } catch (error) {
     res
@@ -93,8 +107,11 @@ export const getProblemByNumber = async (req, res) => {
     }
 
     const visibleTestCases = problem.testCases.filter((tc) => !tc.isHidden);
+    const problemObj = problem.toObject();
+    // Never expose the author's trusted solution to solvers.
+    delete problemObj.referenceSolution;
     const problemToSend = {
-      ...problem.toObject(),
+      ...problemObj,
       testCases: visibleTestCases,
     };
 
@@ -219,6 +236,7 @@ export const createProblem = async (req, res) => {
       await contest.save();
     }
 
+    invalidateProblemCaches(problem._id);
     res.status(201).json({ success: true, problem });
   } catch (err) {
     res.status(500).json({
@@ -322,6 +340,7 @@ export const updateProblem = async (req, res) => {
         .json({ success: false, message: "Problem not found" });
     }
 
+    invalidateProblemCaches(req.params.id);
     res.status(200).json({ success: true, problem: updated });
   } catch (err) {
     res
@@ -383,6 +402,7 @@ export const deleteProblem = async (req, res) => {
       );
     }
 
+    invalidateProblemCaches(req.params.id);
     res
       .status(200)
       .json({ success: true, message: "Problem deleted successfully" });
@@ -492,7 +512,12 @@ export const searchProblems = async (req, res) => {
 
 export const getUniqueTags = async (req, res) => {
   try {
+    const cached = getCachedList(UNIQUE_TAGS_KEY);
+    if (cached) {
+      return res.status(200).json({ success: true, tags: cached });
+    }
     const tags = await Problem.distinct("tags", { isPublic: { $ne: false } });
+    setCachedList(UNIQUE_TAGS_KEY, tags);
     res.status(200).json({ success: true, tags });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch tags" });

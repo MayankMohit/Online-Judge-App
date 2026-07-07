@@ -1,12 +1,14 @@
-import axios from "axios";
 import { Problem } from "../models/problemModel.js";
 import { Submission } from "../models/submissionModel.js";
 import { User } from "../models/userModel.js";
 import { Contest } from "../models/contestModel.js";
 import { ContestParticipation } from "../models/contestParticipationModel.js";
 import { MockParticipation } from "../models/mockParticipationModel.js";
-
-const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
+import { compilerClient } from "../utils/compilerClient.js";
+import {
+  getCachedProblemJudge,
+  setCachedProblemJudge,
+} from "../utils/caches.js";
 
 /**
  * Judges an already-persisted submission: compiles+runs it against the problem's
@@ -36,22 +38,45 @@ export const processSubmissionJudgement = async (submissionId) => {
     };
   }
 
-  const problem = await Problem.findById(submission.problem);
-  if (!problem) throw new Error("Problem not found");
+  // Per-problem judging data (test cases + config + limits) is cached in-process
+  // and invalidated on problem edits — avoids a full-document fetch from Atlas on
+  // every submission, which matters most at contest start (many hits on one problem).
+  let judgeData = getCachedProblemJudge(submission.problem);
+  if (!judgeData) {
+    const problem = await Problem.findById(submission.problem).select(
+      "testCases judgeConfig limits"
+    );
+    if (!problem) throw new Error("Problem not found");
+    judgeData = {
+      testCases: (problem.testCases || []).map((tc) => ({
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+      })),
+      judgeConfig: {
+        mode: problem.judgeConfig?.mode,
+        epsilon: problem.judgeConfig?.epsilon,
+      },
+      limits: {
+        timeLimitMs: problem.limits?.timeLimitMs,
+        memoryLimitMb: problem.limits?.memoryLimitMb,
+      },
+    };
+    setCachedProblemJudge(submission.problem, judgeData);
+  }
 
-  const testCases = problem.testCases || [];
+  const testCases = judgeData.testCases;
 
   // Compile once, run every test case in a single call to the compiler service.
-  const { data: judge } = await axios.post(`${BASE_URL}/compiler/judge/`, {
+  const { data: judge } = await compilerClient.post(`/compiler/judge/`, {
     code: submission.code,
     language: submission.language,
     testCases: testCases.map((tc) => ({
       input: tc.input,
       expectedOutput: tc.expectedOutput,
     })),
-    comparisonMode: problem.judgeConfig?.mode || "trimmed",
-    comparisonOptions: { epsilon: problem.judgeConfig?.epsilon },
-    limits: problem.limits || {},
+    comparisonMode: judgeData.judgeConfig?.mode || "trimmed",
+    comparisonOptions: { epsilon: judgeData.judgeConfig?.epsilon },
+    limits: judgeData.limits || {},
   });
 
   const verdict = judge.verdict;

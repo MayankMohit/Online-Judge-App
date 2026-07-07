@@ -1,2 +1,4 @@
 /node_modules/
 /docs/
+# Root env used by docker-compose interpolation (e.g. REDIS_PASSWORD). Never commit.
+.env

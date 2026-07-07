@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const BASE_URL = process.env.COMPILER_URL || "http://localhost:5001";
+import { compilerClient } from "../utils/compilerClient.js";
 
 /**
  * Runs a reference solution against every test case using the compiler's batch
@@ -58,7 +56,7 @@ export const validateReferenceSolution = async ({
     };
   }
 
-  const { data: judge } = await axios.post(`${BASE_URL}/compiler/judge/`, {
+  const { data: judge } = await compilerClient.post(`/compiler/judge/`, {
     code: referenceCode,
     language: referenceLanguage,
     testCases: testCases.map((tc) => ({

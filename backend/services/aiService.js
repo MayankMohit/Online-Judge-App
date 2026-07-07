@@ -1,7 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
+// Per-request timeout so a stalled Gemini call can't hang the handler indefinitely.
+const model = genAI.getGenerativeModel(
+  { model: "gemini-3.1-flash-lite-preview" },
+  { timeout: Number(process.env.AI_TIMEOUT_MS) || 30000 }
+);
 
 // ─── Hint Prompts ────────────────────────────────────────────────────────────
 

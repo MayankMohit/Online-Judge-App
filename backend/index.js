@@ -22,6 +22,7 @@ import aiRoute from "./routes/aiRouter.js";
 import contestRoute from "./routes/contestRouter.js";
 import { startRenumberJob } from "./jobs/renumberJob.js";
 import { startJudgeWorker } from "./workers/judgeWorker.js";
+import { sanitizeBody } from "./middlewares/sanitize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,13 +34,18 @@ const startServer = async () => {
     // await Problem.syncIndexes();
     // console.log("Problem indexes synced");
 
+    // Behind the nginx reverse proxy: trust the first hop so req.ip reflects the
+    // real client (required for per-IP rate limiting) and Secure cookies work.
+    app.set("trust proxy", 1);
+
     // Middleware
     app.use(cors({
       origin: process.env.CLIENT_URL,
       credentials: true,
     }));
     app.use(cookieParser());
-    app.use(express.json());
+    app.use(express.json({ limit: "1mb" })); // cap request bodies (code + test cases)
+    app.use(sanitizeBody); // strip NoSQL operator injection from request bodies
 
     // Routes
     app.use("/api/auth", authRoute);

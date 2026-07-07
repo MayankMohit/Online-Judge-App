@@ -83,7 +83,9 @@ export const runInSandbox = ({
 
       // Drop to the unprivileged sandbox user so submitted code can't touch the
       // container filesystem or run as root. Requires the server to be root.
-      const spawnOpts = { cwd, env: childEnv };
+      // detached:true makes the child a process-group leader so a runaway can be
+      // killed as a group (parent + forked children) — see killTree().
+      const spawnOpts = { cwd, env: childEnv, detached: true };
       if (SANDBOX_UID != null) {
         spawnOpts.uid = SANDBOX_UID;
         if (SANDBOX_GID != null) spawnOpts.gid = SANDBOX_GID;
@@ -105,6 +107,25 @@ export const runInSandbox = ({
       resolve({ ...result, time: Date.now() - startTime });
     };
 
+    // Kill the whole process group so forked children can't outlive the kill and
+    // keep consuming CPU. On Linux the child leads its own group (detached:true);
+    // on Windows (dev) fall back to a plain single-process kill.
+    const killTree = () => {
+      try {
+        if (!isWindows && child.pid) {
+          process.kill(-child.pid, "SIGKILL");
+          return;
+        }
+      } catch {
+        // group already gone — fall through to a direct kill.
+      }
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        // already exited.
+      }
+    };
+
     try {
       if (input && input.length > 0) child.stdin.write(input);
       child.stdin.end();
@@ -116,7 +137,7 @@ export const runInSandbox = ({
       outputBytes += data.length;
       if (outputBytes > MAX_OUTPUT_BYTES) {
         killedForOutput = true;
-        child.kill("SIGKILL");
+        killTree();
         return;
       }
       output += data.toString();
@@ -128,7 +149,7 @@ export const runInSandbox = ({
 
     const timer = setTimeout(() => {
       isTimeout = true;
-      child.kill("SIGKILL");
+      killTree();
     }, timeout);
 
     child.on("error", (err) => {

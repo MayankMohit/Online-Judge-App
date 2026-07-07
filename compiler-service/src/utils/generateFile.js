@@ -1,16 +1,7 @@
-import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 import { v4 as uuid } from "uuid";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const codesDir = path.join(__dirname, "..", "..", "temp", "codes");
-
-if (!existsSync(codesDir)) {
-  mkdirSync(codesDir, { recursive: true });
-}
+import { codesDir } from "./paths.js";
 
 export const generateFile = (extension, code) => {
   const jobId = uuid();

@@ -3,18 +3,11 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-hot-toast";
 import CodeMirror from "@uiw/react-codemirror";
 import { EditorView } from "@codemirror/view";
-import { cpp } from "@codemirror/lang-cpp";
-import { python } from "@codemirror/lang-python";
 import { CheckCircle2, XCircle, Loader2, ShieldCheck, Wand2 } from "lucide-react";
 
 import { validateTestCases } from "../../features/problems/problemMutationSlice";
 import { editorExtensions } from "../ProblemPageComps/editorTheme";
-
-const LANGUAGES = [
-  { value: "cpp", label: "C++" },
-  { value: "c", label: "C" },
-  { value: "python", label: "Python" },
-];
+import { JUDGE_LANGUAGES, languageExtension } from "../../utils/languages";
 
 const COMPARISON_MODES = [
   { value: "trimmed", label: "Trimmed (ignore trailing whitespace)" },
@@ -25,18 +18,6 @@ const COMPARISON_MODES = [
 ];
 
 const DEFAULT_EPSILON = 1e-6;
-
-const langExtension = (language) => {
-  switch (language) {
-    case "cpp":
-    case "c":
-      return [cpp()];
-    case "python":
-      return [python()];
-    default:
-      return [];
-  }
-};
 
 /**
  * Admin reference-solution + test-case validation panel.
@@ -129,9 +110,10 @@ export default function ReferenceSolutionSection({
           onChange={(e) => update({ language: e.target.value })}
           className="bg-zinc-800 border border-zinc-700 text-white px-2.5 py-1.5 rounded-lg text-xs focus:outline-none focus:border-purple-500"
         >
-          {LANGUAGES.map((l) => (
-            <option key={l.value} value={l.value}>
+          {JUDGE_LANGUAGES.map((l) => (
+            <option key={l.id} value={l.id} disabled={!l.available}>
               {l.label}
+              {l.available ? "" : " (unavailable)"}
             </option>
           ))}
         </select>
@@ -175,7 +157,7 @@ export default function ReferenceSolutionSection({
           value={reference.code}
           height="220px"
           theme="none"
-          extensions={[EditorView.lineWrapping, ...editorExtensions, ...langExtension(reference.language)]}
+          extensions={[EditorView.lineWrapping, ...editorExtensions, ...languageExtension(reference.language)]}
           onChange={(val) => update({ code: val })}
           basicSetup={{ tabSize: 2 }}
         />

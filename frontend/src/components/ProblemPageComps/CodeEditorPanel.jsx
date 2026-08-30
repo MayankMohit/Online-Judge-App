@@ -1,34 +1,15 @@
 import CodeMirror from "@uiw/react-codemirror";
 import { EditorView } from "@codemirror/view";
-import { cpp } from "@codemirror/lang-cpp";
-import { python } from "@codemirror/lang-python";
-import { javascript } from "@codemirror/lang-javascript";
-import { java } from "@codemirror/lang-java";
 import { ArrowLeft, CheckCheck, Play, Send } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearSaveSuccess } from "../../features/code/codePersistenceSlice";
 import { languageBoilerplates } from "./LanguageBoilerplates";
 import { editorExtensions } from "./editorTheme";
-
-// Map our language codes to CodeMirror language extensions.
-const languageExtension = (language) => {
-  switch (language) {
-    case "cpp":
-    case "c":
-      return [cpp()];
-    case "py":
-    case "python":
-      return [python()];
-    case "js":
-    case "javascript":
-      return [javascript()];
-    case "java":
-      return [java()];
-    default:
-      return [];
-  }
-};
+import {
+  languageExtension,
+  isLanguageAvailable,
+} from "../../utils/languages";
 
 const CodeEditorPanel = ({
   language, setLanguage, code,
@@ -98,8 +79,7 @@ const CodeEditorPanel = ({
           <option
             key={lang}
             value={lang}
-            // go/rust toolchains omitted from the image (1GB host); rest enabled.
-            disabled={["go", "rust"].includes(lang)}
+            disabled={!isLanguageAvailable(lang)}
           >
             {lang === "cpp" ? "C++" : lang.charAt(0).toUpperCase() + lang.slice(1)}
           </option>

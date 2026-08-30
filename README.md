@@ -173,14 +173,32 @@ docker-compose up --build -d
 #### HTTPS with Let's Encrypt
  
 1. Point your domain's A record to your VM's public IP
-2. Install Certbot and generate a certificate:
+2. Create the ACME webroot and issue the certificate with the **webroot** plugin.
+   Do NOT use `--manual`: manual certs cannot renew unattended (certbot refuses
+   without `--manual-auth-hook`), so the systemd timer fails silently every run
+   and the cert simply expires after 90 days.
 ```bash
 sudo apt install certbot -y
-sudo certbot certonly --manual --preferred-challenges dns -d your-domain.com
+sudo mkdir -p /var/www/certbot
+# The frontend container serves /.well-known/acme-challenge/ from this path
+# (see frontend/nginx.conf) and must be running for the challenge to succeed.
+docker-compose up --build -d
+sudo certbot certonly --webroot -w /var/www/certbot -d your-domain.com
 ```
  
-3. Update `frontend/nginx.conf` to enable SSL (see the nginx.conf in this repo)
-4. Rebuild the frontend container:
+3. Install the deploy hook so a renewed cert is actually picked up by nginx:
+```bash
+sudo cp deploy/certbot-deploy-hook.sh /etc/letsencrypt/renewal-hooks/deploy/restart-frontend.sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-frontend.sh
+```
+ 
+4. Verify unattended renewal actually works (this is the step that catches a
+   misconfigured authenticator before it costs you an outage):
+```bash
+sudo certbot renew --dry-run
+```
+ 
+5. Rebuild the frontend container:
 ```bash
 docker-compose up --build -d
 ```

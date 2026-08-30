@@ -16,6 +16,9 @@ services:
       - "443:443"  # HTTPS
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro  # for SSL certs
+      # Webroot for certbot's HTTP-01 challenge. certbot writes the token on the
+      # host, nginx serves it from /.well-known/acme-challenge/ (see nginx.conf).
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - backend
     restart: unless-stopped

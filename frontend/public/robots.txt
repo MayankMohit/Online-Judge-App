@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Private, per-user, or admin-only areas — nothing here is useful in an index
+# and most of it 401s or redirects for a crawler anyway.
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /submissions
+Disallow: /update-profile
+Disallow: /login
+Disallow: /signup
+Disallow: /verify-email
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /unauthorized
+
+Sitemap: https://cj.bymayank.com/sitemap.xml

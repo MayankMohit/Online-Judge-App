@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useSeo } from "../../hooks/otherHooks/useSeo";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Lock } from "lucide-react";
@@ -61,6 +62,24 @@ const ProblemDetailsPage = () => {
   const { currentProblem, problemLoading, problemError, problemErrorInfo, contestMeta, contestTimeOffset } = useSelector((state) => state.problems);
   const { items: userSubmissions, error } = useSelector((state) => state.problemSubmissions);
   const { loading: codeLoading, submissionId, verdict, failedCase, averageTime, lastAction, testCaseResults } = useSelector((state) => state.code);
+
+  // Problem pages are the site's only genuinely searchable content, so give each
+  // one its own title and snippet instead of the generic homepage pair. Gated on
+  // the fetch so a crawler never captures the loading state as the title.
+  // Contest-scoped views are noindex: the URL is per-contest and its problems are
+  // also reachable at the canonical /problems/:number.
+  useSeo({
+    title: currentProblem
+      ? `${currentProblem.problemNumber}. ${currentProblem.title}`
+      : undefined,
+    description: currentProblem
+      ? `Solve "${currentProblem.title}" (${currentProblem.difficulty}) on Code Junkie. Write and run C++, Java, Python or JavaScript in the browser and get an instant verdict.`
+      : undefined,
+    path: contestId ? undefined : `/problems/${number}`,
+    noindex: !!contestId,
+    ready: !!currentProblem,
+  });
+
 
   useEffect(() => {
     setSubmissionsReady(false);

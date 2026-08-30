@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import { fetchContests } from "../../features/contests/contestsSlice";
 import ContestCard from "../../components/ContestComps/ContestCard";
 import { ContestCardSkeleton } from "../../components/ContestComps/ContestSkeletons";
+import { useSeo } from "../../hooks/otherHooks/useSeo";
 
 const TABS = [
   { key: "running", label: "Live" },
@@ -12,6 +13,13 @@ const TABS = [
 ];
 
 const ContestsPage = () => {
+  useSeo({
+    title: "Coding Contests",
+    description:
+      "Live, upcoming and past programming contests on Code Junkie. Register, solve timed problems and follow the standings in real time.",
+    path: "/contests",
+  });
+
   const dispatch = useDispatch();
   const { items, loading, error, serverTimeOffset } = useSelector(
     (state) => state.contests

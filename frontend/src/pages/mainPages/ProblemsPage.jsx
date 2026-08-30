@@ -7,8 +7,16 @@ import { fetchProblems, incrementPage } from "../../features/problems/problemsSl
 import { SearchX } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { ProblemCardSkeleton } from "../../components/Skeletons";
+import { useSeo } from "../../hooks/otherHooks/useSeo";
 
 const ProblemsPage = () => {
+  useSeo({
+    title: "Practice Problems",
+    description:
+      "Browse and solve programming problems by difficulty and topic. Write C++, Java, Python or JavaScript in the browser and get an instant verdict from the judge.",
+    path: "/problems",
+  });
+
   const observer = useRef();
   const [direction, setDirection] = useState("desc");
   const dispatch = useDispatch();

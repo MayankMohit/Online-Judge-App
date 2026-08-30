@@ -2,15 +2,74 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image" href="/dark_short.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Code Junkie — Practice Coding Problems &amp; Compete in Contests</title>
+    <meta
+      name="description"
+      content="Code Junkie is a free online judge: solve programming problems in C++, Java, Python, JavaScript and more, get instant verdicts from a real judge, enter timed contests, and track your progress on the leaderboard."
+    />
+    <link rel="canonical" href="https://cj.bymayank.com/" />
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <!-- Open Graph / Twitter: without these a shared link unfurls as a bare URL. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Code Junkie" />
+    <meta property="og:title" content="Code Junkie — Practice Coding Problems &amp; Compete in Contests" />
+    <meta
+      property="og:description"
+      content="Solve programming problems in C++, Java, Python, JavaScript and more, get instant verdicts, enter timed contests, and climb the leaderboard."
+    />
+    <meta property="og:url" content="https://cj.bymayank.com/" />
+    <meta property="og:image" content="https://cj.bymayank.com/dark_long.png" />
+    <meta property="og:image:alt" content="Code Junkie" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Code Junkie — Practice Coding Problems &amp; Compete in Contests" />
+    <meta
+      name="twitter:description"
+      content="Solve programming problems in C++, Java, Python, JavaScript and more, get instant verdicts, enter timed contests, and climb the leaderboard."
+    />
+    <meta name="twitter:image" content="https://cj.bymayank.com/dark_long.png" />
+
+    <link rel="icon" type="image/png" href="/dark_short.png" />
+    <link rel="apple-touch-icon" href="/dark_short.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
-    <title>Code Junkie</title>
+
+    <!-- Structured data. No SearchAction: the problems page filters in Redux and
+         has no URL-addressable search, so advertising one would be a dead end. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Code Junkie",
+        "url": "https://cj.bymayank.com/",
+        "description": "A free online judge for practising programming problems and competing in timed contests."
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Real fallback for crawlers and clients that don't execute JavaScript.
+         Everything below is true of the site and gives a non-rendering bot both
+         a description and crawlable links into the public sections. -->
+    <noscript>
+      <h1>Code Junkie</h1>
+      <p>
+        A free online judge. Solve programming problems in C++, Java, Python and
+        JavaScript, get an instant verdict from the judge, enter timed contests,
+        and track your progress on the leaderboard.
+      </p>
+      <ul>
+        <li><a href="/problems">Practice problems</a></li>
+        <li><a href="/contests">Coding contests</a></li>
+        <li><a href="/leaderboards">Leaderboard</a></li>
+      </ul>
+      <p>Code Junkie needs JavaScript enabled to run the code editor.</p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

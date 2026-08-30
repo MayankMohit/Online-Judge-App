@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
 import { Crown, Medal, Trophy } from "lucide-react";
 import { LeaderboardSkeleton } from "../../components/Skeletons";
+import { useSeo } from "../../hooks/otherHooks/useSeo";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,6 +15,13 @@ const rankConfig = (rank) => {
 };
 
 const LeaderboardPage = () => {
+  useSeo({
+    title: "Leaderboard",
+    description:
+      "See who is solving the most problems on Code Junkie. Global rankings by problems solved across every difficulty.",
+    path: "/leaderboards",
+  });
+
   const dispatch = useDispatch();
   const { users, loading, error } = useSelector((state) => state.leaderboard);
   const [currentPage, setCurrentPage] = useState(0);

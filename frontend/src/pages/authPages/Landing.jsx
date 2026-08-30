@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useSeo } from "../../hooks/otherHooks/useSeo";
 import Logo from "../../assets/images/dark_long.png";
 import Grid from "../../assets/images/grid.png";
 import FloatingIcon from "../../components/FloatingIcon";
@@ -8,7 +9,15 @@ import {
 } from "../../utils/Icons";
 
 const Landing = () => {
+  useSeo({
+    title: "Practice Coding Problems & Compete in Contests",
+    description:
+      "Code Junkie is a free online judge: solve programming problems in C++, Java, Python, JavaScript and more, get instant verdicts, enter timed contests, and climb the leaderboard.",
+    path: "/",
+  });
+
   return (
+
     <div className="relative h-screen w-screen overflow-hidden sm:bg-radial-[at_50%_30%] sm:from-purple-950 sm:to-black bg-gradient-to-b from-black to-purple-950">
       <div
         className="absolute inset-0 z-0 bg-cover opacity-15 pointer-events-none -top-10 -left-10 -right-10"
@@ -25,9 +34,24 @@ const Landing = () => {
       <FloatingIcon url={PhpIcon}    top="85%" left="70%" rotation={-10} delay={0.8} size={10} />
 
       <div className="relative z-30 flex flex-col items-center h-full justify-center gap-1">
-        <img src={Logo} alt="Logo" className="pointer-events-none sm:h-[60%]" />
+        {/* The wordmark is an image, so without this heading the highest-value
+            page on the site has no machine-readable text at all. */}
+        <h1 className="sr-only">
+          Code Junkie — practice coding problems and compete in contests
+        </h1>
+        <img
+          src={Logo}
+          alt="Code Junkie"
+          className="pointer-events-none sm:h-[60%]"
+        />
 
-        <Link to="/problems">
+        <p className="max-w-xl px-6 text-center text-sm sm:text-base text-zinc-300">
+          A free online judge. Solve programming problems in C++, Java, Python
+          and JavaScript, get an instant verdict, enter timed contests, and
+          track your progress on the leaderboard.
+        </p>
+
+        <Link to="/problems" className="mt-4">
           <button className="px-15 py-2 text-2xl bg-purple-400 text-black rounded-4xl hover:bg-purple-300 transition">
             Get Started
           </button>

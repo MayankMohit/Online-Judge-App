@@ -12,6 +12,7 @@ import {
 import { fetchStandings, clearStandings } from "../../features/contests/standingsSlice";
 import { fetchMyMock, clearMock } from "../../features/contests/contestMockSlice";
 import { useAuthStore } from "../../store/authStore";
+import { useSeo } from "../../hooks/otherHooks/useSeo";
 import { formatDate } from "../../utils/date";
 import ContestTimer from "../../components/ContestComps/ContestTimer";
 import ContestProblemRow from "../../components/ContestComps/ContestProblemRow";
@@ -40,6 +41,17 @@ const ContestDetailsPage = () => {
     error,
   } = useSelector((state) => state.contests);
   const standings = useSelector((state) => state.standings);
+
+  useSeo({
+    title: contest?.title,
+    description: contest
+      ? contest.description ||
+        `${contest.title} on Code Junkie — ${contest.problemCount} problems, live standings and results.`
+      : undefined,
+    path: `/contests/${contestId}`,
+    ready: !!contest,
+  });
+
   const { mock, serverTimeOffset: mockOffset } = useSelector(
     (state) => state.contestMock
   );

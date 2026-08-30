@@ -24,6 +24,7 @@ import { startRenumberJob } from "./jobs/renumberJob.js";
 import { startJudgeWorker } from "./workers/judgeWorker.js";
 import { sanitizeBody } from "./middlewares/sanitize.js";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
+import { getSitemap } from "./controllers/seoController.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -62,6 +63,11 @@ const startServer = async () => {
     app.use("/api/code", codeRoute);
     app.use("/api/ai", aiRoute);
     app.use("/api/contests", contestRoute);
+
+    // Served at the site root (nginx proxies /sitemap.xml here) because
+    // crawlers only look for it there. Outside /api so the anti-flood
+    // limiter never 429s a search engine.
+    app.get("/sitemap.xml", getSitemap);
 
     // Background jobs
     startRenumberJob();

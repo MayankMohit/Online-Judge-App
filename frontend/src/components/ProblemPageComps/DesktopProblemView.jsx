@@ -7,6 +7,33 @@ import { ArrowLeft, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 
+/**
+ * The three-dot knob that makes a resize handle look draggable.
+ *
+ * It shares the rail's own colours and hover state (via the parent's `group`), so
+ * it reads as the rail bulging out into a pill rather than as a separate control
+ * sitting on top of it. Pointer events stay with the parent, which owns the drag.
+ */
+const Grip = ({ orientation }) => {
+  const vertical = orientation === "vertical";
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                  flex items-center justify-center gap-[3px] rounded-full
+                  bg-zinc-800 group-hover:bg-purple-600 transition-colors
+                  ${vertical ? "flex-col px-[3px] py-2" : "flex-row py-[3px] px-2"}`}
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-[3px] h-[3px] rounded-full bg-zinc-500 group-hover:bg-white transition-colors"
+        />
+      ))}
+    </div>
+  );
+};
+
 const DesktopProblemView = ({
   activeTab, setActiveTab, currentProblem, userSubmissions,
   loading, error, navigate, isSolved, language, setLanguage,
@@ -89,9 +116,18 @@ const DesktopProblemView = ({
 
       {/* VERTICAL DRAG HANDLE */}
       <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Drag to resize the description and editor panels"
+        title="Drag to resize"
         onMouseDown={(e) => { e.preventDefault(); isDraggingRef.current = true; document.body.style.cursor = "col-resize"; }}
-        className="w-1 cursor-col-resize bg-zinc-800 hover:bg-purple-600 transition-colors shrink-0"
-      />
+        // z-10 so the widened hit area (the ::after below) sits above BOTH
+        // neighbours — the right panel is positioned and would otherwise cover it.
+        className="group relative z-10 w-1 cursor-col-resize bg-zinc-800 hover:bg-purple-600 transition-colors shrink-0
+                   after:content-[''] after:absolute after:inset-y-0 after:-left-[3px] after:-right-[3px]"
+      >
+        <Grip orientation="vertical" />
+      </div>
 
       {/* RIGHT PANEL — blurred for guests */}
       <div className="flex flex-col bg-zinc-950 min-w-[20vw] relative" style={{ width: `${100 - leftWidth}%` }}>
@@ -144,9 +180,16 @@ const DesktopProblemView = ({
 
         {/* HORIZONTAL DRAG HANDLE */}
         <div
-          className="h-1 bg-zinc-800 hover:bg-purple-600 cursor-row-resize transition-colors shrink-0"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Drag to resize the editor and test-case panels"
+          title="Drag to resize"
+          className="group relative z-10 h-1 bg-zinc-800 hover:bg-purple-600 cursor-row-resize transition-colors shrink-0
+                     after:content-[''] after:absolute after:inset-x-0 after:-top-[3px] after:-bottom-[3px]"
           onMouseDown={(e) => { e.preventDefault(); isDraggingHeight.current = true; document.body.style.cursor = "row-resize"; }}
-        />
+        >
+          <Grip orientation="horizontal" />
+        </div>
 
         {/* BOTTOM PANEL */}
         <div className="flex-1 overflow-hidden" style={{ height: `${testcaseHeight}%`, minHeight: "160px" }}>

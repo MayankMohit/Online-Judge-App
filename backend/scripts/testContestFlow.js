@@ -87,6 +87,11 @@ const main = async () => {
     endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
   });
   check("admin creates contest (201)", res.status === 201, `got ${res.status}`);
+  check(
+    "release defaults to on",
+    res.data.contest?.releaseProblemsAfterEnd === true,
+    `got ${res.data.contest?.releaseProblemsAfterEnd}`
+  );
   const contestId = res.data.contest?._id;
 
   res = await adminApi.post("/contests", {
@@ -122,6 +127,8 @@ const main = async () => {
       ],
       contestId,
       points,
+      referenceLanguage: "py",
+      referenceCode: PY_AC,
     });
 
   res = await mkProblem("A", 100);
@@ -342,6 +349,124 @@ const main = async () => {
   check("delete ended contest (200)", res.status === 200, `got ${res.status}`);
   const detached = await Problem.findById(probA._id);
   check("problem detached & public after delete", detached?.contest === null && detached?.isPublic === true);
+
+  // -- 9. Release opt-out ---------------------------------------------
+  console.log("\n[9] Release opt-out");
+
+  const mkContestProblem = (contest, n) =>
+    adminApi.post("/problems", {
+      title: `${P}Problem ${n}`,
+      statement: "Add two numbers.",
+      difficulty: "Easy",
+      tags: ["math"],
+      inputFormat: "two ints",
+      outputFormat: "sum",
+      constraints: "small",
+      sampleInput: "1 2",
+      sampleOutput: "3",
+      testCases: [
+        { input: "1 2", expectedOutput: "3", isHidden: false },
+        { input: "5 7", expectedOutput: "12", isHidden: true },
+      ],
+      contestId: contest,
+      points: 100,
+      referenceLanguage: "py",
+      referenceCode: PY_AC,
+    });
+
+  res = await adminApi.post("/contests", {
+    title: `${P}NoRelease`,
+    startTime: new Date(Date.now() + 60 * 60 * 1000),
+    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    releaseProblemsAfterEnd: false,
+  });
+  check("opt-out contest created (201)", res.status === 201, `got ${res.status}`);
+  check(
+    "flag persisted as false",
+    res.data.contest?.releaseProblemsAfterEnd === false,
+    `got ${res.data.contest?.releaseProblemsAfterEnd}`
+  );
+  const nrId = res.data.contest?._id;
+
+  res = await mkContestProblem(nrId, "C");
+  check("opt-out contest problem created (201)", res.status === 201, `got ${res.status}`);
+  const probC = res.data.problem;
+
+  // End it
+  await Contest.updateOne(
+    { _id: nrId },
+    {
+      startTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() - 1000),
+    }
+  );
+
+  // Reads that would normally trigger the lazy release
+  res = await guestApi.get(`/contests/${nrId}`);
+  check("opt-out contest readable after end (200)", res.status === 200, `got ${res.status}`);
+  check(
+    "releaseProblemsAfterEnd exposed to client",
+    res.data.contest?.releaseProblemsAfterEnd === false
+  );
+  await guestApi.get(`/contests/${nrId}/standings`);
+  await guestApi.get(`/problems/number/${probC.problemNumber}`);
+
+  const nrAfterEnd = await Contest.findById(nrId);
+  check("problemsReleased stays false", nrAfterEnd.problemsReleased === false);
+  const probCAfterEnd = await Problem.findById(probC._id);
+  check("problem stays non-public", probCAfterEnd.isPublic === false);
+
+  res = await guestApi.get("/problems");
+  check(
+    "opt-out problem absent from public list",
+    !(res.data.problems || []).some((p) => p.title === `${P}Problem C`)
+  );
+
+  res = await guestApi.get(`/problems/search?query=${P}Problem`);
+  check(
+    "opt-out problem absent from search",
+    !(res.data.problems || []).some((p) => p.title === `${P}Problem C`)
+  );
+
+  // Admin changes their mind: re-enabling releases on the next read
+  res = await adminApi.put(`/contests/${nrId}`, { releaseProblemsAfterEnd: true });
+  check("admin can re-enable release (200)", res.status === 200, `got ${res.status}`);
+  await guestApi.get(`/contests/${nrId}`);
+  const nrReleased = await Contest.findById(nrId);
+  check("problems released after re-enabling", nrReleased.problemsReleased === true);
+
+  res = await guestApi.get("/problems");
+  check(
+    "problem in public list after re-enabling",
+    (res.data.problems || []).some((p) => p.title === `${P}Problem C`)
+  );
+
+  res = await adminApi.put(`/contests/${nrId}`, { releaseProblemsAfterEnd: false });
+  check("toggle after release rejected (400)", res.status === 400, `got ${res.status}`);
+
+  // Deleting an ended opt-out contest removes its never-public problems
+  res = await adminApi.post("/contests", {
+    title: `${P}NoRelease2`,
+    startTime: new Date(Date.now() + 60 * 60 * 1000),
+    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    releaseProblemsAfterEnd: false,
+  });
+  const nr2Id = res.data.contest?._id;
+  res = await mkContestProblem(nr2Id, "D");
+  const probD = res.data.problem;
+  await Contest.updateOne(
+    { _id: nr2Id },
+    {
+      startTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() - 1000),
+    }
+  );
+  res = await adminApi.delete(`/contests/${nr2Id}`);
+  check("delete ended opt-out contest (200)", res.status === 200, `got ${res.status}`);
+  check(
+    "its hidden problem deleted too",
+    (await Problem.findById(probD._id)) === null
+  );
 
   // ── Done ───────────────────────────────────────────────────────────
   console.log("\nCleaning up test data...");

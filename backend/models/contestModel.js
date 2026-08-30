@@ -41,6 +41,12 @@ const contestSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // When false, problems stay hidden after the contest ends instead of
+    // joining the public problem list. Set at creation, editable until release.
+    releaseProblemsAfterEnd: {
+      type: Boolean,
+      default: true,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

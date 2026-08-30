@@ -1,4 +1,5 @@
 import { Problem } from "../models/problemModel.js";
+import { invalidateProblemCaches } from "./caches.js";
 
 export const getContestStatus = (contest, now = new Date()) => {
   if (now < contest.startTime) return "upcoming";
@@ -7,14 +8,17 @@ export const getContestStatus = (contest, now = new Date()) => {
 };
 
 // Lazy release: once a contest has ended, flip its problems public.
+// Skipped entirely when the contest opted out via releaseProblemsAfterEnd.
 // Idempotent — safe to call on every contest read.
 export const maybeReleaseContestProblems = async (contest) => {
   if (contest.problemsReleased) return;
+  if (contest.releaseProblemsAfterEnd === false) return;
   if (getContestStatus(contest) !== "ended") return;
 
   await Problem.updateMany({ contest: contest._id }, { isPublic: true });
   contest.problemsReleased = true;
   await contest.save();
+  invalidateProblemCaches();
 };
 
 export const STANDINGS_SORT = {

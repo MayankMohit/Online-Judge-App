@@ -37,6 +37,7 @@ export default function ContestManagement() {
     description: "",
     startTime: "",
     endTime: "",
+    releaseProblemsAfterEnd: true,
   });
   const [problems, setProblems] = useState([]); // [{ problem: {…}, points }]
   const [formErrors, setFormErrors] = useState({});
@@ -54,6 +55,7 @@ export default function ContestManagement() {
         description: contest.description || "",
         startTime: toLocalInputValue(contest.startTime),
         endTime: toLocalInputValue(contest.endTime),
+        releaseProblemsAfterEnd: contest.releaseProblemsAfterEnd !== false,
       });
       setProblems(contest.problems || []);
     }
@@ -61,6 +63,7 @@ export default function ContestManagement() {
 
   const status = isEditing ? contest?.status || "upcoming" : "upcoming";
   const started = isEditing && status !== "upcoming";
+  const problemsReleased = isEditing && !!contest?.problemsReleased;
 
   const validate = () => {
     const errors = {};
@@ -105,6 +108,9 @@ export default function ContestManagement() {
       description: form.description.trim(),
       endTime: new Date(form.endTime).toISOString(),
     };
+    if (!problemsReleased) {
+      payload.releaseProblemsAfterEnd = form.releaseProblemsAfterEnd;
+    }
     if (!started) {
       payload.startTime = new Date(form.startTime).toISOString();
     }
@@ -230,6 +236,29 @@ export default function ContestManagement() {
               )}
             </div>
           </div>
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.releaseProblemsAfterEnd}
+              onChange={(e) =>
+                handleChange("releaseProblemsAfterEnd", e.target.checked)
+              }
+              disabled={problemsReleased}
+              className="mt-0.5 w-4 h-4 accent-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <span className="text-sm">
+              <span className="text-zinc-200">
+                Add problems to the public problem list after the contest ends
+              </span>
+              <span className="block text-xs text-zinc-500 mt-0.5">
+                {problemsReleased
+                  ? "Problems have already been released — this can no longer be changed."
+                  : form.releaseProblemsAfterEnd
+                  ? "When the contest ends, its problems become public and appear under Problems."
+                  : "Problems stay out of the public list. Participants can still open them from the contest page."}
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* Problems — only after the contest exists */}
@@ -334,6 +363,8 @@ export default function ContestManagement() {
             <p className="text-zinc-500 text-sm mb-5">
               {status === "upcoming"
                 ? "Its unreleased problems will be deleted too. This cannot be undone."
+                : contest?.releaseProblemsAfterEnd === false
+                ? "Participation records and its unreleased problems will be deleted. This cannot be undone."
                 : "Participation records will be removed. Released problems stay public."}
             </p>
             <div className="flex justify-end gap-3">

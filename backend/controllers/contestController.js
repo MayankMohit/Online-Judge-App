@@ -112,6 +112,8 @@ export const getContestById = async (req, res) => {
         endTime: contest.endTime,
         status,
         registeredCount,
+        releaseProblemsAfterEnd: contest.releaseProblemsAfterEnd !== false,
+        problemsReleased: contest.problemsReleased,
         problems: canSeeProblems
           ? contest.problems.map((p) => ({
               problem: p.problem,
@@ -138,7 +140,8 @@ export const getContestById = async (req, res) => {
 
 export const createContest = async (req, res) => {
   try {
-    const { title, description, startTime, endTime } = req.body;
+    const { title, description, startTime, endTime, releaseProblemsAfterEnd } =
+      req.body;
     if (!title || !startTime || !endTime) {
       return res
         .status(400)
@@ -156,6 +159,7 @@ export const createContest = async (req, res) => {
       description,
       startTime,
       endTime,
+      releaseProblemsAfterEnd: releaseProblemsAfterEnd !== false,
       createdBy: req.userId,
     });
 
@@ -182,7 +186,26 @@ export const updateContest = async (req, res) => {
     }
 
     const status = getContestStatus(contest);
-    const { title, description, startTime, endTime, problems } = req.body;
+    const {
+      title,
+      description,
+      startTime,
+      endTime,
+      problems,
+      releaseProblemsAfterEnd,
+    } = req.body;
+
+    if (releaseProblemsAfterEnd !== undefined) {
+      // Once problems are public again there is no un-publishing them here.
+      if (contest.problemsReleased) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Problems have already been released — this can no longer be changed",
+        });
+      }
+      contest.releaseProblemsAfterEnd = releaseProblemsAfterEnd !== false;
+    }
 
     if (title !== undefined) contest.title = title;
     if (description !== undefined) contest.description = description;
@@ -258,6 +281,11 @@ export const deleteContest = async (req, res) => {
 
     if (status === "upcoming") {
       // Unreleased problems were created for this contest — remove them too
+      await Problem.deleteMany({ contest: contest._id, isPublic: false });
+      await Problem.updateMany({ contest: contest._id }, { contest: null });
+    } else if (contest.releaseProblemsAfterEnd === false) {
+      // Opted out of release: these problems were never meant to be
+      // public, so drop them rather than leave orphaned hidden drafts.
       await Problem.deleteMany({ contest: contest._id, isPublic: false });
       await Problem.updateMany({ contest: contest._id }, { contest: null });
     } else {
